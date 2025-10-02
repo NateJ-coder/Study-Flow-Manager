@@ -35,8 +35,6 @@
   /* when a day is crossed, animate line A then B */
   .day-cell.cross-anim .cross.a{animation:x1 .35s ease-out forwards}
   .day-cell.cross-anim .cross.b{animation:x2 .35s .15s ease-out forwards}
-  .day-x{ position:absolute; inset:4px; pointer-events:none; opacity:0; transition:opacity .12s }
-  .day-cell.crossed .day-x{ opacity:1 }
   </style>
   <style>
     /* Inactivity collapse */
@@ -60,7 +58,22 @@
     .night { filter: brightness(.9) contrast(1.05) }
     .rain  { filter: brightness(.8) }
     /* Wet effect when raining */
-    .rain .glass { filter:saturate(1.15) brightness(0.95) drop-shadow(0 10px 16px rgba(0,0,0,.5)); border-color:rgba(255,255,255,.35); }
+    .rain .glass {
+      filter: saturate(1.1) brightness(0.95) drop-shadow(0 10px 16px rgba(0,0,0,.5));
+      border-color: rgba(255,255,255,.35);
+
+      /* droplet overlay */
+      background-image: url("assets/images/rain-drops-overlay.png");
+      background-size: cover;
+      background-repeat: no-repeat;
+      background-blend-mode: overlay;
+      
+      animation: drip 20s linear infinite;
+    }
+    @keyframes drip {
+      0%   { background-position: center top; }
+      100% { background-position: center bottom; }
+    }
     @keyframes flipY { 0%{transform:rotateY(0)} 100%{transform:rotateY(180deg)} }
     #hourglass.flip { animation: flipY .6s ease; transform-origin:50% 50%; }
     /* Remove border on the main timer panel, add a softer drop shadow */
@@ -284,7 +297,6 @@
             </label>
             <label>Slideshow <input id="setSlide" type="checkbox" checked class="h-5 w-5 accent-[color:var(--primary)]"></label>
             <label>Slide interval (sec) <input id="setSlideInt" type="number" min="20" class="w-full mt-1 p-2 bg-white/10 rounded-lg"></label>
-            <label>X color <input id="setX" type="color" class="w-full h-10 mt-1 rounded-lg"></label>
             <label>Dim background (%) <input id="setDim" type="range" min="0" max="70" step="1" class="w-full mt-1"></label>
           </div>
         </fieldset>
@@ -550,10 +562,7 @@ let _bgTransitioning = false;
     const MAX_LS_KEY = 'sf_max_slides_v1';
     let maxCache = JSON.parse(localStorage.getItem(MAX_LS_KEY)||'{}');
     async function exists(url){
-      try{
-        const r = await fetch(url, { method:'GET', headers:{Range:'bytes=0-0'}, cache:'no-store' });
-        return [200,206,304].includes(r.status);
-      }catch{ return false; }
+      try{ const r=await fetch(url,{method:'HEAD',cache:'no-store'}); return r.ok; }catch{return false;}
     }
     async function discoverMax(prefix){
       const c = maxCache[prefix];
@@ -587,7 +596,13 @@ let _bgTransitioning = false;
     }
 
     async function preloadItem(i){
-      const url = await makeUrl(i);
+      let url;
+      if (state.weather==='rain'){
+        const j = 1 + Math.floor(Math.random()*currentMax);
+        url = cdn(`assets/images/${currentPrefix}-${j}.png`) + cacheBust();
+      } else {
+        url = await makeUrl(i);
+      }
       const img = new Image();
       const t0 = performance.now();
       img.src = url;
@@ -670,6 +685,7 @@ let _bgTransitioning = false;
       else if(state.season==='autumn'){ primary='#FF5722'; sand='#8B5E3C'; }
       else /* winter */ { primary='#2196F3'; sand='#CFD8DC'; }
   root.style.setProperty('--ui-primary-color', primary);
+  root.style.setProperty('--primary', primary);
   // Set the X color: theme-matched or manual
   root.style.setProperty('--x-color', state.xMatchTheme ? primary : state.xColor);
   // If raining, tint sand bluish
@@ -741,7 +757,7 @@ let _bgTransitioning = false;
       if (state.weather==='rain') {
         state.weather='clear'; applyTheme(); setParticleTheme(); refreshBackground(); stopRainAudio();
       } else {
-        state.weather='rain';  applyTheme(); setParticleTheme(); refreshBackground(); startRainAudio(); playShock?.();
+        state.weather='rain';  applyTheme(); setParticleTheme(); refreshBackground(); startRainAudio();
       }
     }
 
@@ -894,7 +910,10 @@ let _bgTransitioning = false;
       
       // enable/disable the color input when matching theme
       const xColorInput = document.getElementById('setXColor');
-      if (xColorInput) xColorInput.disabled = state.xMatchTheme;
+      if (xColorInput){ 
+        xColorInput.disabled = state.xMatchTheme;
+        if (!state.xMatchTheme) state.xColor = xColorInput.value;
+      }
 
       // Guard the "off" mode behind credits (cost = 3)
       if (state.rainMode === 'off') {
@@ -907,7 +926,6 @@ let _bgTransitioning = false;
         }
       }
       document.documentElement.style.setProperty('--scrim', ((document.getElementById('setDim')?.value ?? 28)/100));
-      const xCol = document.getElementById('setX')?.value; if(xCol) document.documentElement.style.setProperty('--x-color', xCol);
     }
     function durationFor(mode){
       if(mode==='work') return state.workMin*60;
@@ -988,6 +1006,13 @@ let _bgTransitioning = false;
     $('#settings')?.addEventListener('submit', e=>{
       e.preventDefault();
   readSettings(); applyTheme(); refreshBackground(); stopSlideshow(); startSlideshow();
+      
+      // Save settings to localStorage
+      saveSettings({
+        season: state.season, tz: state.tz, slideOn: state.slideOn, slideSec: state.slideSec,
+        rainMode: state.rainMode, creditsHours: state.creditsHours, xMatchTheme: state.xMatchTheme, xColor: state.xColor
+      });
+      
       const t = $('#toast'); if(t){ t.style.opacity = '1'; setTimeout(()=> t.style.opacity='0', 1400); }
     });
 
@@ -1307,6 +1332,19 @@ let _bgTransitioning = false;
 
     // ===== Boot =====
   (async ()=>{
+    // Merge saved settings with defaults before first readSettings()
+    const savedSettings = loadSettings({});
+    Object.assign(state, {
+      season: savedSettings.season ?? state.season,
+      tz: savedSettings.tz ?? state.tz,
+      slideOn: savedSettings.slideOn ?? state.slideOn,
+      slideSec: savedSettings.slideSec ?? state.slideSec,
+      rainMode: savedSettings.rainMode ?? state.rainMode,
+      creditsHours: savedSettings.creditsHours ?? state.creditsHours,
+      xMatchTheme: savedSettings.xMatchTheme ?? state.xMatchTheme,
+      xColor: savedSettings.xColor ?? state.xColor
+    });
+    
     readSettings(); applyTheme(); try{ updateFavicon(); }catch(e){}
     await setBackground(); // initial, non-animated set
     startSlideshow(); renderCalendar(); scheduleRainCycle(); updateTimerUI();
