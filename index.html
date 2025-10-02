@@ -61,14 +61,11 @@
     .rain .glass {
       filter: saturate(1.1) brightness(0.95) drop-shadow(0 10px 16px rgba(0,0,0,.5));
       border-color: rgba(255,255,255,.35);
-
-      /* droplet overlay */
       background-image: url("assets/images/rain-drops-overlay.png");
       background-size: cover;
       background-repeat: no-repeat;
-      background-blend-mode: overlay;
-      
-      animation: drip 20s linear infinite;
+      background-position: center center;
+      animation: none;
     }
     @keyframes drip {
       0%   { background-position: center -100%; }
@@ -294,6 +291,18 @@
                 <option value="America/New_York">America/New_York</option>
                 <option value="Asia/Tokyo">Asia/Tokyo</option>
               </select>
+            </label>
+            <label class="toggle">
+              <input type="checkbox" id="dayNightToggle">
+              <span>Night / Day</span>
+            </label>
+            <label class="toggle">
+              <input type="checkbox" id="dayNightToggle">
+              <span>Night / Day</span>
+            </label>
+            <label class="toggle">
+              <input type="checkbox" id="dayNightToggle">
+              <span>Night / Day</span>
             </label>
             <label>Slideshow <input id="setSlide" type="checkbox" checked class="h-5 w-5 accent-[color:var(--primary)]"></label>
             <label>Slide interval (sec) <input id="setSlideInt" type="number" min="20" class="w-full mt-1 p-2 bg-white/10 rounded-lg"></label>
@@ -540,12 +549,21 @@ let _bgTransitioning = false;
     resizeFx(); addEventListener('resize', resizeFx);
 
     // Mouse trail (sprinkles on move)
+    let lastMouse = null;
     document.addEventListener('mousemove', e=>{
-      if(MODE==='fireflies'){
-        spawn(e.clientX, e.clientY); // fireflies follow cursor
-      }else{
-        for(let i=0;i<2;i++){ spawn(e.clientX, e.clientY, true); }
+      const cur = {x:e.clientX, y:e.clientY};
+      if(lastMouse){
+        const dx = cur.x - lastMouse.x, dy = cur.y - lastMouse.y;
+        const steps = Math.max(1, Math.hypot(dx,dy)/10);
+        for(let s=1; s<=steps; s++){
+          const x = lastMouse.x + dx*(s/steps);
+          const y = lastMouse.y + dy*(s/steps);
+          spawn(x,y,true);
+        }
+      } else {
+        spawn(cur.x,cur.y,true);
       }
+      lastMouse = cur;
     });
 
     function spawn(x = Math.random()*fx.width, y = -10, gentle=false){
@@ -554,7 +572,15 @@ let _bgTransitioning = false;
       }else if(MODE==='snow'){
         P.push({x, y, vx:(Math.random()-.5)*0.6, vy: 0.6+Math.random()*0.8, r: 1.5+Math.random()*1.5, a:0.9, wob:Math.random()*6.28});
       }else if(MODE==='fireflies'){
-        P.push({x, y: Math.random()*fx.height, vx:(Math.random()-.5)*0.3, vy:(Math.random()-.5)*0.3, r:2+Math.random()*2, a:0.7, flick:Math.random()*6.28});
+        P.push({
+          x: arguments[0] || Math.random()*fx.width,
+          y: arguments[1] || Math.random()*fx.height,
+          vx:(Math.random()-.5)*0.3,
+          vy:(Math.random()-.5)*0.3,
+          r:2+Math.random()*2,
+          a:1,
+          life:200+Math.random()*100
+        });
       }else{ // leaves
         const brown = (state.season==='autumn');
         const col = brown ? '#a35420' : '#3fb34e';
@@ -574,22 +600,28 @@ let _bgTransitioning = false;
       for(let i=P.length-1;i>=0;i--){
         const p = P[i];
         if(MODE==='rain'){
-          p.y += p.vy; if(p.y>fx.height+10) { P[i].y = -10; continue; }
-          ctx.globalAlpha = p.a; ctx.strokeStyle = '#7fc3ff'; ctx.lineWidth=1;
-          ctx.beginPath(); ctx.moveTo(p.x, p.y-8); ctx.lineTo(p.x, p.y); ctx.stroke();
+          p.blink = p.blink || Math.random()*200;
+          p.blink--;
+          if(p.blink<=0){ p.blink=200+Math.random()*200; }
+          ctx.globalAlpha = p.blink<20 ? 0.6 : 0.2;
+          ctx.fillStyle='#a9d6ff';
+          ctx.beginPath();
+          ctx.arc(p.x,p.y,1.5,0,2*Math.PI);
+          ctx.fill();
         }else if(MODE==='snow'){
           p.wob += 0.02; p.x += p.vx + Math.sin(p.wob)*0.2; p.y += p.vy;
           if(p.y>fx.height+6) { P.splice(i,1); continue; }
           ctx.globalAlpha = p.a; ctx.fillStyle = '#ffffff'; ctx.beginPath();
           ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill();
         }else if(MODE==='fireflies'){
-          p.flick += 0.05; p.x += p.vx; p.y += p.vy;
-          if(p.x<0||p.x>fx.width) p.vx*=-1; if(p.y<0||p.y>fx.height) p.vy*=-1;
-          const glow = (Math.sin(p.flick)*0.5+0.5)*0.6 + 0.3;
-          ctx.shadowBlur = 12; ctx.shadowColor = '#ffd86b';
-          ctx.globalAlpha = glow; ctx.fillStyle = '#fff7ae';
-          ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill();
-          ctx.shadowBlur = 0;
+          p.x += p.vx; p.y += p.vy;
+          p.life--;
+          if(p.life<=0) { P.splice(i,1); continue; }
+          p.a = p.life/200; // gradual fade
+          ctx.fillStyle = 'rgba(255,255,200,'+p.a+')';
+          ctx.beginPath();
+          ctx.arc(p.x,p.y,p.r,0,2*Math.PI);
+          ctx.fill();
         }else{ // leaves
           p.wob += 0.03; p.x += p.vx + Math.sin(p.wob)*0.5; p.y += p.vy;
           if(p.y>fx.height+6) { P.splice(i,1); continue; }
@@ -605,7 +637,13 @@ let _bgTransitioning = false;
     // switcher called when theme/weather/time changes
     function setParticleTheme(){
       if(state.weather==='rain'){ MODE='rain'; MAX = 240; P.length=0; return; }
-      if(state.timeOfDay==='night'){ MODE='fireflies'; MAX = 60; P.length=0; return; }
+      if(state.timeOfDay==='night'){
+        MODE='fireflies';
+        MAX=60;
+        P.length=0;
+        for(let i=0;i<MAX;i++){ spawn(); }
+        return;
+      }
       if(state.season==='winter'){ MODE='snow'; MAX = 140; P.length=0; return; }
       MODE='leaves'; MAX = 120; P.length=0; // summer/autumn leaves
     }
@@ -1106,6 +1144,19 @@ let _bgTransitioning = false;
       });
       
       const t = $('#toast'); if(t){ t.style.opacity = '1'; setTimeout(()=> t.style.opacity='0', 1400); }
+    });
+
+    // Day/Night toggle event listener
+    const toggle=document.getElementById('dayNightToggle');
+    toggle.addEventListener('change',()=>{
+      if(toggle.checked){
+        state.timeOfDay='night';
+      } else {
+        state.timeOfDay='day';
+      }
+      applyTheme();
+      setParticleTheme();
+      refreshBackground();
     });
 
   // ==== Reminders (simple local scheduler) ====
