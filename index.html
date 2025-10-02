@@ -298,109 +298,7 @@ const JSDELIVR_BASE = "https://cdn.jsdelivr.net/gh/NateJ-coder/Study-Flow-Manage
 const cdn = (p) => `${JSDELIVR_BASE}/${p.replace(/^\.?\//,'').split('/').map(encodeURIComponent).join('/')}`;
 const ASSET_ROOT = "assets"; // you flattened to /assets
 
-// ---------- slideshow & preload ----------
-const ONE_MIN = 60000;
-const cacheBust = () => `?t=${Math.floor(Date.now()/ONE_MIN)}`;
 
-let cur = document.getElementById('bgA');
-let next = document.getElementById('bgB');
-cur.classList.add('show');
-
-function prefixForState(){ return (state.weather==='rain') ? 'rain-bg' : `${state.season}-${state.timeOfDay}`; }
-
-// discover max N without HEAD 403s (cached 24h)
-const MAX_LS_KEY = 'sf_max_slides_v1';
-let maxCache = JSON.parse(localStorage.getItem(MAX_LS_KEY)||'{}');
-
-async function exists(url){
-  try{
-    const r = await fetch(url, {method:'GET', headers:{Range:'bytes=0-0'}, cache:'no-store'});
-    return r.status===206 || r.status===200 || r.status===304;
-  }catch{ return false; }
-}
-async function discoverMax(prefix){
-  const c = maxCache[prefix];
-  if (c && Date.now() < c.ttl) return c.n;
-  let lo=1, hi=8;
-  while (await exists(cdn(`${ASSET_ROOT}/images/${prefix}-${hi}.png`))) { lo=hi; hi<<=1; if (hi>512) break; }
-  while (lo+1<hi){ const mid=(lo+hi)>>1; if (await exists(cdn(`${ASSET_ROOT}/images/${prefix}-${mid}.png`))) lo=mid; else hi=mid; }
-  maxCache[prefix] = { n: lo, ttl: Date.now()+86400000 }; // 24h
-  localStorage.setItem(MAX_LS_KEY, JSON.stringify(maxCache));
-  return lo;
-}
-
-// queue & timing
-const PRELOAD_AHEAD = 2;              // how many slides ahead to preload
-const decodeSamples = [];             // moving average of decode times
-function avg(a){ return a.reduce((s,v)=>s+v,0)/a.length || 0; }
-
-let currentPrefix=null, currentMax=8, slideIdx=state.slideIndex||1;
-let queue=[];                         // {i,url,img,readyMs}
-
-async function makeUrl(i){
-  const p = prefixForState();
-  if (p!==currentPrefix){ currentPrefix=p; currentMax = await discoverMax(p); queue.length=0; }
-  const j = ((i-1)%currentMax)+1;
-  return cdn(`${ASSET_ROOT}/images/${currentPrefix}-${j}.png`) + cacheBust();
-}
-
-async function preloadItem(i){
-  const url = await makeUrl(i);
-  const img = new Image(); const t0 = performance.now();
-  img.src = url;
-  try{ if (img.decode) await img.decode(); else await new Promise(r=>{img.onload=r;img.onerror=r;}); } catch {}
-  const readyMs = Math.max(120, performance.now()-t0);
-  decodeSamples.push(readyMs); if (decodeSamples.length>8) decodeSamples.shift();
-  return { i, url, img, readyMs };
-}
-
-async function fillQueue(){
-  while (queue.length < PRELOAD_AHEAD){
-    const last = queue.at(-1)?.i ?? slideIdx;
-    queue.push(await preloadItem(last+1));
-  }
-}
-
-async function refreshBackground(){
-  // ensure at least one ready
-  if (!queue.length) await fillQueue();
-  const item = queue.shift(); // already decoded
-  next.style.backgroundImage = `url("${item.url}")`;
-  next.classList.add('show'); cur.classList.remove('show');
-  [cur,next] = [next,cur];
-  slideIdx = item.i;
-
-  // keep preloading ahead
-  fillQueue();
-}
-
-// enforce min interval based on preload time
-function minIntervalMs(){
-  const safety = 250;                // buffer on top of avg
-  return Math.max(900, Math.ceil(avg(decodeSamples)+safety));
-}
-
-let userIntervalMs = (settings.slideIntervalSec||10)*1000;
-function setSlideIntervalFromSettings(sec){
-  userIntervalMs = (sec*1000)|0;
-  const enforced = Math.max(userIntervalMs, minIntervalMs());
-  // update UI if you have one: e.g. clamp the input/display
-  if (enforced !== userIntervalMs){
-    settings.slideIntervalSec = Math.ceil(enforced/1000);
-    saveSettings(settings);
-  }
-  return enforced;
-}
-
-let slideTimer=null;
-function startSlideshow(){
-  clearInterval(slideTimer);
-  const delay = setSlideIntervalFromSettings(settings.slideIntervalSec||10);
-  slideTimer = setInterval(()=> { refreshBackground(); }, delay);
-}
-
-// call once on load and whenever the season/time changes:
-fillQueue().then(()=> refreshBackground()).then(()=> startSlideshow());
 
 // Point audio to CDN during init
 document.getElementById('sfx-splash').src = cdn(`${ASSET_ROOT}/audio/splash.mp3`);
@@ -580,45 +478,108 @@ let _bgTransitioning = false;
     }
     setInterval(tickClock, 1000); tickClock();
 
-    // ===== Background slideshow & pathing =====
-    // legacy bgPath left for backwards compat (not used by new flow)
-    function bgPath(){
-      if (state.weather === 'rain') {
-        const i = ((state.slideIndex - 1) % 9) + 1;
-        return cdn(`${ASSET_ROOT}/images/rain-bg-${i}.png`);
-      }
-      const i = ((state.slideIndex - 1) % 8) + 1;
-      return cdn(`${ASSET_ROOT}/images/${state.season}-${state.timeOfDay}-${i}.png`);
+    // ===== Background manager (single source of truth) =====
+    /* === Background manager (single source of truth) === */
+    const ONE_MIN = 60000;
+    const cacheBust = () => `?t=${Math.floor(Date.now()/ONE_MIN)}`;
+
+    let cur = document.getElementById('bgA');
+    let next = document.getElementById('bgB');
+    cur.classList.add('show');
+
+    function prefixForState(){
+      return (state.weather === 'rain') ? 'rain-bg' : `${state.season}-${state.timeOfDay}`;
     }
 
-  // Background helpers with preloading + transition guard
-    function preloadImage(src){
-      return new Promise((res)=>{
-        const img = new Image();
-        img.onload = () => res(img);
-        img.onerror = () => res(img); // resolve on error to avoid blocking
-        img.src = src;
-      });
-    }
-
-    // replace old preload/set helpers with async-aware refreshBackground + swapBackground
-    async function setBackground(){ // instant (used at boot)
-      // set both layers to the current background without a visible cross-fade
+    // discover max available slides (cached 24h)
+    const MAX_LS_KEY = 'sf_max_slides_v1';
+    let maxCache = JSON.parse(localStorage.getItem(MAX_LS_KEY)||'{}');
+    async function exists(url){
       try{
-        const url = await nextBackgroundUrl();
-        const urlCss = `url('${url + cacheBust()}')`;
-        const A = document.getElementById('bgA');
-        const B = document.getElementById('bgB');
-        if(A) A.style.backgroundImage = urlCss;
-        if(B) B.style.backgroundImage = urlCss;
-      }catch(e){ /* non-fatal */ }
+        const r = await fetch(url, { method:'GET', headers:{Range:'bytes=0-0'}, cache:'no-store' });
+        return [200,206,304].includes(r.status);
+      }catch{ return false; }
     }
+    async function discoverMax(prefix){
+      const c = maxCache[prefix];
+      if (c && Date.now() < c.ttl) return c.n;
+      let lo=1, hi=8;
+      while (await exists(cdn(`assets/images/${prefix}-${hi}.png`))) { lo=hi; hi<<=1; if (hi>512) break; }
+      while (lo+1<hi){
+        const mid=(lo+hi)>>1;
+        if (await exists(cdn(`assets/images/${prefix}-${mid}.png`))) lo=mid; else hi=mid;
+      }
+      maxCache[prefix] = { n: lo, ttl: Date.now()+86400000 };
+      localStorage.setItem(MAX_LS_KEY, JSON.stringify(maxCache));
+      return lo;
+    }
+
+    // queue & timing
+    let currentPrefix = null, currentMax = 8, slideIdx = 1;
+    let queue = []; // {i,url,img,readyMs}
+    const decodeSamples = [];
+    const avg = a => a.length ? a.reduce((s,v)=>s+v,0)/a.length : 0;
+
+    async function makeUrl(i){
+      const p = prefixForState();
+      if (p !== currentPrefix){
+        currentPrefix = p;
+        currentMax = await discoverMax(p);
+        queue.length = 0;
+      }
+      const j = ((i-1) % currentMax) + 1;
+      return cdn(`assets/images/${currentPrefix}-${j}.png`) + cacheBust();
+    }
+
+    async function preloadItem(i){
+      const url = await makeUrl(i);
+      const img = new Image();
+      const t0 = performance.now();
+      img.src = url;
+      try{
+        if (img.decode) await img.decode();
+        else await new Promise(r=>{img.onload=r;img.onerror=r;});
+      }catch{}
+      const readyMs = Math.max(120, performance.now()-t0);
+      decodeSamples.push(readyMs); if (decodeSamples.length>8) decodeSamples.shift();
+      return { i, url, img, readyMs };
+    }
+
+    async function fillQueue(){
+      while (queue.length < 2){
+        const last = queue.at(-1)?.i ?? slideIdx;
+        queue.push(await preloadItem(last+1));
+      }
+    }
+
+    async function refreshBackground(){
+      if (!queue.length) await fillQueue();
+      const it = queue.shift();
+      next.style.backgroundImage = `url("${it.url}")`;
+      next.classList.add('show'); cur.classList.remove('show');
+      [cur, next] = [next, cur];
+      slideIdx = it.i;
+      fillQueue();
+    }
+
+    async function setBackground(){ // first paint, no cross-fade
+      const url = await makeUrl(slideIdx);
+      const css = `url("${url}")`;
+      document.getElementById('bgA').style.backgroundImage = css;
+      document.getElementById('bgB').style.backgroundImage = css;
+    }
+
+    function minIntervalMs(){ return Math.max(900, Math.ceil(avg(decodeSamples) + 250)); }
+    let slideTimer = null;
     function startSlideshow(){
-      stopSlideshow();
-      if(!state.slideOn) return;
-      state._slideTimer = setInterval(()=>{ state.slideIndex++; refreshBackground(); }, state.slideSec*1000);
+      clearInterval(slideTimer);
+      if (!state.slideOn) return;
+      const delay = Math.max(state.slideSec*1000, minIntervalMs());
+      slideTimer = setInterval(()=>{ slideIdx++; refreshBackground(); }, delay);
     }
-    function stopSlideshow(){ if(state._slideTimer){ clearInterval(state._slideTimer); state._slideTimer=null; } }
+    function stopSlideshow(){ clearInterval(slideTimer); slideTimer = null; }
+
+    (async ()=>{ try{ await setBackground(); startSlideshow(); refreshBackground().catch(()=>{}); }catch(e){ /* non-fatal */ } })();
 
     // ===== Theme application =====
     function applyTheme(){
@@ -1044,6 +1005,9 @@ let _bgTransitioning = false;
           } else {
             crossed.delete(d);
           }
+          // play drawing sound
+          const draw = document.getElementById('sfx-drawing');
+          if (draw){ draw.currentTime = 0; draw.play().catch(()=>{}); }
           persistCrossed();
         });
 
