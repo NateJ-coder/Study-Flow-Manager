@@ -11,8 +11,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
 
-  <link rel="preload" as="image" href="https://cdn.jsdelivr.net/gh/NateJ-coder/Study-Flow-Manager@main/timer-assets/assets/images/summer-day-1.png">
-  <link rel="preload" as="audio" href="https://cdn.jsdelivr.net/gh/NateJ-coder/Study-Flow-Manager@main/timer-assets/assets/audio/splash.mp3">
+  <!-- preload links removed: using JS preloader instead -->
 
   <!-- Base theme vars -->
   <style>
@@ -80,31 +79,16 @@
   @keyframes toastIn{to{opacity:1;transform:none}}
   </style>
   <style>
-  .calendar .day.crossed::after{
-    content:"✕"; position:absolute; inset:0; display:grid; place-items:center;
-    font-weight:900; font-size:2rem; color:#ef4444cc; text-shadow:0 2px 8px #0008;
-    pointer-events:none;
-  }
+  /* Removed old .calendar .day.crossed::after CSS */
   </style>
   <style>
-  /* Ensure day cells can host overlay */
-  #calGrid .day{ position: relative; }
-
-  /* Visible X when crossed (drawn with two pseudo elements) */
-  #calGrid .day.crossed::before,
-  #calGrid .day.crossed::after{
-    content:""; position:absolute; left:14%; right:14%; top:50%;
-    height:3px; border-radius:2px; background: var(--x-color, #ef4444);
-    box-shadow: 0 2px 8px rgba(0,0,0,.35);
-    transform-origin: left center;
-  }
-  #calGrid .day.crossed::before{ transform: rotate(45deg); }
-  #calGrid .day.crossed::after { transform: rotate(-45deg); }
-
-  /* Animate when crossing (add/remove the 'cross-anim' class just for the draw) */
-  #calGrid .day.cross-anim::before{ transform: rotate(45deg) scaleX(0); animation:drawX .18s ease-out forwards; }
-  #calGrid .day.cross-anim::after { transform: rotate(-45deg) scaleX(0); animation:drawX .18s ease-out .12s forwards; }
-  @keyframes drawX{ to { transform: scaleX(1) rotate(0deg); } }
+  /* Calendar X SVG overlay (updated) */
+  .day-cell{ position:relative }
+  .day-x{ position:absolute; inset:0; pointer-events:none; opacity:0; transition:opacity .15s }
+  .day-cell.crossed .day-x{ opacity:1 }
+  .day-x line{ stroke: var(--x-color, #ef4444); stroke-width:8; stroke-linecap:round; filter: drop-shadow(0 2px 6px rgba(0,0,0,.35)) }
+  @keyframes xpop{0%{transform:scale(.9);opacity:.2}100%{transform:none;opacity:1}}
+  .day-cell.cross-anim .day-x{ animation:xpop .18s ease-out }
   </style>
   <style>
   /* Cross-fade background layers */
@@ -314,123 +298,109 @@ const JSDELIVR_BASE = "https://cdn.jsdelivr.net/gh/NateJ-coder/Study-Flow-Manage
 const cdn = (p) => `${JSDELIVR_BASE}/${p.replace(/^\.?\//,'').split('/').map(encodeURIComponent).join('/')}`;
 const ASSET_ROOT = "assets"; // you flattened to /assets
 
-// --- fast background swap with cancellation ---
-let bgAbort;
-const ONE_MIN = 60_000;
-// small cache-bust rounded to the minute (avoids hammering cache while ensuring new uploads show up)
+// ---------- slideshow & preload ----------
+const ONE_MIN = 60000;
 const cacheBust = () => `?t=${Math.floor(Date.now()/ONE_MIN)}`;
 
-async function swapBackground(url){
-  if (bgAbort) bgAbort.abort();
-  const ctrl = new AbortController(); bgAbort = ctrl;
-
-  // Start loading the next image, but don't block the UI forever
-  const img = new Image();
-  const loadP = new Promise((res, rej) => { img.onload = res; img.onerror = rej; });
-  img.src = url + cacheBust();
-
-  // If it loads, swap; if it takes too long, just set the URL and let the browser stream it
-  const timeout = new Promise(res => setTimeout(res, 1200)); // 1.2s soft limit
-  try { await Promise.race([loadP, timeout]); } catch {}
-
-  if (ctrl.signal.aborted) return;
-
-  const imgSrc = img.src;
-  const A = document.getElementById('bgA');
-  const B = document.getElementById('bgB');
-  const urlCss = `url('${imgSrc}')`;
-
-  // reuse the same cross-fade guard from the app
-  _bgTransitioning = true;
-  if(_bgActive==='A'){
-    if(B) B.style.backgroundImage = urlCss;
-    if(A) A.style.opacity = '0'; if(B) B.style.opacity = '1'; _bgActive='B';
-  }else{
-    if(A) A.style.backgroundImage = urlCss;
-    if(B) B.style.opacity = '0'; if(A) A.style.opacity = '1'; _bgActive='A';
-  }
-  setTimeout(()=>{ _bgTransitioning = false; }, 760);
-}
-
-// --- discover max slide index per prefix (cached) ---
-const MAX_LS_KEY = 'sf_max_slides_v1';
-let maxCache = JSON.parse(localStorage.getItem(MAX_LS_KEY) || '{}');
-
-// --- Fast existence check (no HEAD) ---
-// Ask for only the first byte. If server ignores Range, it's still fine
-async function exists(url) {
-  try {
-    const r = await fetch(url, {
-      method: 'GET',
-      headers: { 'Range': 'bytes=0-0' },
-      cache: 'no-store',
-    });
-    // 206 = partial accepted, 200 = full (still OK), 304 = cached OK
-    return r.status === 206 || r.status === 200 || r.status === 304;
-  } catch { return false; }
-}
-
-async function discoverMax(prefix){ // e.g. "summer-day" or "rain-bg"
-  const cached = maxCache[prefix];
-  if (cached && Date.now() < cached.ttl) return cached.n;
-
-  // exponential up, binary down (quick even for big sets)
-  let lo = 1, hi = 8;
-  while (await exists(cdn(`${ASSET_ROOT}/images/${prefix}-${hi}.png`))) {
-    lo = hi; hi <<= 1; if (hi > 512) break;
-  }
-  while (lo + 1 < hi) {
-    const mid = (lo + hi) >> 1;
-    if (await exists(cdn(`${ASSET_ROOT}/images/${prefix}-${mid}.png`))) lo = mid; else hi = mid;
-  }
-
-  maxCache[prefix] = { n: lo, ttl: Date.now() + 24*60*60*1000 }; // cache 24h
-  localStorage.setItem(MAX_LS_KEY, JSON.stringify(maxCache));
-  return lo;
-}
-
-let currentPrefix = null, currentMax = 8;
-
-function prefixForState(){
-  return (state.weather === 'rain')
-    ? 'rain-bg'
-    : `${state.season}-${state.timeOfDay}`;
-}
-
-async function updateMaxIfNeeded(){
-  const p = prefixForState();
-  if (p !== currentPrefix) {
-    currentPrefix = p;
-    currentMax = await discoverMax(p); // e.g., 13 if you uploaded 13 images
-  }
-}
-
-async function nextBackgroundUrl(){
-  await updateMaxIfNeeded();
-  const i = ((state.slideIndex - 1) % currentMax) + 1;
-  return cdn(`${ASSET_ROOT}/images/${currentPrefix}-${i}.png`);
-}
-
-// preload -> crossfade (no jank)
 let cur = document.getElementById('bgA');
 let next = document.getElementById('bgB');
 cur.classList.add('show');
 
-async function refreshBackground(){
-  const urlBase = await nextBackgroundUrl();
-  const url = urlBase + cacheBust();
+function prefixForState(){ return (state.weather==='rain') ? 'rain-bg' : `${state.season}-${state.timeOfDay}`; }
 
-  // preload (race against a short timeout so we don't block forever)
-  const img = new Image();
-  const ready = new Promise(res => { img.onload = res; img.onerror = res; });
-  img.src = url;
-  await Promise.race([ready, new Promise(res=>setTimeout(res, 900))]); // don't block too long
+// discover max N without HEAD 403s (cached 24h)
+const MAX_LS_KEY = 'sf_max_slides_v1';
+let maxCache = JSON.parse(localStorage.getItem(MAX_LS_KEY)||'{}');
 
-  next.style.backgroundImage = `url("${url}")`;
-  next.classList.add('show');
-  cur.classList.remove('show');
-  [cur, next] = [next, cur];
+async function exists(url){
+  try{
+    const r = await fetch(url, {method:'GET', headers:{Range:'bytes=0-0'}, cache:'no-store'});
+    return r.status===206 || r.status===200 || r.status===304;
+  }catch{ return false; }
 }
+async function discoverMax(prefix){
+  const c = maxCache[prefix];
+  if (c && Date.now() < c.ttl) return c.n;
+  let lo=1, hi=8;
+  while (await exists(cdn(`${ASSET_ROOT}/images/${prefix}-${hi}.png`))) { lo=hi; hi<<=1; if (hi>512) break; }
+  while (lo+1<hi){ const mid=(lo+hi)>>1; if (await exists(cdn(`${ASSET_ROOT}/images/${prefix}-${mid}.png`))) lo=mid; else hi=mid; }
+  maxCache[prefix] = { n: lo, ttl: Date.now()+86400000 }; // 24h
+  localStorage.setItem(MAX_LS_KEY, JSON.stringify(maxCache));
+  return lo;
+}
+
+// queue & timing
+const PRELOAD_AHEAD = 2;              // how many slides ahead to preload
+const decodeSamples = [];             // moving average of decode times
+function avg(a){ return a.reduce((s,v)=>s+v,0)/a.length || 0; }
+
+let currentPrefix=null, currentMax=8, slideIdx=state.slideIndex||1;
+let queue=[];                         // {i,url,img,readyMs}
+
+async function makeUrl(i){
+  const p = prefixForState();
+  if (p!==currentPrefix){ currentPrefix=p; currentMax = await discoverMax(p); queue.length=0; }
+  const j = ((i-1)%currentMax)+1;
+  return cdn(`${ASSET_ROOT}/images/${currentPrefix}-${j}.png`) + cacheBust();
+}
+
+async function preloadItem(i){
+  const url = await makeUrl(i);
+  const img = new Image(); const t0 = performance.now();
+  img.src = url;
+  try{ if (img.decode) await img.decode(); else await new Promise(r=>{img.onload=r;img.onerror=r;}); } catch {}
+  const readyMs = Math.max(120, performance.now()-t0);
+  decodeSamples.push(readyMs); if (decodeSamples.length>8) decodeSamples.shift();
+  return { i, url, img, readyMs };
+}
+
+async function fillQueue(){
+  while (queue.length < PRELOAD_AHEAD){
+    const last = queue.at(-1)?.i ?? slideIdx;
+    queue.push(await preloadItem(last+1));
+  }
+}
+
+async function refreshBackground(){
+  // ensure at least one ready
+  if (!queue.length) await fillQueue();
+  const item = queue.shift(); // already decoded
+  next.style.backgroundImage = `url("${item.url}")`;
+  next.classList.add('show'); cur.classList.remove('show');
+  [cur,next] = [next,cur];
+  slideIdx = item.i;
+
+  // keep preloading ahead
+  fillQueue();
+}
+
+// enforce min interval based on preload time
+function minIntervalMs(){
+  const safety = 250;                // buffer on top of avg
+  return Math.max(900, Math.ceil(avg(decodeSamples)+safety));
+}
+
+let userIntervalMs = (settings.slideIntervalSec||10)*1000;
+function setSlideIntervalFromSettings(sec){
+  userIntervalMs = (sec*1000)|0;
+  const enforced = Math.max(userIntervalMs, minIntervalMs());
+  // update UI if you have one: e.g. clamp the input/display
+  if (enforced !== userIntervalMs){
+    settings.slideIntervalSec = Math.ceil(enforced/1000);
+    saveSettings(settings);
+  }
+  return enforced;
+}
+
+let slideTimer=null;
+function startSlideshow(){
+  clearInterval(slideTimer);
+  const delay = setSlideIntervalFromSettings(settings.slideIntervalSec||10);
+  slideTimer = setInterval(()=> { refreshBackground(); }, delay);
+}
+
+// call once on load and whenever the season/time changes:
+fillQueue().then(()=> refreshBackground()).then(()=> startSlideshow());
 
 // Point audio to CDN during init
 document.getElementById('sfx-splash').src = cdn(`${ASSET_ROOT}/audio/splash.mp3`);
@@ -1055,13 +1025,34 @@ let _bgTransitioning = false;
         const iso = `${year}-${mm}-${dd}`;
         cell.dataset.date = iso;
 
-        // append overlay X element (works regardless of pseudo-element rules)
-        const x = document.createElement('span');
-        x.className = 'day-x'; x.textContent = '✕';
+        // add SVG overlay for the X mark
+        const x = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        x.classList.add('day-x'); x.setAttribute('viewBox','0 0 100 100');
+        x.innerHTML = `<line x1="22" y1="22" x2="78" y2="78"/><line x1="78" y1="22" x2="22" y2="78"/>`;
         cell.appendChild(x);
 
-        // wire left/right click + initial visual
-        wireDayCell(cell);
+        // right-click toggle (draw animation + persistence)
+        cell.addEventListener('contextmenu', (e)=>{
+          e.preventDefault();
+          const d = cell.dataset.date;
+          const nowCrossed = !crossed.has(d);
+          cell.classList.toggle('crossed', nowCrossed);
+          if (nowCrossed){
+            crossed.add(d);
+            cell.classList.add('cross-anim'); setTimeout(()=>cell.classList.remove('cross-anim'), 260);
+            celebrate(); // your toast
+          } else {
+            crossed.delete(d);
+          }
+          persistCrossed();
+        });
+
+        // left-click opens tasks
+        cell.addEventListener('click', ()=> openTasks(iso));
+
+        // initial state
+        cell.classList.toggle('crossed', crossed.has(iso));
+
         grid.appendChild(cell);
       }
     }
