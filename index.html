@@ -104,14 +104,22 @@
   #calGrid .day.cross-anim::after { transform: rotate(-45deg) scaleX(0); animation:drawX .18s ease-out .12s forwards; }
   @keyframes drawX{ to { transform: scaleX(1) rotate(0deg); } }
   </style>
+  <style>
+  /* Cross-fade background layers */
+  .bg-layer{
+    position: fixed; inset: 0; z-index: -1;
+    background-position: center; background-size: cover; background-repeat: no-repeat;
+    opacity: 0; transition: opacity .45s ease; will-change: opacity;
+  }
+  .bg-layer.show{ opacity: 1; }
+  </style>
 </head>
 <body class="min-h-screen bg-gray-900 text-gray-50 overflow-x-hidden relative">
-
   <div id="toastHost" aria-live="polite"></div>
 
-  <!-- Background & scrim -->
-  <div id="bgA" class="fixed inset-0 bg-center bg-cover transition-opacity duration-700 opacity-100"></div>
-  <div id="bgB" class="fixed inset-0 bg-center bg-cover transition-opacity duration-700 opacity-0"></div>
+  <!-- Background layers & scrim (two layers for cross-fade) -->
+  <div id="bgA" class="bg-layer"></div>
+  <div id="bgB" class="bg-layer"></div>
   <div id="scrim" class="fixed inset-0 bg-black" style="opacity:var(--scrim)"></div>
 
   <!-- Particles canvas (leaves/snow/fireflies/rain) -->
@@ -346,23 +354,34 @@ async function swapBackground(url){
 const MAX_LS_KEY = 'sf_max_slides_v1';
 let maxCache = JSON.parse(localStorage.getItem(MAX_LS_KEY) || '{}');
 
-async function exists(path){ // HEAD is fast & cheap
-  try { const r = await fetch(path, { method: 'HEAD' }); return r.ok; } catch { return false; }
+// --- Fast existence check (no HEAD) ---
+// Ask for only the first byte. If server ignores Range, it's still fine
+async function exists(url) {
+  try {
+    const r = await fetch(url, {
+      method: 'GET',
+      headers: { 'Range': 'bytes=0-0' },
+      cache: 'no-store',
+    });
+    // 206 = partial accepted, 200 = full (still OK), 304 = cached OK
+    return r.status === 206 || r.status === 200 || r.status === 304;
+  } catch { return false; }
 }
 
-async function discoverMax(prefix){ // prefix e.g. "summer-day", "winter-night", or "rain-bg"
-  const ttl = maxCache[prefix]?.ttl || 0;
-  if (Date.now() < ttl && maxCache[prefix]?.n) return maxCache[prefix].n;
+async function discoverMax(prefix){ // e.g. "summer-day" or "rain-bg"
+  const cached = maxCache[prefix];
+  if (cached && Date.now() < cached.ttl) return cached.n;
 
-  let lo = 1, hi = 8; // start optimistic at 8
+  // exponential up, binary down (quick even for big sets)
+  let lo = 1, hi = 8;
   while (await exists(cdn(`${ASSET_ROOT}/images/${prefix}-${hi}.png`))) {
-    lo = hi; hi *= 2;
-    if (hi > 512) break; // sanity bound
+    lo = hi; hi <<= 1; if (hi > 512) break;
   }
   while (lo + 1 < hi) {
     const mid = (lo + hi) >> 1;
     if (await exists(cdn(`${ASSET_ROOT}/images/${prefix}-${mid}.png`))) lo = mid; else hi = mid;
   }
+
   maxCache[prefix] = { n: lo, ttl: Date.now() + 24*60*60*1000 }; // cache 24h
   localStorage.setItem(MAX_LS_KEY, JSON.stringify(maxCache));
   return lo;
@@ -384,16 +403,31 @@ async function updateMaxIfNeeded(){
   }
 }
 
-async function nextBackground(){
+async function nextBackgroundUrl(){
   await updateMaxIfNeeded();
   const i = ((state.slideIndex - 1) % currentMax) + 1;
   return cdn(`${ASSET_ROOT}/images/${currentPrefix}-${i}.png`);
 }
 
-// convenience: pick next and swap
+// preload -> crossfade (no jank)
+let cur = document.getElementById('bgA');
+let next = document.getElementById('bgB');
+cur.classList.add('show');
+
 async function refreshBackground(){
-  const url = await nextBackground();
-  swapBackground(url);
+  const urlBase = await nextBackgroundUrl();
+  const url = urlBase + cacheBust();
+
+  // preload (race against a short timeout so we don't block forever)
+  const img = new Image();
+  const ready = new Promise(res => { img.onload = res; img.onerror = res; });
+  img.src = url;
+  await Promise.race([ready, new Promise(res=>setTimeout(res, 900))]); // don't block too long
+
+  next.style.backgroundImage = `url("${url}")`;
+  next.classList.add('show');
+  cur.classList.remove('show');
+  [cur, next] = [next, cur];
 }
 
 // Point audio to CDN during init
@@ -601,7 +635,7 @@ let _bgTransitioning = false;
     async function setBackground(){ // instant (used at boot)
       // set both layers to the current background without a visible cross-fade
       try{
-        const url = await nextBackground();
+        const url = await nextBackgroundUrl();
         const urlCss = `url('${url + cacheBust()}')`;
         const A = document.getElementById('bgA');
         const B = document.getElementById('bgB');
@@ -1069,13 +1103,20 @@ let _bgTransitioning = false;
       const daysInMonth = new Date(year, month+1, 0).getDate();
       for(let day=1; day<=daysInMonth; day++){
         const cell = document.createElement('div');
-        cell.className = 'relative p-3 h-20 glass rounded-lg select-none day';
+        // keep existing 'day' class for compatibility; add 'day-cell' to host overlay
+        cell.className = 'relative p-3 h-20 glass rounded-lg select-none day day-cell';
         cell.innerHTML = `<div class="text-sm opacity-80">${day}</div>`;
         // set data-date as YYYY-MM-DD
         const mm = String(month+1).padStart(2,'0');
         const dd = String(day).padStart(2,'0');
         const iso = `${year}-${mm}-${dd}`;
         cell.dataset.date = iso;
+
+        // append overlay X element (works regardless of pseudo-element rules)
+        const x = document.createElement('span');
+        x.className = 'day-x'; x.textContent = '✕';
+        cell.appendChild(x);
+
         // wire left/right click + initial visual
         wireDayCell(cell);
         grid.appendChild(cell);
