@@ -445,65 +445,66 @@ function toast(msg, ms=2800){
   setTimeout(()=> el.remove(), ms);
 }
 
-// --- Local Reminders (no Firestore needed) ---
-const LS_KEY = 'sf_reminders_v1';
-const reminders = new Map(JSON.parse(localStorage.getItem(LS_KEY)||'[]'));
-
-function saveReminders(){
-  localStorage.setItem(LS_KEY, JSON.stringify([...reminders.entries()]));
-}
-
-function scheduleTick(){
-  setInterval(()=> {
-    const now = Date.now();
-    for(const [id, r] of reminders){
-      if(!r.fired && now >= r.when){
-        r.fired = true; saveReminders();
-        try { document.getElementById('sfx-splash')?.play?.(); } catch{}
-        toast(r.text || "⏰ Time’s up!");
-        if ('Notification' in window && Notification.permission === 'granted'){
-          new Notification('Reminder', { body: r.text || 'Time!' });
-        }
-      }
-    }
-  }, 15_000);
-}
-scheduleTick();
-
-(async ()=>{ if ('Notification' in window && Notification.permission==='default'){ try{ await Notification.requestPermission(); }catch{} }})();
-
-// Hook up Save button
-const remTimeEl = document.getElementById('remTime');
-const remTextEl = document.getElementById('remText');
-document.getElementById('remSaveBtn')?.addEventListener('click', ()=>{
-  if(!remTimeEl?.value) return toast('Choose a time.');
-  const [h,m] = remTimeEl.value.split(':').map(Number);
-  const now = new Date();
-  const target = new Date();
-  target.setHours(h, m, 0, 0);
-  if(target.getTime() <= now.getTime()) target.setDate(target.getDate()+1);
-  const id = crypto.randomUUID();
-  reminders.set(id, { id, when: target.getTime(), text: remTextEl?.value?.trim() || 'Reminder', fired: false });
-  saveReminders();
-  toast("Alright, I'll remind you then Mr. Johnson! 😊");
-});
-
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getFirestore, collection, doc, setDoc, getDocs, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+// NOTE: scheduleTick and reminder UI wiring will run after KV & helper declarations further down
 
     // ===== Icons =====
     lucide.createIcons();
 
-    // ===== Firebase (paste your config) =====
-    const firebaseConfig = {
-      apiKey: "AIzaSyDiY_fxXuLNSTgpPIiHTkmvSAlT-Owqkgc",
-      authDomain: "studyflowapp-2dfd0.firebaseapp.com",
-      projectId: "studyflowapp-2dfd0",
-      storageBucket: "studyflowapp-2dfd0.firebasestorage.app",
-      messagingSenderId: "292997866503",
-      appId: "1:292997866503:web:a999c0ef9d3f06b61136a2",
-      measurementId: "G-CEJ384DE17"
+    // --- Local key/value (Firestore replacement) ---
+    const KV = {
+      get(key, fallback){ try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } },
+      set(key,val){ localStorage.setItem(key, JSON.stringify(val)); }
     };
+
+    // Settings helpers
+    const SETTINGS_KEY = 'sf_settings_v1';
+    function loadSettings(defaults){ return KV.get(SETTINGS_KEY, defaults); }
+    function saveSettings(obj){ KV.set(SETTINGS_KEY, obj); }
+
+    // Reminders (local)
+    const REM_KEY = 'sf_reminders_v1';
+    const reminders = new Map(KV.get(REM_KEY, []));
+    function saveReminders(){ KV.set(REM_KEY, [...reminders.entries()]); }
+
+    // Calendar crossed days
+    const X_KEY = 'sf_crossed_days_v1';
+    const crossed = new Set(KV.get(X_KEY, []));
+    function persistCrossed(){ KV.set(X_KEY, [...crossed]); }
+
+    // Per-day tasks helpers
+    function tasksKey(dateISO){ return `sf_tasks_${dateISO}`; }
+    function readTasks(dateISO){ return KV.get(tasksKey(dateISO), []); }
+    function writeTasks(dateISO, arr){ KV.set(tasksKey(dateISO), arr); }
+
+    // schedule tick for reminders (uses KV-backed `reminders`)
+    const _remTimers = new Map();
+    function scheduleReminderTimeout(r){
+      if(_remTimers.has(r.id)) return;
+      const now = Date.now(), t = new Date(r.when).getTime();
+      const ms = t - now; if(ms <= 0) return;
+      const id = setTimeout(()=>{ const a=$('#sfx-splash'); a && a.play().catch(()=>{}); const toastEl=$('#toast'); if(toastEl){ toastEl.textContent=r.msg; toastEl.style.opacity='1'; setTimeout(()=>{ toastEl.style.opacity='0'; toastEl.textContent='Settings saved ✔'; },3000); } _remTimers.delete(r.id); }, ms);
+      _remTimers.set(r.id, id);
+    }
+
+    function scheduleTick(){
+      setInterval(()=>{
+        const now = Date.now();
+        for(const [id, r] of reminders){
+          if(!r.fired && now >= r.when){ r.fired = true; saveReminders(); try{ document.getElementById('sfx-splash')?.play?.(); }catch{}; toast(r.text||"⏰ Time’s up!"); if('Notification' in window && Notification.permission === 'granted'){ new Notification('Reminder', { body: r.text || 'Time!' }); } }
+        }
+      }, 15_000);
+    }
+    scheduleTick();
+    (async ()=>{ if ('Notification' in window && Notification.permission==='default'){ try{ await Notification.requestPermission(); }catch{} }})();
+
+    // Hook up Save button (new reminders)
+    const remTimeEl = document.getElementById('remTime');
+    const remTextEl = document.getElementById('remText');
+    document.getElementById('remSaveBtn')?.addEventListener('click', ()=>{
+      if(!remTimeEl?.value) return toast('Choose a time.');
+      const [h,m] = remTimeEl.value.split(':').map(Number); const now = new Date(); const target = new Date(); target.setHours(h,m,0,0); if(target.getTime()<=now.getTime()) target.setDate(target.getDate()+1);
+      const id = crypto.randomUUID(); reminders.set(id, { id, when: target.getTime(), text: remTextEl?.value?.trim() || 'Reminder', fired:false }); saveReminders(); toast("Alright, I'll remind you then Mr. Johnson! 😊");
+    });
 
     // ===== Favicon helpers =====
     function setFaviconFromSvg(svgString){
@@ -546,10 +547,7 @@ document.getElementById('remSaveBtn')?.addEventListener('click', ()=>{
 
       setFaviconFromSvg(svgFavicon(palette));
     }
-  // init Firebase app + Firestore
-  const app = initializeApp(firebaseConfig);
-  const db  = getFirestore(app);
-    // (Optional) Load SDKs later as needed. Config present for future Firestore/calendar storage. :contentReference[oaicite:2]{index=2}
+  // Firebase removed: using localStorage-based helpers instead
 
     // ===== State =====
     const state = {
@@ -713,49 +711,9 @@ let _bgTransitioning = false;
         state.rainTimeout = setTimeout(scheduleRainCycle, state.rainCycleMs - state.rainDurationMs);
       }, state.rainCycleMs);
     }
-    // ===== Firestore helpers: Reminders & Calendar tasks =====
-    async function saveReminderFS(r){
-      const id = r.id || crypto.randomUUID();
-      const ref = doc(collection(db,'reminders'), id);
-      await setDoc(ref, { id, when:r.when, msg:r.msg });
-      return id;
-    }
-    async function loadRemindersFS(){
-      const snap = await getDocs(collection(db,'reminders'));
-      const arr = []; snap.forEach(d=> arr.push(d.data())); return arr;
-    }
-    async function deleteReminderFS(id){
-      await deleteDoc(doc(collection(db,'reminders'), id));
-    }
-
-    // calendar helpers
+    // Reminders & calendar tasks are stored locally using KV/readTasks/writeTasks
     function ymKey(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; }
     function ddKey(day){ return String(day).padStart(2,'0'); }
-    async function loadTasksForDay(year,month,day){
-      const col = collection(db, 'calendar', `${year}-${String(month+1).padStart(2,'0')}`, 'days', ddKey(day), 'tasks');
-      const snap = await getDocs(col); const arr=[]; snap.forEach(s=>arr.push(s.data())); return arr;
-    }
-    async function addTask(year,month,day,text){
-      const id = crypto.randomUUID();
-      const ref = doc(db, 'calendar', `${year}-${String(month+1).padStart(2,'0')}`, 'days', ddKey(day), 'tasks', id);
-      await setDoc(ref, { id, text, done:false });
-    }
-    async function toggleTask(year,month,day,id,done){
-      const ref = doc(db, 'calendar', `${year}-${String(month+1).padStart(2,'0')}`, 'days', ddKey(day), 'tasks', id);
-      const snap = await getDoc(ref); if(!snap.exists()) return;
-      const data = snap.data(); await setDoc(ref, {...data, done});
-    }
-    async function deleteTask(year,month,day,id){
-      const ref = doc(db, 'calendar', `${year}-${String(month+1).padStart(2,'0')}`, 'days', ddKey(day), 'tasks', id);
-      await deleteDoc(ref);
-    }
-    async function moveIncompleteToNext(year,month,day){
-      const tasks = await loadTasksForDay(year,month,day);
-      const next = new Date(year,month,day+1);
-      for(const t of tasks){
-        if(!t.done){ await addTask(next.getFullYear(), next.getMonth(), next.getDate(), t.text); }
-      }
-    }
     function rainRippleOnce(e){
       const el = e.currentTarget;
       el.classList.add('ripple','pulse');
@@ -923,9 +881,9 @@ let _bgTransitioning = false;
       $('#btnReminder')?.click(); // open the modal we added earlier
     });
 
-    // Render reminders list from Firestore
+    // Render reminders list from local Map
     async function loadAndRenderReminders(){
-      const items = await loadRemindersFS(); // from §4
+      const items = [...reminders.values()];
       remList.innerHTML = items.length ? '' : '<div class="opacity-70">No reminders yet.</div>';
       items.sort((a,b)=> new Date(a.when) - new Date(b.when));
       for(const r of items){
@@ -942,7 +900,7 @@ let _bgTransitioning = false;
           </div>
         `;
         row.querySelector('[data-act="edit"]').onclick = ()=> openEditReminder(r);
-        row.querySelector('[data-act="del"]').onclick  = async()=>{ await deleteReminderFS(r.id); await loadAndRenderReminders(); };
+        row.querySelector('[data-act="del"]').onclick  = async()=>{ reminders.delete(r.id); saveReminders(); await loadAndRenderReminders(); };
         remList.appendChild(row);
         scheduleReminderTimeout(r); // ensure it will fire
       }
@@ -958,7 +916,9 @@ let _bgTransitioning = false;
         if(Number.isNaN(hh)||Number.isNaN(mm)) return remTime.focus();
         const now = new Date(); const target = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hh, mm, 0);
         if(target<=now) target.setDate(target.getDate()+1);
-        await saveReminderFS({id:r.id, when:target.toISOString(), msg:remText.value.trim()||'Reminder'});
+        const id = r.id || crypto.randomUUID();
+        reminders.set(id, { id, when: target.toISOString(), msg: remText.value.trim()||'Reminder' });
+        saveReminders();
         remModal.classList.add('hidden'); await loadAndRenderReminders();
       };
     }
@@ -970,34 +930,17 @@ let _bgTransitioning = false;
       if(Number.isNaN(hh)||Number.isNaN(mm)) return remTime.focus();
       const now = new Date(); const target = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hh, mm, 0);
       if(target<=now) target.setDate(target.getDate()+1);
-      await saveReminderFS({when:target.toISOString(), msg:remText.value.trim()||'Reminder'});
+      const id = crypto.randomUUID();
+      reminders.set(id, { id, when: target.toISOString(), msg: remText.value.trim()||'Reminder' });
+      saveReminders();
       remModal.classList.add('hidden');
       await loadAndRenderReminders();
     };
 
-    // schedule firing + toast + sound
-    const _remTimers = new Map();
-    function scheduleReminderTimeout(r){
-      // don’t double-schedule
-      if(_remTimers.has(r.id)) return;
-      const now = Date.now(), t = new Date(r.when).getTime();
-      const ms = t - now;
-      if(ms <= 0) return; // past reminder; ignore or handle as "missed"
-      const id = setTimeout(async()=>{
-        const a=$('#sfx-splash'); a && a.play().catch(()=>{});
-        const toast = $('#toast'); if(toast){ toast.textContent=r.msg; toast.style.opacity='1'; setTimeout(()=>{ toast.style.opacity='0'; toast.textContent='Settings saved ✔'; }, 3000); }
-        _remTimers.delete(r.id);
-      }, ms);
-      _remTimers.set(r.id, id);
-    }
+    // scheduleReminderTimeout is defined earlier and reused
 
-    // ===== Calendar =====
-    // --- Calendar cross-out store ---
-    const X_KEY = 'sf_crossed_days_v1';
-    const crossed = new Set(JSON.parse(localStorage.getItem(X_KEY) || '[]'));
-    function persistCrossed(){ localStorage.setItem(X_KEY, JSON.stringify([...crossed])); }
-
-    // Call this after you render each day cell:
+  // ===== Calendar =====
+  // Call this after you render each day cell:
     function wireDayCell(cell){ // cell must have data-date="YYYY-MM-DD"
       const date = cell.dataset.date;
       // right-click toggles an X with a draw animation
