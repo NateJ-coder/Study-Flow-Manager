@@ -163,9 +163,9 @@
         <div id="minSess" class="opacity-60 text-sm mt-2">1 of 4</div>
       </div>
 
-      <audio id="sfx-splash"   src="audio/splash.mp3"   preload="auto"></audio>
-      <audio id="sfx-drawing"  src="audio/drawing.mp3"  preload="auto"></audio>
-      <audio id="sfx-rain"     src="audio/rainfall.mp3" preload="auto" loop></audio>
+  <audio id="sfx-splash"   preload="auto"></audio>
+  <audio id="sfx-drawing"  preload="auto"></audio>
+  <audio id="sfx-rain"     preload="auto" loop></audio>
 
       <!-- Reminder Modal -->
       <div id="remModal" class="hidden fixed inset-0 bg-black/60 z-40 grid place-items-center">
@@ -265,16 +265,15 @@
 
   <!-- Core App -->
   <script type="module">
-    // ===== jsDelivr asset base =====
-    const JSDELIVR_BASE = "https://cdn.jsdelivr.net/gh/NateJ-coder/Study-Flow-Manager@main";
-    // compact cdn helper
-    const cdn = (p) => `${JSDELIVR_BASE}/${p.replace(/^\.?\//,'').split('/').map(encodeURIComponent).join('/')}`;
-    const ASSET_ROOT = "assets"; // actual repo root where images & audio live
+// --- CDN helper (put near the top of your script) ---
+const JSDELIVR_BASE = "https://cdn.jsdelivr.net/gh/NateJ-coder/Study-Flow-Manager@main";
+const cdn = (p) => `${JSDELIVR_BASE}/${p.replace(/^\.?\//,'').split('/').map(encodeURIComponent).join('/')}`;
+const ASSET_ROOT = "assets"; // you flattened to /assets
 
-  // Point audio to CDN (defensive: only set if element exists) — use ASSET_ROOT
-  document.getElementById('sfx-splash')?.src = cdn(`${ASSET_ROOT}/audio/splash.mp3`);
-  document.getElementById('sfx-drawing')?.src = cdn(`${ASSET_ROOT}/audio/drawing.mp3`);
-  document.getElementById('sfx-rain')?.src    = cdn(`${ASSET_ROOT}/audio/rainfall.mp3`);
+// Point audio to CDN during init
+document.getElementById('sfx-splash').src = cdn(`${ASSET_ROOT}/audio/splash.mp3`);
+document.getElementById('sfx-drawing').src = cdn(`${ASSET_ROOT}/audio/drawing.mp3`);
+document.getElementById('sfx-rain').src    = cdn(`${ASSET_ROOT}/audio/rainfall.mp3`);
 
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getFirestore, collection, doc, setDoc, getDocs, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
