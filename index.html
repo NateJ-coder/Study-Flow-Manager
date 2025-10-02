@@ -72,8 +72,22 @@
   </style>
 
   <!-- Firebase (paste your config below in the JS where marked) -->
+  <style>
+  #toastHost{position:fixed;right:16px;bottom:16px;z-index:9999;display:grid;gap:10px}
+  .toast{background:#111827dd;color:#fff;padding:.8rem 1rem;border-radius:10px;box-shadow:0 10px 30px #0006;opacity:0;transform:translateY(10px);animation:toastIn .18s forwards}
+  @keyframes toastIn{to{opacity:1;transform:none}}
+  </style>
+  <style>
+  .calendar .day.crossed::after{
+    content:"✕"; position:absolute; inset:0; display:grid; place-items:center;
+    font-weight:900; font-size:2rem; color:#ef4444cc; text-shadow:0 2px 8px #0008;
+    pointer-events:none;
+  }
+  </style>
 </head>
 <body class="min-h-screen bg-gray-900 text-gray-50 overflow-x-hidden relative">
+
+  <div id="toastHost" aria-live="polite"></div>
 
   <!-- Background & scrim -->
   <div id="bgA" class="fixed inset-0 bg-center bg-cover transition-opacity duration-700 opacity-100"></div>
@@ -178,12 +192,12 @@
             </label>
             <label class="block text-sm">
               Message
-              <input id="remMsg" type="text" placeholder="Stretch / Switch tasks / etc." class="w-full mt-1 p-2 bg-white/10 rounded-lg">
+              <input id="remText" type="text" placeholder="Stretch / Switch tasks / etc." class="w-full mt-1 p-2 bg-white/10 rounded-lg">
             </label>
           </div>
           <div class="mt-4 flex justify-end gap-2">
             <button id="remCancel" class="glass px-4 py-2 rounded-lg">Cancel</button>
-            <button id="remSave" class="px-5 py-2 rounded-full bg-[color:var(--primary)] text-white">Save</button>
+            <button id="remSaveBtn" class="px-5 py-2 rounded-full bg-[color:var(--primary)] text-white">Save</button>
           </div>
         </div>
       </div>
@@ -274,6 +288,59 @@ const ASSET_ROOT = "assets"; // you flattened to /assets
 document.getElementById('sfx-splash').src = cdn(`${ASSET_ROOT}/audio/splash.mp3`);
 document.getElementById('sfx-drawing').src = cdn(`${ASSET_ROOT}/audio/drawing.mp3`);
 document.getElementById('sfx-rain').src    = cdn(`${ASSET_ROOT}/audio/rainfall.mp3`);
+
+// --- Toast helper ---
+function toast(msg, ms=2800){
+  const host = document.getElementById('toastHost');
+  if(!host) return;
+  const el = document.createElement('div');
+  el.className='toast'; el.textContent = msg;
+  host.appendChild(el);
+  setTimeout(()=> el.remove(), ms);
+}
+
+// --- Local Reminders (no Firestore needed) ---
+const LS_KEY = 'sf_reminders_v1';
+const reminders = new Map(JSON.parse(localStorage.getItem(LS_KEY)||'[]'));
+
+function saveReminders(){
+  localStorage.setItem(LS_KEY, JSON.stringify([...reminders.entries()]));
+}
+
+function scheduleTick(){
+  setInterval(()=> {
+    const now = Date.now();
+    for(const [id, r] of reminders){
+      if(!r.fired && now >= r.when){
+        r.fired = true; saveReminders();
+        try { document.getElementById('sfx-splash')?.play?.(); } catch{}
+        toast(r.text || "⏰ Time’s up!");
+        if ('Notification' in window && Notification.permission === 'granted'){
+          new Notification('Reminder', { body: r.text || 'Time!' });
+        }
+      }
+    }
+  }, 15_000);
+}
+scheduleTick();
+
+(async ()=>{ if ('Notification' in window && Notification.permission==='default'){ try{ await Notification.requestPermission(); }catch{} }})();
+
+// Hook up Save button
+const remTimeEl = document.getElementById('remTime');
+const remTextEl = document.getElementById('remText');
+document.getElementById('remSaveBtn')?.addEventListener('click', ()=>{
+  if(!remTimeEl?.value) return toast('Choose a time.');
+  const [h,m] = remTimeEl.value.split(':').map(Number);
+  const now = new Date();
+  const target = new Date();
+  target.setHours(h, m, 0, 0);
+  if(target.getTime() <= now.getTime()) target.setDate(target.getDate()+1);
+  const id = crypto.randomUUID();
+  reminders.set(id, { id, when: target.getTime(), text: remTextEl?.value?.trim() || 'Reminder', fired: false });
+  saveReminders();
+  toast("Alright, I'll remind you then Mr. Johnson! 😊");
+});
 
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getFirestore, collection, doc, setDoc, getDocs, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -703,14 +770,14 @@ let _bgTransitioning = false;
       const t = $('#toast'); if(t){ t.style.opacity = '1'; setTimeout(()=> t.style.opacity='0', 1400); }
     });
 
-    // ==== Reminders (simple local scheduler) ====
-    const remModal = $('#remModal'), remTime = $('#remTime'), remMsg = $('#remMsg');
+  // ==== Reminders (simple local scheduler) ====
+  const remModal = $('#remModal'), remTime = $('#remTime'), remText = $('#remText');
     $('#btnReminder')?.addEventListener('click', ()=> {
       // prime with 5 minutes from now
       const now = new Date();
       now.setMinutes(now.getMinutes()+5);
       remTime.value = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-      remMsg.value = 'Time to switch focus';
+  remText.value = 'Time to switch focus';
       remModal.classList.remove('hidden');
     });
     $('#remCancel')?.addEventListener('click', ()=> remModal.classList.add('hidden'));
@@ -753,27 +820,27 @@ let _bgTransitioning = false;
 
     function openEditReminder(r){
       remTime.value = new Date(r.when).toTimeString().slice(0,5);
-      remMsg.value  = r.msg;
+      remText.value  = r.msg;
       remModal.classList.remove('hidden');
       // save will overwrite (we use r.id)
-      $('#remSave').onclick = async()=>{
+      $('#remSaveBtn').onclick = async()=>{
         const [hh,mm] = (remTime.value||'').split(':').map(Number);
         if(Number.isNaN(hh)||Number.isNaN(mm)) return remTime.focus();
         const now = new Date(); const target = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hh, mm, 0);
         if(target<=now) target.setDate(target.getDate()+1);
-        await saveReminderFS({id:r.id, when:target.toISOString(), msg:remMsg.value.trim()||'Reminder'});
+        await saveReminderFS({id:r.id, when:target.toISOString(), msg:remText.value.trim()||'Reminder'});
         remModal.classList.add('hidden'); await loadAndRenderReminders();
       };
     }
 
     // When saving from the "Set Reminder" modal (new reminder path)
-    const originalRemSave = $('#remSave')?.onclick; // in case defined
-    $('#remSave').onclick = async()=>{
+    const originalRemSave = $('#remSaveBtn')?.onclick; // in case defined
+    $('#remSaveBtn').onclick = async()=>{
       const [hh,mm] = (remTime.value||'').split(':').map(Number);
       if(Number.isNaN(hh)||Number.isNaN(mm)) return remTime.focus();
       const now = new Date(); const target = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hh, mm, 0);
       if(target<=now) target.setDate(target.getDate()+1);
-      await saveReminderFS({when:target.toISOString(), msg:remMsg.value.trim()||'Reminder'});
+      await saveReminderFS({when:target.toISOString(), msg:remText.value.trim()||'Reminder'});
       remModal.classList.add('hidden');
       await loadAndRenderReminders();
     };
@@ -795,6 +862,97 @@ let _bgTransitioning = false;
     }
 
     // ===== Calendar =====
+    // --- Calendar cross-out store ---
+    const X_KEY = 'sf_crossed_days_v1';
+    const crossed = new Set(JSON.parse(localStorage.getItem(X_KEY) || '[]'));
+    function persistCrossed(){ localStorage.setItem(X_KEY, JSON.stringify([...crossed])); }
+
+    // Call this after you render each day cell:
+    function wireDayCell(cell){ // cell must have data-date="YYYY-MM-DD"
+      const date = cell.dataset.date;
+      // right-click toggles an X
+      cell.addEventListener('contextmenu', (e)=>{
+        e.preventDefault();
+        const nowCrossed = !crossed.has(date);
+        cell.classList.toggle('crossed', nowCrossed);
+        if(nowCrossed){
+          crossed.add(date);
+          celebrate();
+        } else {
+          crossed.delete(date);
+        }
+        persistCrossed();
+      });
+      // left-click to open tasks
+      cell.addEventListener('click', ()=> openTasks(date));
+      // initialize visual
+      cell.classList.toggle('crossed', crossed.has(date));
+    }
+
+    // Simple celebrate popup
+    const praise = [
+      "All done! You crushed it! 🎉",
+      "Nice! Streak maintained. 🔥",
+      "That’s a wrap—great focus! ✅",
+      "Boom! Tasks completed. 💥",
+      "Chef’s kiss of productivity. 👌"
+    ];
+    function celebrate(){ toast(praise[Math.floor(Math.random()*praise.length)]); }
+
+    // --- Per-day tasks (localStorage) ---
+    function keyFor(dateISO){ return `sf_tasks_${dateISO}`; }
+    function readTasks(dateISO){ return JSON.parse(localStorage.getItem(keyFor(dateISO))||'[]'); }
+    function writeTasks(dateISO, arr){ localStorage.setItem(keyFor(dateISO), JSON.stringify(arr)); }
+
+    const tasksModal = document.getElementById('dayTasksModal');
+    const tasksList = document.getElementById('tasksList');
+    const tasksDateLabel = document.getElementById('tasksDateLabel');
+    document.getElementById('tasksClose').onclick = ()=> tasksModal.style.display='none';
+
+    let activeDateISO = null;
+
+    function openTasks(dateISO){
+      activeDateISO = dateISO;
+      tasksDateLabel.textContent = `Tasks — ${dateISO}`;
+      renderTasks();
+      tasksModal.style.display='grid';
+    }
+
+    function renderTasks(){
+      const items = readTasks(activeDateISO);
+      tasksList.innerHTML = '';
+      items.forEach((t,i)=>{
+        const row = document.createElement('div');
+        row.style.display='flex'; row.style.gap='8px'; row.style.alignItems='center';
+        row.innerHTML = `
+          <input type="checkbox" ${t.done?'checked':''} data-i="${i}">
+          <div style="flex:1;${t.done?'text-decoration:line-through;opacity:.7':''}">${t.text}</div>
+          <button data-del="${i}" style="background:#374151;border:0;color:#fff;padding:.3rem .6rem;border-radius:8px">Del</button>
+        `;
+        tasksList.appendChild(row);
+      });
+      // wire
+      tasksList.querySelectorAll('input[type=checkbox]').forEach(cb=>{
+        cb.onchange = ()=>{
+          const i = +cb.dataset.i; const arr = readTasks(activeDateISO);
+          arr[i].done = cb.checked; writeTasks(activeDateISO, arr); renderTasks();
+        };
+      });
+      tasksList.querySelectorAll('button[data-del]').forEach(btn=>{
+        btn.onclick = ()=>{
+          const i = +btn.dataset.del; const arr = readTasks(activeDateISO);
+          arr.splice(i,1); writeTasks(activeDateISO, arr); renderTasks();
+        };
+      });
+    }
+
+    document.getElementById('taskAdd').onclick = ()=>{
+      const input = document.getElementById('taskText');
+      const txt = input.value.trim(); if(!txt) return;
+      const arr = readTasks(activeDateISO); arr.push({text:txt, done:false});
+      writeTasks(activeDateISO, arr); input.value=''; renderTasks();
+    };
+
     const weekdays = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
     function renderCalendar(){
       const grid = $('#calGrid'); grid.innerHTML='';
@@ -812,84 +970,15 @@ let _bgTransitioning = false;
       const daysInMonth = new Date(year, month+1, 0).getDate();
       for(let day=1; day<=daysInMonth; day++){
         const cell = document.createElement('div');
-        cell.className = 'relative p-3 h-20 glass rounded-lg select-none';
-        cell.innerHTML = `<div class="text-sm opacity-80">${day}</div><svg class="absolute inset-0" viewBox="0 0 100 100"></svg>`;
-        const svg = cell.querySelector('svg');
-
-        // left click => tasks modal (Firestore-backed)
-        cell.addEventListener('click', async ()=>{
-          const y = year, m = month, dy = day;
-          $('#taskDate').textContent = `${day} ${new Intl.DateTimeFormat('en-GB',{month:'short',year:'numeric'}).format(d)}`;
-
-          // load tasks
-          const tasks = await loadTasksForDay(y,m,dy);
-          const body  = $('#taskBody'); body.innerHTML='';
-
-          // add form
-          const form = document.createElement('div');
-          form.className='flex gap-2 mb-3';
-          form.innerHTML = `
-            <input id="newTaskText" class="flex-1 p-2 bg-white/10 rounded-lg" placeholder="New task...">
-            <button id="addTaskBtn" class="px-3 py-2 rounded-full bg-[color:var(--primary)] text-white">Add</button>
-            <button id="carryBtn" class="glass px-3 py-2 rounded-lg">Carry over ➜</button>
-          `;
-          body.appendChild(form);
-
-          // list
-          const list = document.createElement('div'); list.className='space-y-2';
-          body.appendChild(list);
-
-          function renderList(){
-            list.innerHTML='';
-            for(const t of tasks){
-              const row = document.createElement('div');
-              row.className='glass rounded-lg p-2 flex items-center justify-between';
-              row.innerHTML = `
-                <label class="flex items-center gap-2">
-                  <input type="checkbox" ${t.done?'checked':''}>
-                  <span class="${t.done?'line-through opacity-60':''}">${t.text}</span>
-                </label>
-                <button class="glass px-2 py-1 rounded">Del</button>
-              `;
-              const cb = row.querySelector('input'); cb.onchange = async()=>{
-                t.done = cb.checked; await toggleTask(y,m,dy,t.id,t.done); renderList();
-              };
-              row.querySelector('button').onclick = async()=>{ await deleteTask(y,m,dy,t.id); tasks.splice(tasks.findIndex(x=>x.id===t.id),1); renderList(); };
-              list.appendChild(row);
-            }
-          }
-          renderList();
-
-          // add task
-          form.querySelector('#addTaskBtn').onclick = async()=>{
-            const txt = form.querySelector('#newTaskText').value.trim(); if(!txt) return;
-            await addTask(y,m,dy,txt);
-            tasks.push({id:'(pending)', text:txt, done:false}); // optimistic; refresh
-            const real = await loadTasksForDay(y,m,dy); tasks.length=0; tasks.push(...real); renderList();
-          };
-
-          // carry over incomplete to next day (no typing required)
-          form.querySelector('#carryBtn').onclick = async()=>{
-            await moveIncompleteToNext(y,m,dy);   // this copies all NOT done → tomorrow
-            // encourage + close
-            const t = $('#toast'); 
-            if(t){ t.textContent = "Carried over unfinished tasks — tomorrow's another shot!"; 
-                  t.style.opacity='1'; setTimeout(()=>{ t.style.opacity='0'; t.textContent='Settings saved ✔'; }, 2600); }
-            $('#taskModal').classList.add('hidden');
-          };
-
-          $('#taskModal').classList.remove('hidden');
-        });
-        // right click => draw X + sound
-        cell.addEventListener('contextmenu', (e)=>{
-          e.preventDefault();
-          svg.innerHTML = `
-            <line x1="15" y1="15" x2="85" y2="85" class="cross a"/>
-            <line x1="85" y1="15" x2="15" y2="85" class="cross b"/>
-          `;
-          const a=$('#sfx-drawing'); if(a){ a.currentTime=0; a.play().catch(()=>{}); }
-        });
-
+        cell.className = 'relative p-3 h-20 glass rounded-lg select-none day';
+        cell.innerHTML = `<div class="text-sm opacity-80">${day}</div>`;
+        // set data-date as YYYY-MM-DD
+        const mm = String(month+1).padStart(2,'0');
+        const dd = String(day).padStart(2,'0');
+        const iso = `${year}-${mm}-${dd}`;
+        cell.dataset.date = iso;
+        // wire left/right click + initial visual
+        wireDayCell(cell);
         grid.appendChild(cell);
       }
     }
@@ -979,6 +1068,21 @@ let _bgTransitioning = false;
   readSettings(); applyTheme(); try{ updateFavicon(); }catch(e){}; setBackground(); startSlideshow(); renderCalendar(); scheduleRainCycle(); updateTimerUI();
   loadAndRenderReminders().catch(console.error);
   </script>
+  <!-- Day Tasks modal (local per-day tasks) -->
+  <div id="dayTasksModal" style="position:fixed;inset:0;display:none;place-items:center;background:#0008;z-index:70">
+    <div style="width:520px;background:#111827ee;color:#fff;border-radius:14px;padding:20px;box-shadow:0 20px 60px #0006">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <strong id="tasksDateLabel">Tasks</strong>
+        <button id="tasksClose" style="background:#374151;border:0;color:#fff;padding:.4rem .7rem;border-radius:8px">Close</button>
+      </div>
+      <div id="tasksList" style="display:grid;gap:8px;margin-bottom:12px"></div>
+      <div style="display:flex;gap:8px">
+        <input id="taskText" placeholder="New task…" style="flex:1;padding:.6rem;border-radius:8px;border:1px solid #374151;background:#111827;color:#fff">
+        <button id="taskAdd" class="btn">Add</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Docked mini-timer -->
   <div id="dockTimer" class="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 hidden">
     <div class="glass rounded-full px-4 py-2 flex items-center gap-3 shadow-lg">
