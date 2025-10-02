@@ -528,6 +528,84 @@ let _bgTransitioning = false;
     $('#goCalendar').onclick = ()=> { show('#calendarView'); renderCalendar(); };
     $('#goSettings').onclick = ()=> show('#settingsView');
 
+    // === Particles v2 (continuous background + mouse trail) ===
+    const fx = document.getElementById('fx');
+    const ctx = fx.getContext('2d', { alpha:true });
+    let P = [];              // active particles
+    let MAX = 120;           // target count (varies by theme)
+    let MODE = 'leaves';     // leaves | snow | rain | fireflies
+    function resizeFx(){ fx.width = innerWidth; fx.height = innerHeight; }
+    resizeFx(); addEventListener('resize', resizeFx);
+
+    // Mouse trail (sprinkles on move)
+    document.addEventListener('mousemove', e=>{
+      for(let i=0;i<2;i++){ spawn(e.clientX, e.clientY, true); }
+    });
+
+    function spawn(x = Math.random()*fx.width, y = -10, gentle=false){
+      if(MODE==='rain'){
+        P.push({x, y, vx:0, vy: 8+Math.random()*6, r:1, a:0.5});
+      }else if(MODE==='snow'){
+        P.push({x, y, vx:(Math.random()-.5)*0.6, vy: 0.6+Math.random()*0.8, r: 1.5+Math.random()*1.5, a:0.9, wob:Math.random()*6.28});
+      }else if(MODE==='fireflies'){
+        P.push({x, y: Math.random()*fx.height, vx:(Math.random()-.5)*0.3, vy:(Math.random()-.5)*0.3, r:2+Math.random()*2, a:0.7, flick:Math.random()*6.28});
+      }else{ // leaves
+        const brown = (state.season==='autumn');
+        const col = brown ? '#a35420' : '#3fb34e';
+        P.push({x, y, vx:(Math.random()-.5)*0.8, vy: 0.8+Math.random()*1.2, w:4, h:4, col, wob:Math.random()*6.28});
+      }
+      // keep cap reasonable
+      if(!gentle && P.length>MAX) P.splice(0, P.length-MAX);
+    }
+
+    function tickParticles(){
+      ctx.clearRect(0,0,fx.width,fx.height);
+      // spawn to maintain density (skip for fireflies; they persist)
+      if(MODE!=='fireflies'){
+        while(P.length<MAX) spawn();
+      }else if(P.length<MAX){ spawn(); }
+
+      for(let i=P.length-1;i>=0;i--){
+        const p = P[i];
+        if(MODE==='rain'){
+          p.y += p.vy; if(p.y>fx.height+10) { P.splice(i,1); continue; }
+          ctx.globalAlpha = p.a; ctx.strokeStyle = '#7fc3ff'; ctx.lineWidth=1;
+          ctx.beginPath(); ctx.moveTo(p.x, p.y-8); ctx.lineTo(p.x, p.y); ctx.stroke();
+        }else if(MODE==='snow'){
+          p.wob += 0.02; p.x += p.vx + Math.sin(p.wob)*0.2; p.y += p.vy;
+          if(p.y>fx.height+6) { P.splice(i,1); continue; }
+          ctx.globalAlpha = p.a; ctx.fillStyle = '#ffffff'; ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill();
+        }else if(MODE==='fireflies'){
+          p.flick += 0.05; p.x += p.vx; p.y += p.vy;
+          if(p.x<0||p.x>fx.width) p.vx*=-1; if(p.y<0||p.y>fx.height) p.vy*=-1;
+          const glow = (Math.sin(p.flick)*0.5+0.5)*0.6 + 0.3;
+          ctx.shadowBlur = 12; ctx.shadowColor = '#ffd86b';
+          ctx.globalAlpha = glow; ctx.fillStyle = '#fff7ae';
+          ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill();
+          ctx.shadowBlur = 0;
+        }else{ // leaves
+          p.wob += 0.03; p.x += p.vx + Math.sin(p.wob)*0.5; p.y += p.vy;
+          if(p.y>fx.height+6) { P.splice(i,1); continue; }
+          ctx.globalAlpha = .9; ctx.fillStyle = p.col;
+          ctx.fillRect(p.x, p.y, p.w, p.h);
+        }
+      }
+      ctx.globalAlpha = 1;
+      requestAnimationFrame(tickParticles);
+    }
+    tickParticles();
+
+    // switcher called when theme/weather/time changes
+    function setParticleTheme(){
+      if(state.weather==='rain'){ MODE='rain'; MAX = 240; P.length=0; return; }
+      if(state.timeOfDay==='night'){ MODE='fireflies'; MAX = 60; P.length=0; return; }
+      if(state.season==='winter'){ MODE='snow'; MAX = 140; P.length=0; return; }
+      MODE='leaves'; MAX = 120; P.length=0; // summer/autumn leaves
+    }
+    // call whenever theme changes:
+    setParticleTheme();
+
     // ===== Perpetual clock + day/night switch =====
     function tickClock(){
       const now = new Date();
@@ -1252,83 +1330,7 @@ let _bgTransitioning = false;
     $('#nextMonth').onclick = ()=>{ state.calDate.setMonth(state.calDate.getMonth()+1); renderCalendar(); }
     $('#taskClose').onclick = ()=> $('#taskModal').classList.add('hidden');
 
-    // === Particles v2 (continuous background + mouse trail) ===
-    const fx = document.getElementById('fx');
-    const ctx = fx.getContext('2d', { alpha:true });
-    let P = [];              // active particles
-    let MAX = 120;           // target count (varies by theme)
-    let MODE = 'leaves';     // leaves | snow | rain | fireflies
-    function resizeFx(){ fx.width = innerWidth; fx.height = innerHeight; }
-    resizeFx(); addEventListener('resize', resizeFx);
 
-    // Mouse trail (sprinkles on move)
-    document.addEventListener('mousemove', e=>{
-      for(let i=0;i<2;i++){ spawn(e.clientX, e.clientY, true); }
-    });
-
-    function spawn(x = Math.random()*fx.width, y = -10, gentle=false){
-      if(MODE==='rain'){
-        P.push({x, y, vx:0, vy: 8+Math.random()*6, r:1, a:0.5});
-      }else if(MODE==='snow'){
-        P.push({x, y, vx:(Math.random()-.5)*0.6, vy: 0.6+Math.random()*0.8, r: 1.5+Math.random()*1.5, a:0.9, wob:Math.random()*6.28});
-      }else if(MODE==='fireflies'){
-        P.push({x, y: Math.random()*fx.height, vx:(Math.random()-.5)*0.3, vy:(Math.random()-.5)*0.3, r:2+Math.random()*2, a:0.7, flick:Math.random()*6.28});
-      }else{ // leaves
-        const brown = (state.season==='autumn');
-        const col = brown ? '#a35420' : '#3fb34e';
-        P.push({x, y, vx:(Math.random()-.5)*0.8, vy: 0.8+Math.random()*1.2, w:4, h:4, col, wob:Math.random()*6.28});
-      }
-      // keep cap reasonable
-      if(!gentle && P.length>MAX) P.splice(0, P.length-MAX);
-    }
-
-    function tickParticles(){
-      ctx.clearRect(0,0,fx.width,fx.height);
-      // spawn to maintain density (skip for fireflies; they persist)
-      if(MODE!=='fireflies'){
-        while(P.length<MAX) spawn();
-      }else if(P.length<MAX){ spawn(); }
-
-      for(let i=P.length-1;i>=0;i--){
-        const p = P[i];
-        if(MODE==='rain'){
-          p.y += p.vy; if(p.y>fx.height+10) { P.splice(i,1); continue; }
-          ctx.globalAlpha = p.a; ctx.strokeStyle = '#7fc3ff'; ctx.lineWidth=1;
-          ctx.beginPath(); ctx.moveTo(p.x, p.y-8); ctx.lineTo(p.x, p.y); ctx.stroke();
-        }else if(MODE==='snow'){
-          p.wob += 0.02; p.x += p.vx + Math.sin(p.wob)*0.2; p.y += p.vy;
-          if(p.y>fx.height+6) { P.splice(i,1); continue; }
-          ctx.globalAlpha = p.a; ctx.fillStyle = '#ffffff'; ctx.beginPath();
-          ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill();
-        }else if(MODE==='fireflies'){
-          p.flick += 0.05; p.x += p.vx; p.y += p.vy;
-          if(p.x<0||p.x>fx.width) p.vx*=-1; if(p.y<0||p.y>fx.height) p.vy*=-1;
-          const glow = (Math.sin(p.flick)*0.5+0.5)*0.6 + 0.3;
-          ctx.shadowBlur = 12; ctx.shadowColor = '#ffd86b';
-          ctx.globalAlpha = glow; ctx.fillStyle = '#fff7ae';
-          ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill();
-          ctx.shadowBlur = 0;
-        }else{ // leaves
-          p.wob += 0.03; p.x += p.vx + Math.sin(p.wob)*0.5; p.y += p.vy;
-          if(p.y>fx.height+6) { P.splice(i,1); continue; }
-          ctx.globalAlpha = .9; ctx.fillStyle = p.col;
-          ctx.fillRect(p.x, p.y, p.w, p.h);
-        }
-      }
-      ctx.globalAlpha = 1;
-      requestAnimationFrame(tickParticles);
-    }
-    tickParticles();
-
-    // switcher called when theme/weather/time changes
-    function setParticleTheme(){
-      if(state.weather==='rain'){ MODE='rain'; MAX = 240; P.length=0; return; }
-      if(state.timeOfDay==='night'){ MODE='fireflies'; MAX = 60; P.length=0; return; }
-      if(state.season==='winter'){ MODE='snow'; MAX = 140; P.length=0; return; }
-      MODE='leaves'; MAX = 120; P.length=0; // summer/autumn leaves
-    }
-    // call whenever theme changes:
-    setParticleTheme();
 
     // ===== Boot =====
   (async ()=>{
