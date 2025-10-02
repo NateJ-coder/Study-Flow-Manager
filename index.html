@@ -352,6 +352,8 @@
 
   <!-- Core App -->
   <script type="module">
+let BG_READY = false;
+
 // Use site-relative URLs so GitHub Pages serves assets directly
 function siteBase(){
   const base = document.querySelector('base')?.href || (location.origin + location.pathname.replace(/[^/]*$/,''));
@@ -619,10 +621,9 @@ let _bgTransitioning = false;
       const was = state.timeOfDay;
       state.timeOfDay = (hour>=6 && hour<18) ? 'day' : 'night';
       if (state.timeOfDay !== was){
-        applyTheme(); setParticleTheme();
-        // If a fade is mid-flight or not initialized yet, just set instantly
-        if (typeof _bgTransitioning === 'undefined') { setBackground(); }
-        else { refreshBackground(); }
+        applyTheme(); 
+        setParticleTheme();
+        if (BG_READY) refreshBackground();
       }
     }
     setInterval(tickClock, 1000); tickClock();
@@ -759,12 +760,13 @@ let _bgTransitioning = false;
       slideTimer = null; preloadPulse = null; preloadTimeout = null;
     }
 
-    (async ()=>{ 
-      try{ 
-        await setBackground(); 
-        startSlideshow(); 
-        refreshBackground().catch(()=>{}); 
-      }catch(e){ console.warn("BG init skipped", e); } 
+    (async ()=>{
+      try{
+        await setBackground();
+        startSlideshow();
+        await refreshBackground().catch(()=>{});
+        BG_READY = true;
+      }catch(e){ console.warn("BG init skipped", e); }
     })();
 
     // ===== Theme application =====
