@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>StudyFlow</title>
 
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='50' x='8' font-size='48'%3E%F0%9F%8F%93%3C/text%3E%3C/svg%3E">
+
   <!-- Tailwind + Icons -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -466,15 +468,15 @@ function toast(msg, ms=2800){
     const reminders = new Map(KV.get(REM_KEY, []));
     function saveReminders(){ KV.set(REM_KEY, [...reminders.entries()]); }
 
-    // Calendar crossed days
-    const X_KEY = 'sf_crossed_days_v1';
-    const crossed = new Set(KV.get(X_KEY, []));
-    function persistCrossed(){ KV.set(X_KEY, [...crossed]); }
+  // Calendar crossed days
+  const X_KEY = 'sf_crossed_days_v1';
+  const crossed = new Set(KV.get(X_KEY, []));
+  function persistCrossed(){ KV.set(X_KEY, [...crossed]); }
 
-    // Per-day tasks helpers
-    function tasksKey(dateISO){ return `sf_tasks_${dateISO}`; }
-    function readTasks(dateISO){ return KV.get(tasksKey(dateISO), []); }
-    function writeTasks(dateISO, arr){ KV.set(tasksKey(dateISO), arr); }
+  // Per-day tasks (localStorage) — single canonical pair
+  function tasksKey(dateISO){ return `sf_tasks_${dateISO}`; }
+  function readDayTasks(dateISO){ return JSON.parse(localStorage.getItem(tasksKey(dateISO)) || '[]'); }
+  function writeDayTasks(dateISO, arr){ localStorage.setItem(tasksKey(dateISO), JSON.stringify(arr)); }
 
     // schedule tick for reminders (uses KV-backed `reminders`)
     const _remTimers = new Map();
@@ -975,10 +977,8 @@ let _bgTransitioning = false;
     ];
     function celebrate(){ toast(praise[Math.floor(Math.random()*praise.length)]); }
 
-    // --- Per-day tasks (localStorage) ---
-    function keyFor(dateISO){ return `sf_tasks_${dateISO}`; }
-    function readTasks(dateISO){ return JSON.parse(localStorage.getItem(keyFor(dateISO))||'[]'); }
-    function writeTasks(dateISO, arr){ localStorage.setItem(keyFor(dateISO), JSON.stringify(arr)); }
+  // --- Per-day tasks (localStorage) ---
+  // (duplicate removed — using readDayTasks/writeDayTasks)
 
     const tasksModal = document.getElementById('dayTasksModal');
     const tasksList = document.getElementById('tasksList');
@@ -995,7 +995,7 @@ let _bgTransitioning = false;
     }
 
     function renderTasks(){
-      const items = readTasks(activeDateISO);
+      const items = readDayTasks(activeDateISO);
       tasksList.innerHTML = '';
       items.forEach((t,i)=>{
         const row = document.createElement('div');
@@ -1010,14 +1010,14 @@ let _bgTransitioning = false;
       // wire
       tasksList.querySelectorAll('input[type=checkbox]').forEach(cb=>{
         cb.onchange = ()=>{
-          const i = +cb.dataset.i; const arr = readTasks(activeDateISO);
-          arr[i].done = cb.checked; writeTasks(activeDateISO, arr); renderTasks();
+          const i = +cb.dataset.i; const arr = readDayTasks(activeDateISO);
+          arr[i].done = cb.checked; writeDayTasks(activeDateISO, arr); renderTasks();
         };
       });
       tasksList.querySelectorAll('button[data-del]').forEach(btn=>{
         btn.onclick = ()=>{
-          const i = +btn.dataset.del; const arr = readTasks(activeDateISO);
-          arr.splice(i,1); writeTasks(activeDateISO, arr); renderTasks();
+          const i = +btn.dataset.del; const arr = readDayTasks(activeDateISO);
+          arr.splice(i,1); writeDayTasks(activeDateISO, arr); renderTasks();
         };
       });
     }
@@ -1025,8 +1025,8 @@ let _bgTransitioning = false;
     document.getElementById('taskAdd').onclick = ()=>{
       const input = document.getElementById('taskText');
       const txt = input.value.trim(); if(!txt) return;
-      const arr = readTasks(activeDateISO); arr.push({text:txt, done:false});
-      writeTasks(activeDateISO, arr); input.value=''; renderTasks();
+  const arr = readDayTasks(activeDateISO); arr.push({text:txt, done:false});
+  writeDayTasks(activeDateISO, arr); input.value=''; renderTasks();
     };
 
     const weekdays = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
