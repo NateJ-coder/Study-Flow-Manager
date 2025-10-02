@@ -9,8 +9,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
 
-  <link rel="preload" as="image" href="https://cdn.jsdelivr.net/gh/NateJ-coder/Study-Flow-Manager@main/timer-assets/assets/images/summer-day-1.png">
-  <link rel="preload" as="audio" href="https://cdn.jsdelivr.net/gh/NateJ-coder/Study-Flow-Manager@main/timer-assets/assets/audio/splash.mp3">
+  <link rel="preload" as="image" href="https://cdn.jsdelivr.net/gh/NateJ-coder/Study-Flow-Manager@main/assets/background%20images/summer-day-1.png">
+  <link rel="preload" as="audio" href="https://cdn.jsdelivr.net/gh/NateJ-coder/Study-Flow-Manager@main/assets/audio/splash.mp3">
 
   <!-- Base theme vars -->
   <style>
@@ -267,14 +267,18 @@
   <script type="module">
     // ===== jsDelivr asset base =====
     const JSDELIVR_BASE = "https://cdn.jsdelivr.net/gh/NateJ-coder/Study-Flow-Manager@main";
-    // compact cdn helper
-    const cdn = (p) => `${JSDELIVR_BASE}/${p.replace(/^\.?\//,'').split('/').map(encodeURIComponent).join('/')}`;
-    const ASSET_ROOT = "assets"; // actual repo root where images & audio live
 
-  // Point audio to CDN (defensive: only set if element exists) — use ASSET_ROOT
-  document.getElementById('sfx-splash')?.src = cdn(`${ASSET_ROOT}/audio/splash.mp3`);
-  document.getElementById('sfx-drawing')?.src = cdn(`${ASSET_ROOT}/audio/drawing.mp3`);
-  document.getElementById('sfx-rain')?.src    = cdn(`${ASSET_ROOT}/audio/rainfall.mp3`);
+    // Wrap local-like paths and make them CDN-safe (handles spaces)
+    const cdn = (p) => {
+      // ensure no leading "./" and encode each segment (so "background images" works)
+      const clean = p.replace(/^\.?\//,'').split('/').map(encodeURIComponent).join('/');
+      return `${JSDELIVR_BASE}/${clean}`;
+    };
+
+  // Point audio to CDN (defensive: only set if element exists)
+  const _splashEl = document.getElementById('sfx-splash'); if(_splashEl) _splashEl.src = cdn('assets/audio/splash.mp3');
+  const _drawEl   = document.getElementById('sfx-drawing'); if(_drawEl)   _drawEl.src   = cdn('assets/audio/drawing.mp3');
+  const _rainEl   = document.getElementById('sfx-rain');    if(_rainEl)    _rainEl.src    = cdn('assets/audio/rainfall.mp3');
 
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getFirestore, collection, doc, setDoc, getDocs, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -400,12 +404,12 @@ let _bgTransitioning = false;
 
     // ===== Background slideshow & pathing =====
     function bgPath(){
-      if (state.weather === 'rain') {
-        const i = ((state.slideIndex - 1) % 9) + 1;
-        return cdn(`${ASSET_ROOT}/images/rain-bg-${i}.png`);
+      if(state.weather==='rain'){
+        const i = ((state.slideIndex-1)%9)+1;
+        return cdn(`assets/background images/rain-bg-${i}.png`);
       }
-      const i = ((state.slideIndex - 1) % 8) + 1;
-      return cdn(`${ASSET_ROOT}/images/${state.season}-${state.timeOfDay}-${i}.png`);
+      const i = ((state.slideIndex-1)%8)+1;
+      return cdn(`assets/background images/${state.season}-${state.timeOfDay}-${i}.png`);
     }
 
   // Background helpers with preloading + transition guard
