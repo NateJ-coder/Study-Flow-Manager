@@ -25,10 +25,20 @@
     }
     .glass{background:rgba(255,255,255,0.18); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,.18)}
     .view{animation:fade .25s} @keyframes fade{from{opacity:0}to{opacity:1}}
-    /* Calendar cross animation */
-    @keyframes x1{to{stroke-dashoffset:0}} @keyframes x2{to{stroke-dashoffset:0}}
-    .cross{stroke:var(--x-color); stroke-width:8; stroke-linecap:round; fill:none; stroke-dasharray:120; stroke-dashoffset:120}
-    .cross.a{animation:x1 .35s ease-out forwards} .cross.b{animation:x2 .35s .15s ease-out forwards}
+  </style>
+  <style>
+  /* Calendar cross animation (drawn by pen) */
+  @keyframes x1{to{stroke-dashoffset:0}}
+  @keyframes x2{to{stroke-dashoffset:0}}
+  .cross{stroke:var(--x-color); stroke-width:8; stroke-linecap:round; fill:none;
+         stroke-dasharray:120; stroke-dashoffset:120; filter: drop-shadow(0 2px 6px rgba(0,0,0,.35))}
+  /* when a day is crossed, animate line A then B */
+  .day-cell.cross-anim .cross.a{animation:x1 .35s ease-out forwards}
+  .day-cell.cross-anim .cross.b{animation:x2 .35s .15s ease-out forwards}
+  .day-x{ position:absolute; inset:4px; pointer-events:none; opacity:0; transition:opacity .12s }
+  .day-cell.crossed .day-x{ opacity:1 }
+  </style>
+  <style>
     /* Inactivity collapse */
     #minimalTimer{display:none}
     /* Rain “shock” */
@@ -273,10 +283,47 @@
               </select>
             </label>
             <label>Slideshow <input id="setSlide" type="checkbox" checked class="h-5 w-5 accent-[color:var(--primary)]"></label>
-            <label>Slide interval (sec) <input id="setSlideInt" type="number" min="3" class="w-full mt-1 p-2 bg-white/10 rounded-lg"></label>
+            <label>Slide interval (sec) <input id="setSlideInt" type="number" min="20" class="w-full mt-1 p-2 bg-white/10 rounded-lg"></label>
             <label>X color <input id="setX" type="color" class="w-full h-10 mt-1 rounded-lg"></label>
             <label>Dim background (%) <input id="setDim" type="range" min="0" max="70" step="1" class="w-full mt-1"></label>
           </div>
+        </fieldset>
+
+        <fieldset class="border-t border-white/20 pt-4">
+          <legend class="text-[color:var(--primary)] font-medium">Weather & Rain</legend>
+          <div class="grid grid-cols-2 gap-3">
+            <label>Rain mode
+              <select id="setRainMode" class="w-full mt-1 p-2 bg-white/10 rounded-lg">
+                <option value="fixed-slots">Fixed times (clock)</option>
+                <option value="clock-2h">Every 2 hours (clock)</option>
+                <option value="runtime-2h">Every 2 hours (runtime)</option>
+                <option value="random">Random 45-min showers</option>
+                <option value="off">Off (spend credits)</option>
+              </select>
+            </label>
+            <label>Credits (hours)
+              <input id="setCredits" type="number" min="0" class="w-full mt-1 p-2 bg-white/10 rounded-lg" />
+            </label>
+          </div>
+          <p class="text-xs opacity-70 mt-2">
+            Turning rain <em>Off</em> costs 3 credits (temporary placeholder until the currency system lands).
+          </p>
+          <label class="flex items-center gap-2 mt-3">
+            <input id="setRainTest" type="checkbox" class="scale-125">
+            <span>Test rain (no lockout)</span>
+          </label>
+        </fieldset>
+
+        <fieldset class="border-t border-white/20 pt-4">
+          <legend class="text-[color:var(--primary)] font-medium">Calendar X</legend>
+          <label class="flex items-center gap-2">
+            <input id="setXMatchTheme" type="checkbox" class="scale-125" checked>
+            <span>Match theme color (default)</span>
+          </label>
+          <label class="block mt-2">X color (manual)
+            <input id="setXColor" type="color" value="#ffffff" class="mt-1 w-24 h-9 bg-white/10 rounded"
+                   style="accent-color: var(--ui-primary-color)">
+          </label>
         </fieldset>
 
         <div class="text-right">
@@ -293,10 +340,13 @@
 
   <!-- Core App -->
   <script type="module">
-// --- CDN helper (put near the top of your script) ---
-const JSDELIVR_BASE = "https://cdn.jsdelivr.net/gh/NateJ-coder/Study-Flow-Manager@main";
-const cdn = (p) => `${JSDELIVR_BASE}/${p.replace(/^\.?\//,'').split('/').map(encodeURIComponent).join('/')}`;
-const ASSET_ROOT = "assets"; // you flattened to /assets
+// Use site-relative URLs so GitHub Pages serves assets directly
+function siteBase(){
+  const base = document.querySelector('base')?.href || (location.origin + location.pathname.replace(/[^/]*$/,''));
+  return base.endsWith('/') ? base : base + '/';
+}
+const ASSET_ROOT = "assets";
+const cdn = (p) => siteBase() + p.replace(/^\.?\//,'');
 
 
 
@@ -426,8 +476,17 @@ function toast(msg, ms=2800){
       weather: 'clear',                 // clear | rain (scheduled)
       slideIndex: 1,
       slideOn: true,
-  slideSec: 15,                    // friendlier default (seconds); user can change in Settings
+  slideSec: 20,                    // default seconds (user can raise but never go below 20)
       tz: 'Africa/Johannesburg',
+      // rain defaults
+      rainMode: 'fixed-slots',   // fixed-slots | clock-2h | runtime-2h | random | off
+      creditsHours: 0,           // temporary placeholder "currency"
+      rainTest: false,   // when true, allow settings during rain
+      rainCycleMs: 2*60*60*1000, // keep for runtime mode
+      rainDurationMs: 45*60*1000,
+      rainTimeout: null, clearTimeoutId: null,
+      xMatchTheme: true,
+      xColor: '#ffffff',
       // Pomodoro
       workMin: 25, shortMin: 5, longMin: 15, longEvery: 4, autostart: true,
       mode: 'work',                     // work | short | long
@@ -436,10 +495,6 @@ function toast(msg, ms=2800){
       timerId: null,
       // inactivity
       inactive: false,
-      // rain cycle
-      rainCycleMs: 2*60*60*1000,        // every 2h
-      rainDurationMs: 45*60*1000,       // rains 45 min
-      rainTimeout: null, clearTimeoutId: null,
       // calendar
       calDate: new Date()
     };
@@ -570,14 +625,40 @@ let _bgTransitioning = false;
     }
 
     function minIntervalMs(){ return Math.max(900, Math.ceil(avg(decodeSamples) + 250)); }
-    let slideTimer = null;
+    let slideTimer = null;     // existing
+    let preloadTimeout = null; // new
+    let preloadPulse = null;   // new
+    let currentDelayMs = 20000;
+
+    function schedulePreload(){
+      clearTimeout(preloadTimeout);
+      // Ensure the next image is decoded ≥10s before the swap
+      const when = Math.max(0, currentDelayMs - 10000);
+      preloadTimeout = setTimeout(()=> { fillQueue().catch(()=>{}); }, when);
+    }
     function startSlideshow(){
       clearInterval(slideTimer);
+      clearInterval(preloadPulse);
       if (!state.slideOn) return;
+
       const delay = Math.max(state.slideSec*1000, minIntervalMs());
-      slideTimer = setInterval(()=>{ slideIdx++; refreshBackground(); }, delay);
+      currentDelayMs = delay;
+
+      // Swap on a fixed cadence
+      slideTimer = setInterval(()=>{ slideIdx++; refreshBackground(); schedulePreload(); }, delay);
+
+      // Safety: keep the queue warm every 15s regardless of user interval
+      preloadPulse = setInterval(()=> { fillQueue().catch(()=>{}); }, 15000);
+
+      // And ensure we have the next image ≥10s before the first swap
+      schedulePreload();
     }
-    function stopSlideshow(){ clearInterval(slideTimer); slideTimer = null; }
+    function stopSlideshow(){
+      clearInterval(slideTimer);
+      clearInterval(preloadPulse);
+      clearTimeout(preloadTimeout);
+      slideTimer = null; preloadPulse = null; preloadTimeout = null;
+    }
 
     (async ()=>{ try{ await setBackground(); startSlideshow(); refreshBackground().catch(()=>{}); }catch(e){ /* non-fatal */ } })();
 
@@ -589,13 +670,15 @@ let _bgTransitioning = false;
       else if(state.season==='autumn'){ primary='#FF5722'; sand='#8B5E3C'; }
       else /* winter */ { primary='#2196F3'; sand='#CFD8DC'; }
   root.style.setProperty('--ui-primary-color', primary);
+  // Set the X color: theme-matched or manual
+  root.style.setProperty('--x-color', state.xMatchTheme ? primary : state.xColor);
   // If raining, tint sand bluish
   if(state.weather==='rain'){ sand = '#79c0ff'; }
       root.style.setProperty('--ui-sand-color', sand);
       document.body.classList.toggle('night', state.timeOfDay==='night');
       document.body.classList.toggle('rain',  state.weather==='rain');
       // lock settings during rain
-      $('#rainBlocker').classList.toggle('hidden', state.weather!=='rain');
+      $('#rainBlocker').classList.toggle('hidden', state.weather!=='rain' || state.rainTest);
       setParticleTheme();
       // Number color by theme (always white at night; seasonal only by day)
       const countdown = $('#countdown');
@@ -624,25 +707,116 @@ let _bgTransitioning = false;
       });
     }
 
-    // ===== Rain scheduler (every 2h, lasts 45 min) =====
+    // ===== Rain scheduler (multiple modes) =====
     function scheduleRainCycle(){
-      // Clear old timers
+      // clear any previous timers
       if(state.rainTimeout){ clearTimeout(state.rainTimeout); state.rainTimeout=null; }
       if(state.clearTimeoutId){ clearTimeout(state.clearTimeoutId); state.clearTimeoutId=null; }
-      // Next start in 2h from app open
-      state.rainTimeout = setTimeout(()=> {
-    // Start rain
-  state.weather='rain'; applyTheme(); setParticleTheme(); refreshBackground(); startRainAudio();
-        // Wet ripple on all .glass buttons while raining
-        $$('.glass, button').forEach(b=> b.addEventListener('click', rainRippleOnce, {once:false}));
-        // Stop after 45 min
-        state.clearTimeoutId = setTimeout(()=>{
-          state.weather='clear'; applyTheme(); setParticleTheme(); refreshBackground(); stopRainAudio();
-          $$('.glass, button').forEach(b=> b.removeEventListener('click', rainRippleOnce));
-        }, state.rainDurationMs);
-        // Schedule next in additional 75 min (remaining of 2h window) so cadence stays every 2h
-        state.rainTimeout = setTimeout(scheduleRainCycle, state.rainCycleMs - state.rainDurationMs);
+
+      if(state.rainMode === 'runtime-2h') return scheduleRuntimeEvery2h();
+      if(state.rainMode === 'clock-2h')   return scheduleClockEvery2h();
+      if(state.rainMode === 'random')     return scheduleRandomToday();
+      if(state.rainMode === 'fixed-slots')return scheduleFixedSlots();
+      // off => do nothing
+    }
+
+    function scheduleRuntimeEvery2h(){
+      state.rainTimeout = setTimeout(()=>{
+        startRain();
+        state.clearTimeoutId = setTimeout(stopRain, state.rainDurationMs);
+        state.rainTimeout = setTimeout(scheduleRuntimeEvery2h, state.rainCycleMs - state.rainDurationMs);
       }, state.rainCycleMs);
+    }
+
+    function startRain(){
+      state.weather='rain'; applyTheme(); setParticleTheme(); refreshBackground(); startRainAudio();
+      $$('.glass, button').forEach(b=> b.addEventListener('click', rainRippleOnce, {once:false}));
+    }
+    function stopRain(){
+      state.weather='clear'; applyTheme(); setParticleTheme(); refreshBackground(); stopRainAudio();
+      $$('.glass, button').forEach(b=> b.removeEventListener('click', rainRippleOnce));
+    }
+
+    function toggleTestRain(){
+      if (state.weather==='rain') {
+        state.weather='clear'; applyTheme(); setParticleTheme(); refreshBackground(); stopRainAudio();
+      } else {
+        state.weather='rain';  applyTheme(); setParticleTheme(); refreshBackground(); startRainAudio(); playShock?.();
+      }
+    }
+
+    function nowInTz(tz){ return new Date(new Intl.DateTimeFormat('en-GB',{timeZone:tz, hour12:false}).format ? Date.now() : Date.now()); }
+    // Build a Date today in tz at hh:mm
+    function dateAt(h, m, tz){
+      const now = new Date();
+      const parts = new Intl.DateTimeFormat('en-GB',{timeZone:tz,hour:'2-digit',minute:'2-digit',second:'2-digit',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(now)
+        .reduce((o,p)=> (o[p.type]=p.value, o), {});
+      const y = Number(parts.year), mo = Number(parts.month)-1, d = Number(parts.day);
+      // Create local time for that tz's wallclock, then adjust by tz offset difference
+      const targetLocal = new Date(y, mo, d, h, m, 0, 0);
+      // Compute the next occurrence in real time:
+      return targetLocal;
+    }
+    function msUntil(dt){ return Math.max(0, dt.getTime() - Date.now()); }
+
+    const FIXED_SLOTS = [ // 24h format
+      [10,0],[12,0],[14,0],[16,0],[18,0],[20,0],[22,0],[0,0]
+    ];
+    function nextFixedSlotDate(){
+      const tz = state.tz;
+      const today = new Date();
+      // build candidate dates for today
+      const cands = FIXED_SLOTS.map(([h,m])=> dateAt(h,m,tz))
+        .map(d => (d.getTime() < Date.now() ? new Date(d.getTime()+86400000) : d));
+      // earliest upcoming
+      return cands.sort((a,b)=>a-b)[0];
+    }
+    function scheduleFixedSlots(){
+      const startAt = nextFixedSlotDate();
+      state.rainTimeout = setTimeout(()=>{
+        startRain();
+        state.clearTimeoutId = setTimeout(()=>{
+          stopRain();
+          scheduleFixedSlots(); // schedule the next slot after stopping
+        }, state.rainDurationMs);
+      }, msUntil(startAt));
+    }
+
+    function nextClock2hBoundary(){
+      const tz = state.tz;
+      const now = new Date();
+      const parts = new Intl.DateTimeFormat('en-GB',{timeZone:tz,hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(now)
+        .reduce((o,p)=> (o[p.type]=p.value, o), {});
+      const y=+parts.year, mo=+parts.month-1, d=+parts.day, hh=+parts.hour, mm=+parts.minute;
+      const nextHour = (Math.floor(hh/2)+1)*2;
+      const carry = nextHour>=24 ? 1 : 0;
+      const h = nextHour%24;
+      const start = new Date(y,mo,d + carry,h,0,0,0);
+      return start;
+    }
+    function scheduleClockEvery2h(){
+      const startAt = nextClock2hBoundary();
+      state.rainTimeout = setTimeout(()=>{
+        startRain();
+        state.clearTimeoutId = setTimeout(()=>{
+          stopRain();
+          scheduleClockEvery2h(); // re-align to next boundary
+        }, state.rainDurationMs);
+      }, msUntil(startAt));
+    }
+
+    function scheduleRandomToday(){
+      const tz = state.tz;
+      // pick a random minute in the next 24h window
+      const startInMs = Math.floor(Math.random() * 24*60)*60*1000;
+      const startAt = new Date(Date.now() + startInMs);
+      state.rainTimeout = setTimeout(()=>{
+        startRain();
+        state.clearTimeoutId = setTimeout(()=>{
+          stopRain();
+          scheduleRandomToday();
+        }, state.rainDurationMs);
+      }, msUntil(startAt));
     }
     // Reminders & calendar tasks are stored locally using KV/readTasks/writeTasks
     function ymKey(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; }
@@ -705,7 +879,33 @@ let _bgTransitioning = false;
       state.season    = v('setSeason') ?? state.season;
       state.tz        = v('setTZ') ?? state.tz;
       state.slideOn   = document.getElementById('setSlide')?.checked ?? state.slideOn;
-      state.slideSec  = Number(v('setSlideInt') ?? state.slideSec) || state.slideSec;
+      state.slideSec = Math.max(20, Number(v('setSlideInt') ?? state.slideSec) || state.slideSec);
+      state.rainMode = (document.getElementById('setRainMode')?.value) || state.rainMode;
+      state.creditsHours = Math.max(0, Number(document.getElementById('setCredits')?.value ?? state.creditsHours) || state.creditsHours);
+      state.rainTest = !!document.getElementById('setRainTest')?.checked;
+      
+      const testWasOn = document.documentElement.dataset.rt === '1';
+      document.documentElement.dataset.rt = state.rainTest ? '1' : '0';
+      if (state.rainTest !== testWasOn) toggleTestRain();
+      
+      state.xMatchTheme = !!document.getElementById('setXMatchTheme')?.checked;
+      const picked = document.getElementById('setXColor')?.value;
+      if (picked) state.xColor = picked;
+      
+      // enable/disable the color input when matching theme
+      const xColorInput = document.getElementById('setXColor');
+      if (xColorInput) xColorInput.disabled = state.xMatchTheme;
+
+      // Guard the "off" mode behind credits (cost = 3)
+      if (state.rainMode === 'off') {
+        if (state.creditsHours < 3) {
+          toast('Not enough credits to turn rain off (need 3).');
+          state.rainMode = 'fixed-slots';
+        } else {
+          state.creditsHours -= 3;
+          toast('3 credits spent — rain disabled.');
+        }
+      }
       document.documentElement.style.setProperty('--scrim', ((document.getElementById('setDim')?.value ?? 28)/100));
       const xCol = document.getElementById('setX')?.value; if(xCol) document.documentElement.style.setProperty('--x-color', xCol);
     }
@@ -980,17 +1180,20 @@ let _bgTransitioning = false;
         // keep existing 'day' class for compatibility; add 'day-cell' to host overlay
         cell.className = 'relative p-3 h-20 glass rounded-lg select-none day day-cell';
         cell.innerHTML = `<div class="text-sm opacity-80">${day}</div>`;
+        
+        const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+        svg.setAttribute('class','day-x');
+        svg.setAttribute('viewBox','0 0 100 100');
+        svg.innerHTML = `
+          <line class="cross a" x1="15" y1="15" x2="85" y2="85"></line>
+          <line class="cross b" x1="85" y1="15" x2="15" y2="85"></line>`;
+        cell.appendChild(svg);
+        
         // set data-date as YYYY-MM-DD
         const mm = String(month+1).padStart(2,'0');
         const dd = String(day).padStart(2,'0');
         const iso = `${year}-${mm}-${dd}`;
         cell.dataset.date = iso;
-
-        // add SVG overlay for the X mark
-        const x = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        x.classList.add('day-x'); x.setAttribute('viewBox','0 0 100 100');
-        x.innerHTML = `<line x1="22" y1="22" x2="78" y2="78"/><line x1="78" y1="22" x2="22" y2="78"/>`;
-        cell.appendChild(x);
 
         // right-click toggle (draw animation + persistence)
         cell.addEventListener('contextmenu', (e)=>{
