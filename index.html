@@ -37,59 +37,65 @@
   .day-cell.cross-anim .cross.b{animation:x2 .35s .15s ease-out forwards}
   </style>
   <style>
-    /* Inactivity collapse */
-    #minimalTimer{display:none}
-    /* Rain “shock” */
-    @keyframes shake{0%,100%{transform:translate(0)}10%,30%,50%,70%,90%{transform:translate(-3px)}20%,40%,60%,80%{transform:translate(3px)}}
-    .shocked{animation:shake .45s}
-    /* Ripple pulse on click (used in rain mode) */
-    .ripple{position:relative;overflow:hidden}
-    .ripple::before{
-      content:""; position:absolute; opacity:0; pointer-events:none;
-      border:2px solid #fff; border-radius:9999px; transform:scale(0);
-      left:var(--rx); top:var(--ry); width:var(--rsize); height:var(--rsize);
-      margin-left:calc(var(--rsize) * -0.5); margin-top:calc(var(--rsize) * -0.5);
-    }
-    .ripple.pulse::before{opacity:.7;animation:rip .6s ease-out}
-    @keyframes rip{to{transform:scale(1);opacity:0}}
-    /* Auto-hide side nav */
-    #sideNav{transition:opacity .2s} #sideNav.hiddenish{opacity:0}
-    /* Night tint */
-    .night { filter: brightness(.9) contrast(1.05) }
-    .rain  { filter: brightness(.8) }
-    /* Wet effect when raining */
-    .rain .glass {
-      filter: saturate(1.1) brightness(0.95) drop-shadow(0 10px 16px rgba(0,0,0,.5));
-      border-color: rgba(255,255,255,.35);
-      background-image: url("assets/images/rain-drops-overlay.png");
-      background-size: cover;
-      background-repeat: no-repeat;
-      background-position: center center;
-      animation: none;
-    }
-    @keyframes drip {
-      0%   { background-position: center -100%; }
-      100% { background-position: center 100%; }
-    }
-    @keyframes flipY { 0%{transform:rotateY(0)} 100%{transform:rotateY(180deg)} }
-    #hourglass.flip { animation: flipY .6s ease; transform-origin:50% 50%; }
-    /* Remove border on the main timer panel, add a softer drop shadow */
-    #timerView.glass { border: 0 !important; box-shadow: 0 24px 80px rgba(0,0,0,.35); }
+  /* === WEATHER/THEME EFFECTS (Unified) === */
+  :root{
+    --primary:#4A3DF2;
+    --x-color:#ffffff;
+    --sand:#f2d16b;
+    --scrim:0.28;
+    --ui-primary-color:var(--primary);
+    --ui-sand-color:var(--sand);
+  }
 
-    /* dark form controls for Settings */
-    #settings select,
-    #settings input[type="number"],
-    #settings input[type="time"],
-    #settings input[type="text"],
-    #settings input[type="color"]{
-      background: rgba(0,0,0,.65) !important;
-      color: #fff !important;
-      border: 1px solid rgba(255,255,255,.18);
-    }
-    #settings select option{
-      background:#111; color:#fff;
-    }
-    #settings label { color: #fff; }
+  /* Global night and rain filters */
+  .night { filter: brightness(.9) contrast(1.05) }
+  .rain  { filter: brightness(.85) }
+
+  /* "Wet" glass look while raining */
+  .rain .glass {
+    filter: saturate(1.1) brightness(0.95) drop-shadow(0 10px 16px rgba(0,0,0,.5));
+    border-color: rgba(255,255,255,.35);
+    background-image: url("assets/images/rain-drops-overlay.png");
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center center;
+    animation: none;
+  }
+
+  /* Shock wobble (rain lockout click) */
+  @keyframes shake{0%,100%{transform:translate(0)}10%,30%,50%,70%,90%{transform:translate(-3px)}20%,40%,60%,80%{transform:translate(3px)}}
+  .shocked{animation:shake .45s}
+
+  /* Ripple pulse used during rain clicks */
+  .ripple{position:relative;overflow:hidden}
+  .ripple::before{
+    content:""; position:absolute; opacity:0; pointer-events:none;
+    border:2px solid #fff; border-radius:9999px; transform:scale(0);
+    left:var(--rx); top:var(--ry); width:var(--rsize); height:var(--rsize);
+    margin-left:calc(var(--rsize) * -0.5); margin-top:calc(var(--rsize) * -0.5);
+  }
+  .ripple.pulse::before{opacity:.7;animation:rip .6s ease-out}
+  @keyframes rip{to{transform:scale(1);opacity:0}}
+
+  /* Hourglass flip */
+  @keyframes flipY { 0%{transform:rotateY(0)} 100%{transform:rotateY(180deg)} }
+  #hourglass.flip { animation: flipY .6s ease; transform-origin:50% 50%; }
+
+  /* Timer panel soften */
+  #timerView.glass { border: 0 !important; box-shadow: 0 24px 80px rgba(0,0,0,.35); }
+
+  /* Settings form (dark) */
+  #settings select,
+  #settings input[type="number"],
+  #settings input[type="time"],
+  #settings input[type="text"],
+  #settings input[type="color"]{
+    background: rgba(0,0,0,.65) !important;
+    color: #fff !important;
+    border: 1px solid rgba(255,255,255,.18);
+  }
+  #settings select option{ background:#111; color:#fff; }
+  #settings label { color: #fff; }
   </style>
 
   <!-- Firebase (paste your config below in the JS where marked) -->
@@ -839,118 +845,192 @@ let _bgTransitioning = false;
       });
     }
 
-    // ===== Rain scheduler (multiple modes) =====
-    function scheduleRainCycle(){
-      // clear any previous timers
-      if(state.rainTimeout){ clearTimeout(state.rainTimeout); state.rainTimeout=null; }
-      if(state.clearTimeoutId){ clearTimeout(state.clearTimeoutId); state.clearTimeoutId=null; }
+// ===== Rain/Weather Manager (Unified) =====
+const RainManager = (() => {
+  const AUDIO = {
+    rain: $('#sfx-rain'),
+    splash: $('#sfx-splash')
+  };
 
-      if(state.rainMode === 'runtime-2h') return scheduleRuntimeEvery2h();
-      if(state.rainMode === 'clock-2h')   return scheduleClockEvery2h();
-      if(state.rainMode === 'random')     return scheduleRandomToday();
-      if(state.rainMode === 'fixed-slots')return scheduleFixedSlots();
-      // off => do nothing
-    }
+  // Fixed time slots in 24h
+  const FIXED_SLOTS = [[10,0],[12,0],[14,0],[16,0],[18,0],[20,0],[22,0],[0,0]];
 
-    function scheduleRuntimeEvery2h(){
-      state.rainTimeout = setTimeout(()=>{
-        startRain();
-        state.clearTimeoutId = setTimeout(stopRain, state.rainDurationMs);
-        state.rainTimeout = setTimeout(scheduleRuntimeEvery2h, state.rainCycleMs - state.rainDurationMs);
-      }, state.rainCycleMs);
-    }
+  // Internal timers
+  let tStart = null;     // when to start next rain
+  let tStop  = null;     // when to stop current rain
+  let tLoop  = null;     // recurring schedule pulse (runtime-2h / random)
+  let currentMode = null;
 
-    function startRain(){
-      state.weather='rain'; applyTheme(); setParticleTheme(); refreshBackground(); startRainAudio();
-      $$('.glass, button').forEach(b=> b.addEventListener('click', rainRippleOnce, {once:false}));
-    }
-    function stopRain(){
-      state.weather='clear'; applyTheme(); setParticleTheme(); refreshBackground(); stopRainAudio();
-      $$('.glass, button').forEach(b=> b.removeEventListener('click', rainRippleOnce));
-    }
-
-    function toggleTestRain(){
-      if (state.weather==='rain') {
-        state.weather='clear'; applyTheme(); setParticleTheme(); refreshBackground(); stopRainAudio();
-      } else {
-        state.weather='rain';  applyTheme(); setParticleTheme(); refreshBackground(); startRainAudio();
+  // Ripple-on-click wiring (wet buttons while raining)
+  function onRainWireClicks(enable){
+    const targets = [...$$('.glass'), ...$$('button')];
+    targets.forEach(el => {
+      if(enable){
+        el.classList.add('ripple');
+        el.addEventListener('click', rippleOnce, { passive:true });
+      }else{
+        el.classList.remove('ripple','pulse');
+        el.removeEventListener('click', rippleOnce);
       }
-    }
+    });
+  }
+  function rippleOnce(e){
+    const el = e.currentTarget;
+    const r = el.getBoundingClientRect();
+    const d = Math.max(r.width,r.height)*1.8;
+    el.style.setProperty('--rsize', d+'px');
+    el.style.setProperty('--rx', (e.clientX-r.left)+'px');
+    el.style.setProperty('--ry', (e.clientY-r.top)+'px');
+    el.classList.add('pulse');
+    setTimeout(()=> el.classList.remove('pulse'), 620);
+  }
 
-    function nowInTz(tz){ return new Date(new Intl.DateTimeFormat('en-GB',{timeZone:tz, hour12:false}).format ? Date.now() : Date.now()); }
-    // Build a Date today in tz at hh:mm
-    function dateAt(h, m, tz){
-      const now = new Date();
-      const parts = new Intl.DateTimeFormat('en-GB',{timeZone:tz,hour:'2-digit',minute:'2-digit',second:'2-digit',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(now)
-        .reduce((o,p)=> (o[p.type]=p.value, o), {});
-      const y = Number(parts.year), mo = Number(parts.month)-1, d = Number(parts.day);
-      // Create local time for that tz's wallclock, then adjust by tz offset difference
-      const targetLocal = new Date(y, mo, d, h, m, 0, 0);
-      // Compute the next occurrence in real time:
-      return targetLocal;
-    }
-    function msUntil(dt){ return Math.max(0, dt.getTime() - Date.now()); }
+  // Lockout overlay (settingsView disabled during rain, unless developer override)
+  function updateLockout(){
+    const blocker = $('#rainBlocker');
+    if(!blocker) return;
+    const shouldBlock = state.weather==='rain' && !state.rainTest; // override when developer mode
+    blocker.classList.toggle('hidden', !shouldBlock);
+  }
 
-    const FIXED_SLOTS = [ // 24h format
-      [10,0],[12,0],[14,0],[16,0],[18,0],[20,0],[22,0],[0,0]
-    ];
-    function nextFixedSlotDate(){
-      const tz = state.tz;
-      const today = new Date();
-      // build candidate dates for today
-      const cands = FIXED_SLOTS.map(([h,m])=> dateAt(h,m,tz))
-        .map(d => (d.getTime() < Date.now() ? new Date(d.getTime()+86400000) : d));
-      // earliest upcoming
-      return cands.sort((a,b)=>a-b)[0];
-    }
-    function scheduleFixedSlots(){
-      const startAt = nextFixedSlotDate();
-      state.rainTimeout = setTimeout(()=>{
-        startRain();
-        state.clearTimeoutId = setTimeout(()=>{
-          stopRain();
-          scheduleFixedSlots(); // schedule the next slot after stopping
-        }, state.rainDurationMs);
-      }, msUntil(startAt));
-    }
+  // Apply weather effects to UI
+  function applyWeather(){
+    applyTheme();                // propagates CSS vars + favicon + number color + .rain/.night classes
+    setParticleTheme();          // adjust particle system
+    if (BG_READY) refreshBackground(); // switch BG bank
+    onRainWireClicks(state.weather==='rain');
+    updateLockout();
+  }
 
-    function nextClock2hBoundary(){
-      const tz = state.tz;
-      const now = new Date();
-      const parts = new Intl.DateTimeFormat('en-GB',{timeZone:tz,hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(now)
-        .reduce((o,p)=> (o[p.type]=p.value, o), {});
-      const y=+parts.year, mo=+parts.month-1, d=+parts.day, hh=+parts.hour, mm=+parts.minute;
-      const nextHour = (Math.floor(hh/2)+1)*2;
-      const carry = nextHour>=24 ? 1 : 0;
-      const h = nextHour%24;
-      const start = new Date(y,mo,d + carry,h,0,0,0);
-      return start;
-    }
-    function scheduleClockEvery2h(){
-      const startAt = nextClock2hBoundary();
-      state.rainTimeout = setTimeout(()=>{
-        startRain();
-        state.clearTimeoutId = setTimeout(()=>{
-          stopRain();
-          scheduleClockEvery2h(); // re-align to next boundary
-        }, state.rainDurationMs);
-      }, msUntil(startAt));
-    }
+  // Audio helpers
+  function startAudio(){
+    if(AUDIO.rain){ AUDIO.rain.currentTime = 0; AUDIO.rain.play().catch(()=>{}); }
+  }
+  function stopAudio(){
+    if(AUDIO.rain){ AUDIO.rain.pause(); }
+  }
 
-    function scheduleRandomToday(){
-      const tz = state.tz;
-      // pick a random minute in the next 24h window
-      const startInMs = Math.floor(Math.random() * 24*60)*60*1000;
-      const startAt = new Date(Date.now() + startInMs);
-      state.rainTimeout = setTimeout(()=>{
-        startRain();
-        state.clearTimeoutId = setTimeout(()=>{
-          stopRain();
-          scheduleRandomToday();
-        }, state.rainDurationMs);
-      }, msUntil(startAt));
+  // Public API — start/stop rain immediately
+  function startRain(){
+    if(state.weather==='rain') return;
+    state.weather = 'rain';
+    applyWeather();
+  }
+  function stopRain(){
+    if(state.weather!=='rain') return;
+    state.weather = 'clear';
+    applyWeather();
+  }
+
+  // Utilities
+  function msUntil(date){ return Math.max(0, date.getTime() - Date.now()); }
+  function atToday(h, m){
+    const now = new Date();
+    const z   = new Intl.DateTimeFormat('en-GB',{ timeZone: state.tz, year:'numeric',month:'2-digit',day:'2-digit', hour:'2-digit',minute:'2-digit', second:'2-digit', hour12:false }).formatToParts(now)
+      .reduce((o,p)=> (o[p.type]=p.value, o), {});
+    const y=+z.year, mo=(+z.month-1), d=+z.day;
+    const t = new Date(y,mo,d,h,m,0,0);
+    if (t.getTime() <= Date.now()) t.setDate(t.getDate()+1);
+    return t;
+  }
+  function next2hBoundary(){
+    const now = new Date();
+    const parts = new Intl.DateTimeFormat('en-GB',{ timeZone: state.tz, year:'numeric',month:'2-digit',day:'2-digit', hour:'2-digit',minute:'2-digit', hour12:false }).formatToParts(now)
+      .reduce((o,p)=> (o[p.type]=p.value, o), {});
+    const y=+parts.year, mo=(+parts.month-1), d=+parts.day, hh=+parts.hour;
+    const nextHour = (Math.floor(hh/2)+1)*2;
+    const carry = nextHour>=24 ? 1 : 0;
+    const h = nextHour%24;
+    return new Date(y,mo,d+carry,h,0,0,0);
+  }
+  function nextFixedSlot(){
+    const cands = FIXED_SLOTS
+      .map(([h,m]) => atToday(h,m))
+      .map(d => (d.getTime() <= Date.now() ? new Date(d.getTime()+86400000) : d));
+    cands.sort((a,b)=>a-b);
+    return cands[0];
+  }
+
+  // Clear all timers
+  function clearTimers(){
+    [tStart,tStop,tLoop].forEach(id => { if(id){ clearTimeout(id); clearInterval(id); } });
+    tStart=tStop=tLoop=null;
+  }
+
+  // Scheduling engines
+  function scheduleFixed(){
+    clearTimers();
+    const startAt = nextFixedSlot();
+    tStart = setTimeout(()=>{
+      startRain(); startAudio();
+      tStop = setTimeout(()=> { stopRain(); stopAudio(); scheduleFixed(); }, state.rainDurationMs);
+    }, msUntil(startAt));
+  }
+  function scheduleClock2h(){
+    clearTimers();
+    const startAt = next2hBoundary();
+    tStart = setTimeout(()=>{
+      startRain(); startAudio();
+      tStop = setTimeout(()=> { stopRain(); stopAudio(); scheduleClock2h(); }, state.rainDurationMs);
+    }, msUntil(startAt));
+  }
+  function scheduleRuntime2h(){
+    clearTimers();
+    tLoop = setInterval(()=>{
+      startRain(); startAudio();
+      // stop after duration
+      setTimeout(()=> { stopRain(); stopAudio(); }, state.rainDurationMs);
+    }, state.rainCycleMs);
+    // optional: kick first one after cycle length (not immediately)
+    tStart = setTimeout(()=>{ /* first pulse happens on interval */ }, state.rainCycleMs);
+  }
+  function scheduleRandom(){
+    clearTimers();
+    const startInMs = Math.floor(Math.random() * 24*60)*60*1000; // within next 24h
+    tStart = setTimeout(()=>{
+      startRain(); startAudio();
+      tStop = setTimeout(()=> { stopRain(); stopAudio(); scheduleRandom(); }, state.rainDurationMs);
+    }, startInMs);
+  }
+
+  // Public: re-evaluate the schedule based on state.rainMode
+  function schedule(){
+    currentMode = state.rainMode;
+    clearTimers();
+
+    if(currentMode === 'off') {
+      stopRain(); stopAudio();
+      return; // no scheduling
     }
-    // Reminders & calendar tasks are stored locally using KV/readTasks/writeTasks
+    if(currentMode === 'fixed-slots') return scheduleFixed();
+    if(currentMode === 'clock-2h')    return scheduleClock2h();
+    if(currentMode === 'runtime-2h')  return scheduleRuntime2h();
+    if(currentMode === 'random')      return scheduleRandom();
+  }
+
+  // Public: developer override (checkbox)
+  function setTestOverride(on){
+    state.rainTest = !!on;
+    updateLockout();
+  }
+
+  // Wire shock effect for clicks on settings when blocked
+  (function wireShock(){
+    const blocker = $('#rainBlocker');
+    if(!blocker) return;
+    blocker.addEventListener('click', ()=>{
+      $('#settingsView').classList.add('shocked');
+      setTimeout(()=> $('#settingsView').classList.remove('shocked'), 500);
+      if(AUDIO.splash){ AUDIO.splash.currentTime=0; AUDIO.splash.play().catch(()=>{}); }
+    });
+  })();
+
+  // Expose API
+  return { startRain, stopRain, schedule, setTestOverride, applyWeather };
+})();
+// ===== End Rain/Weather Manager =====
+
+// Reminders & calendar tasks are stored locally using KV/readTasks/writeDayTasks
     function ymKey(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; }
     function ddKey(day){ return String(day).padStart(2,'0'); }
     function rainRippleOnce(e){
@@ -1000,48 +1080,54 @@ let _bgTransitioning = false;
 
     // ===== Pomodoro state machine =====
     function readSettings(){
-      // Read current form values (if present) else keep defaults
-      const v = id => document.getElementById(id)?.value;
+      const v  = id => document.getElementById(id)?.value;
       const cb = id => document.getElementById(id)?.checked;
+
+      // Timer
       state.workMin   = Number(v('setWork')  ?? state.workMin)   || state.workMin;
       state.shortMin  = Number(v('setShort') ?? state.shortMin)  || state.shortMin;
       state.longMin   = Number(v('setLong')  ?? state.longMin)   || state.longMin;
       state.longEvery = Number(v('setInterval') ?? state.longEvery) || state.longEvery;
       state.autostart = cb('setAutostart') ?? state.autostart;
-      state.season    = v('setSeason') ?? state.season;
-      state.tz        = v('setTZ') ?? state.tz;
-      state.slideOn   = document.getElementById('setSlide')?.checked ?? state.slideOn;
+
+      // Theme
+      state.season  = v('setSeason') ?? state.season;
+      state.tz      = v('setTZ') ?? state.tz;
+      state.slideOn = cb('setSlide') ?? state.slideOn;
       state.slideSec = Math.max(20, Number(v('setSlideInt') ?? state.slideSec) || state.slideSec);
-      state.rainMode = (document.getElementById('setRainMode')?.value) || state.rainMode;
-      state.creditsHours = Math.max(0, Number(document.getElementById('setCredits')?.value ?? state.creditsHours) || state.creditsHours);
-      state.rainTest = !!document.getElementById('setRainTest')?.checked;
-      
-      const testWasOn = document.documentElement.dataset.rt === '1';
-      document.documentElement.dataset.rt = state.rainTest ? '1' : '0';
-      if (state.rainTest !== testWasOn) toggleTestRain();
-      
-      state.xMatchTheme = !!document.getElementById('setXMatchTheme')?.checked;
-      const picked = document.getElementById('setXColor')?.value;
-      if (picked) state.xColor = picked;
-      
-      // enable/disable the color input when matching theme
-      const xColorInput = document.getElementById('setXColor');
-      if (xColorInput){ 
-        xColorInput.disabled = state.xMatchTheme;
-        if (!state.xMatchTheme) state.xColor = xColorInput.value;
-      }
+      document.documentElement.style.setProperty('--scrim', ((document.getElementById('setDim')?.value ?? 28)/100));
+
+      // Weather/Rain
+      const prevMode = state.rainMode;
+      state.rainMode = v('setRainMode') || state.rainMode;
+      state.creditsHours = Math.max(0, Number(v('setCredits') ?? state.creditsHours) || state.creditsHours);
 
       // Guard the "off" mode behind credits (cost = 3)
       if (state.rainMode === 'off') {
         if (state.creditsHours < 3) {
           toast('Not enough credits to turn rain off (need 3).');
-          state.rainMode = 'fixed-slots';
+          state.rainMode = prevMode;
         } else {
           state.creditsHours -= 3;
           toast('3 credits spent — rain disabled.');
         }
       }
-      document.documentElement.style.setProperty('--scrim', ((document.getElementById('setDim')?.value ?? 28)/100));
+
+      // Developer Mode (rain lockout override)
+      const testOverride = !!cb('setRainTest');
+      RainManager.setTestOverride(testOverride);
+
+      // Calendar X color
+      state.xMatchTheme = !!cb('setXMatchTheme');
+      const picked = document.getElementById('setXColor')?.value;
+      if (picked) state.xColor = picked;
+
+      // Enable/disable color input when matching theme
+      const xColorInput = document.getElementById('setXColor');
+      if (xColorInput){
+        xColorInput.disabled = state.xMatchTheme;
+        if (!state.xMatchTheme) state.xColor = xColorInput.value;
+      }
     }
     function durationFor(mode){
       if(mode==='work') return state.workMin*60;
@@ -1119,18 +1205,31 @@ let _bgTransitioning = false;
     }
 
     // ===== Settings submit =====
-    $('#settings')?.addEventListener('submit', e=>{
+    document.getElementById('settings')?.addEventListener('submit', e=>{
       e.preventDefault();
-  readSettings(); applyTheme(); refreshBackground(); stopSlideshow(); startSlideshow();
-  scheduleRainCycle();
-      
-      // Save settings to localStorage
+      readSettings();
+      applyTheme();
+      if (BG_READY) refreshBackground();
+      stopSlideshow(); startSlideshow();
+
+      // Recompute rain schedule and apply current weather visuals (if state changed)
+      RainManager.schedule();
+      RainManager.applyWeather();
+
+      // Persist user prefs
       saveSettings({
-        season: state.season, tz: state.tz, slideOn: state.slideOn, slideSec: state.slideSec,
-        rainMode: state.rainMode, creditsHours: state.creditsHours, xMatchTheme: state.xMatchTheme, xColor: state.xColor
+        season: state.season,
+        tz: state.tz,
+        slideOn: state.slideOn,
+        slideSec: state.slideSec,
+        rainMode: state.rainMode,
+        creditsHours: state.creditsHours,
+        xMatchTheme: state.xMatchTheme,
+        xColor: state.xColor
       });
-      
-      const t = $('#toast'); if(t){ t.style.opacity = '1'; setTimeout(()=> t.style.opacity='0', 1400); }
+
+      const t = $('#toast');
+      if(t){ t.style.opacity = '1'; setTimeout(()=> t.style.opacity='0', 1400); }
     });
 
     // Day/Night toggle event listener
@@ -1375,9 +1474,9 @@ let _bgTransitioning = false;
       xColor: savedSettings.xColor ?? state.xColor
     });
     
-    readSettings(); applyTheme(); try{ updateFavicon(); }catch(e){}
-    await setBackground(); // initial, non-animated set
-    startSlideshow(); renderCalendar(); scheduleRainCycle(); updateTimerUI();
+  readSettings(); applyTheme(); try{ updateFavicon(); }catch(e){}
+  await setBackground(); // initial, non-animated set
+  startSlideshow(); renderCalendar(); RainManager.schedule(); updateTimerUI();
     // kick off first refresh in background (non-blocking)
     refreshBackground().catch(()=>{});
   })();
