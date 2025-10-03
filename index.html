@@ -15,75 +15,476 @@
   <style>
   /*
     ─────────────────────────────────────────────────────────────────────
-    PASTE YOUR ORIGINAL CSS HERE (EXACTLY, FULL BLOCK) TO PRESERVE LOOK/FEEL
+    StudyFlow CSS - Full Implementation
     ─────────────────────────────────────────────────────────────────────
-    The placeholder below only provides minimal safety defaults so the HTML
-    renders. Replace it with your full original CSS to activate all visuals.
   */
 
-  :root{
+  :root {
     --scrim: 0.35;
+    --glass-bg: rgba(255, 255, 255, 0.08);
+    --glass-border: rgba(255, 255, 255, 0.12);
+    --glass-hover: rgba(255, 255, 255, 0.15);
+    --text-primary: rgb(249, 250, 251);
+    --text-secondary: rgb(156, 163, 175);
+    --accent-blue: rgb(59, 130, 246);
+    --accent-green: rgb(34, 197, 94);
+    --accent-amber: rgb(245, 158, 11);
+    --accent-red: rgb(239, 68, 68);
   }
 
+  /* Global Styles */
   html, body {
     height: 100%;
+    overflow-x: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   }
 
+  * {
+    box-sizing: border-box;
+  }
+
+  /* Background Layers & Animations */
   .bg-layer {
     position: fixed;
     inset: 0;
     background-size: cover;
     background-position: center;
+    background-repeat: no-repeat;
     z-index: 0;
+    transition: opacity 1200ms ease;
+    will-change: opacity, background-image;
   }
 
-  /* Minimal glass fallback (replace with original .glass) */
+  #bgA { opacity: 1; }
+  #bgB { opacity: 0; }
+  #rainOverlay { 
+    opacity: 0; 
+    transition: opacity 800ms ease;
+    z-index: 1;
+    background-blend-mode: multiply;
+  }
+
+  /* Scrim overlay for better text contrast */
+  #scrim {
+    background: linear-gradient(
+      135deg,
+      rgba(0, 0, 0, var(--scrim)) 0%,
+      rgba(0, 0, 0, calc(var(--scrim) * 0.8)) 50%,
+      rgba(0, 0, 0, var(--scrim)) 100%
+    );
+    backdrop-filter: brightness(0.9);
+  }
+
+  /* Glass Morphism Effect */
   .glass {
-    backdrop-filter: blur(10px) saturate(120%);
-    -webkit-backdrop-filter: blur(10px) saturate(120%);
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.12);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    box-shadow: 
+      0 8px 32px rgba(0, 0, 0, 0.37),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    transition: all 300ms ease;
   }
 
-  /* Views */
+  .glass:hover {
+    background: var(--glass-hover);
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 
+      0 12px 40px rgba(0, 0, 0, 0.45),
+      inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  }
+
+  /* Theme Variants */
+  body.night {
+    --scrim: 0.5;
+    --glass-bg: rgba(255, 255, 255, 0.06);
+    --glass-border: rgba(255, 255, 255, 0.08);
+  }
+
+  body.rain {
+    --scrim: 0.6;
+    --glass-bg: rgba(255, 255, 255, 0.12);
+    --glass-border: rgba(255, 255, 255, 0.18);
+  }
+
+  body.rain .glass {
+    backdrop-filter: blur(20px) saturate(200%);
+    -webkit-backdrop-filter: blur(20px) saturate(200%);
+  }
+
+  /* Layout & Navigation */
+  header {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    background: rgba(0, 0, 0, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  #sideNav button {
+    position: relative;
+    overflow: hidden;
+  }
+
+  #sideNav button::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 200ms ease;
+  }
+
+  #sideNav button:hover::before {
+    opacity: 1;
+  }
+
+  /* Ring highlight for active nav */
+  .ring-2 {
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.6);
+  }
+
+  /* View System */
   .view {
     display: block;
+    animation: fadeIn 400ms ease-out;
   }
 
-  /* Placeholder calendar grid */
-  #calGrid {
-    display: grid;
-    grid-template-columns: repeat(7, minmax(0, 1fr));
-    gap: .5rem;
+  .view.hidden {
+    display: none;
   }
 
-  /* Placeholder save spinner (replace with original) */
-  .btn-saving::after{
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Timer Display */
+  #countdown {
+    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+
+  /* Hourglass Animation */
+  #hourglass {
+    width: 140px;
+    height: 180px;
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
+    transition: transform 200ms ease;
+  }
+
+  #hourglass:hover {
+    transform: scale(1.05);
+  }
+
+  #sandTop, #sandBottom, #sandStream {
+    transition: all 300ms ease;
+    transform-origin: 50% 100%;
+  }
+
+  #sandStream {
+    opacity: 0;
+    animation: streamFlow 1.5s ease-in-out infinite alternate;
+  }
+
+  @keyframes streamFlow {
+    0%, 100% { 
+      transform: scaleY(0.8) translateY(0); 
+      opacity: 0.8;
+    }
+    50% { 
+      transform: scaleY(1.1) translateY(1px); 
+      opacity: 1;
+    }
+  }
+
+  /* Button States & Interactions */
+  button {
+    position: relative;
+    overflow: hidden;
+    transition: all 200ms ease;
+  }
+
+  button::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 150ms ease;
+  }
+
+  button:hover::after {
+    opacity: 1;
+  }
+
+  button:active {
+    transform: scale(0.98);
+  }
+
+  button:disabled {
+    opacity: 0.5;
+    pointer-events: none;
+    filter: grayscale(50%);
+  }
+
+  /* Save Button Loading Animation */
+  .btn-saving {
+    position: relative;
+    pointer-events: none;
+    min-width: 120px; /* Prevent layout shift during text changes */
+  }
+
+  .btn-saving::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    animation: shimmer 1.5s infinite;
+  }
+
+  .btn-saving::after {
     content: "";
     width: 1rem;
     height: 1rem;
-    border-radius: 999px;
+    border-radius: 50%;
     border: 2px solid currentColor;
     border-top-color: transparent;
     display: inline-block;
-    margin-left: .5rem;
+    margin-left: 0.5rem;
     animation: spin 0.8s linear infinite;
   }
-  @keyframes spin { to{ transform: rotate(360deg); } }
 
-  /* Fixed canvas on top of bg layers */
-  #fx { z-index: 10; }
+  /* Save button text transitions */
+  .btn-saving span {
+    transition: opacity 200ms ease;
+  }
 
-  /* Header stacking above effects */
-  header, #sideNav, main, #toastHost { position: relative; z-index: 20; }
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    50% { transform: translateX(100%); }
+    100% { transform: translateX(100%); }
+  }
 
-  /* Reminders panel scroll */
-  #remPanel { max-height: 40vh; }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
 
-  /* Hourglass svg baseline fit */
-  #hourglass { width: 140px; height: 180px; }
+  /* Calendar Grid */
+  #calGrid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
 
-  /* End of minimal fallback. Replace with your original CSS! */
+  #calGrid button {
+    aspect-ratio: 1;
+    min-height: 3rem;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: space-between;
+    padding: 0.25rem;
+    font-size: 0.875rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    transition: all 200ms ease;
+  }
+
+  #calGrid button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+  }
+
+  #calGrid button.completed {
+    background: rgba(34, 197, 94, 0.2);
+    border-color: rgba(34, 197, 94, 0.4);
+  }
+
+  #calGrid .completion-marker {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent-green);
+  }
+
+  #calGrid .completion-count {
+    background: rgba(34, 197, 94, 0.8);
+    color: white;
+    font-size: 0.625rem;
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.375rem;
+    font-weight: 600;
+  }
+
+  /* Form Controls */
+  input, select, textarea {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    transition: all 200ms ease;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  input[type="checkbox"] {
+    accent-color: var(--accent-blue);
+  }
+
+  /* Scrollbars */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    transition: background 200ms ease;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+  }
+
+  /* Toast Notifications */
+  #toastHost {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 1000;
+    pointer-events: none;
+  }
+
+  .toast {
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--glass-border);
+    border-radius: 0.75rem;
+    padding: 1rem 1.5rem;
+    margin-bottom: 0.5rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.37);
+    animation: slideInRight 300ms ease-out;
+    pointer-events: auto;
+  }
+
+  @keyframes slideInRight {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  /* Rain Mode Blocker */
+  #rainBlocker {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 30;
+  }
+
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    header {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 1rem;
+    }
+
+    #remPanel {
+      max-height: 25vh;
+    }
+
+    #sideNav {
+      position: fixed;
+      bottom: 1rem;
+      left: 50%;
+      transform: translateX(-50%);
+      flex-direction: row;
+      background: var(--glass-bg);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-border);
+      border-radius: 2rem;
+      padding: 0.5rem;
+    }
+
+    #countdown {
+      font-size: 3rem;
+    }
+
+    #hourglass {
+      width: 100px;
+      height: 130px;
+    }
+  }
+
+  /* Accessibility */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+
+    .bg-layer {
+      transition: none;
+    }
+  }
+
+  /* High contrast mode */
+  @media (prefers-contrast: high) {
+    .glass {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    button {
+      border: 2px solid rgba(255, 255, 255, 0.3);
+    }
+  }
+
+  /* Print styles */
+  @media print {
+    .bg-layer, #fx, #sideNav, audio {
+      display: none !important;
+    }
+
+    body {
+      background: white !important;
+      color: black !important;
+    }
+
+    .glass {
+      background: white !important;
+      border: 1px solid #ccc !important;
+      backdrop-filter: none !important;
+    }
+  }
   </style>
 </head>
 
@@ -92,6 +493,7 @@
 
   <div id="bgA" class="bg-layer"></div>
   <div id="bgB" class="bg-layer"></div>
+  <div id="rainOverlay" class="bg-layer" style="opacity:0; background-size:cover; background-repeat:repeat;"></div>
   <div id="scrim" class="fixed inset-0 bg-black" style="opacity:var(--scrim)"></div>
 
   <canvas id="fx" class="fixed inset-0 pointer-events-none z-10"></canvas>
@@ -332,18 +734,128 @@
         </div>
 
         <p class="md:col-span-2 text-xs text-gray-400">
-          Changes are staged until you click <strong>Save</strong>. A short spinner will appear before applying.
+          Changes are staged until you click <strong>Save</strong>. Theme changes may take a moment to load new assets smoothly.
         </p>
       </form>
     </section>
   </main>
 
-  <script type="module" src="assets/js/core.js"></script>
-
+  <script type="module" src="core.js"></script>
 
   <script>
+    // Initialize Lucide icons and navigation when DOM is ready
     window.addEventListener('DOMContentLoaded', () => {
-      if (window.lucide && lucide.createIcons) lucide.createIcons();
+      // Initialize Lucide icons
+      if (window.lucide && window.lucide.createIcons) {
+        window.lucide.createIcons();
+      }
+
+      // Wait a moment for the module to load, then initialize navigation
+      setTimeout(() => {
+        // Wire up navigation buttons
+        const goTimer = document.getElementById('goTimer');
+        const goCalendar = document.getElementById('goCalendar');
+        const goSettings = document.getElementById('goSettings');
+
+        if (goTimer) {
+          goTimer.addEventListener('click', () => {
+            if (window.showView) {
+              window.showView('timerView');
+            } else {
+              console.warn('showView function not available yet');
+            }
+          });
+        }
+
+        if (goCalendar) {
+          goCalendar.addEventListener('click', () => {
+            if (window.showView) {
+              window.showView('calendarView');
+            } else {
+              console.warn('showView function not available yet');
+            }
+          });
+        }
+
+        if (goSettings) {
+          goSettings.addEventListener('click', () => {
+            if (window.showView) {
+              window.showView('settingsView');
+            } else {
+              console.warn('showView function not available yet');
+            }
+          });
+        }
+
+        // Initialize with timer view
+        if (window.showView) {
+          window.showView('timerView');
+        } else {
+          console.warn('showView function not available - core.js may not have loaded properly');
+          // Fallback: show timer view manually
+          const views = document.querySelectorAll('.view');
+          views.forEach(view => view.classList.add('hidden'));
+          const timerView = document.getElementById('timerView');
+          if (timerView) timerView.classList.remove('hidden');
+        }
+
+        // Initialize clock display
+        function updateClock() {
+          const clock = document.getElementById('clock');
+          if (clock) {
+            const now = new Date();
+            const timeZone = window.userSettings?.general?.timeZone || 'UTC';
+            try {
+              const formatter = new Intl.DateTimeFormat('en-US', {
+                timeZone,
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+              });
+              clock.textContent = formatter.format(now);
+            } catch {
+              // Fallback to local time
+              clock.textContent = now.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+              });
+            }
+          }
+        }
+
+        // Update clock immediately and then every second
+        updateClock();
+        const clockInterval = setInterval(updateClock, 1000);
+        
+        // Ensure clock continues updating even when tab is inactive
+        // Some browsers throttle setInterval, so we add visibility change handling
+        let clockBackupInterval;
+        
+        document.addEventListener('visibilitychange', () => {
+          if (document.hidden) {
+            // Tab became inactive - add backup interval at max 60 seconds
+            clockBackupInterval = setInterval(() => {
+              if (document.hidden) updateClock();
+            }, 60000); // Max 1 minute as requested
+          } else {
+            // Tab became active - clear backup and ensure main interval works
+            if (clockBackupInterval) {
+              clearInterval(clockBackupInterval);
+              clockBackupInterval = null;
+            }
+            updateClock(); // Immediate update when tab becomes visible
+          }
+        });
+      }, 100); // Small delay to ensure module loads
+    });
+
+    // Add error handling for script loading
+    window.addEventListener('error', (event) => {
+      if (event.filename && event.filename.includes('core.js')) {
+        console.error('Failed to load core.js:', event.error);
+        console.log('Make sure core.js exists in the same directory as index.html');
+      }
     });
   </script>
 </body>

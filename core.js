@@ -2,6 +2,7 @@
  * Firebase SDK (Initialization Only)
  *********************************************************/
 import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
 // Import placeholder for database/auth until they are used
 const firebaseConfig = {
   apiKey: "AIzaSyDiY_fxXuLNSTgpPIiHTkmvSAlT-Owqkgc",
@@ -15,6 +16,7 @@ const firebaseConfig = {
 
 // Initialize Firebase app
 const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
 
 // Placeholders until Firestore/Auth are actually used
 let db = null;
@@ -134,6 +136,23 @@ function showView(viewId) {
 // Export the function in case other modules need it
 export { showView };
 
+// Make showView available globally for inline scripts
+window.showView = showView;
+
+// Log successful module loading
+console.log('✅ StudyFlow core.js loaded successfully');
+
+// Global error handler for better debugging
+window.addEventListener('error', (event) => {
+  console.error('StudyFlow Error:', event.error);
+  console.log('Error details:', {
+    message: event.message,
+    filename: event.filename,
+    lineno: event.lineno,
+    colno: event.colno
+  });
+});
+
 /*********************************************************
  * PASTE ALL NEW THEME/BACKGROUND/RAIN CODE HERE
  *********************************************************/
@@ -155,11 +174,11 @@ export { showView };
 const THEME_ASSETS = {
   rain: 9,
   summer_day: 8,
-  summer_night: 6,
-  autumn_day: 6,
-  autumn_night: 6,
-  winter_day: 6,
-  winter_night: 6
+  summer_night: 8,
+  autumn_day: 8,
+  autumn_night: 8,
+  winter_day: 8,
+  winter_night: 8
 };
 
 /**
@@ -294,6 +313,14 @@ async function updateBackground() {
       preloadList.push('assets/images/rain-drops-overlay.png', 'assets/audio/rainfall.mp3');
     }
     await preloadAssets(preloadList);
+  }
+
+  // Apply rain overlay if in rain mode
+  const rainOverlay = document.getElementById('rainOverlay');
+  if (type === 'rain' && rainOverlay) {
+    // Apply rain overlay if in rain mode\n  const rainOverlay = document.getElementById('rainOverlay');\n  if (rainOverlay) {\n    if (type === 'rain') {\n      rainOverlay.style.backgroundImage = 'url(\"assets/images/rain-drops-overlay.png\")';\n      rainOverlay.style.opacity = '0.6';\n    } else {\n      rainOverlay.style.opacity = '0';\n    }\n  }
+  } else if (rainOverlay) {
+    rainOverlay.style.opacity = '0';
   }
 
   // Decide active/inactive by computed opacity (default bgA active on first run)
@@ -508,6 +535,45 @@ function saveSettingsToTemp() {
   if (setTZ)       t.general.timeZone = setTZ.value;
 
   window.appState.tempSettings = t;
+
+  // Preload assets based on new temp settings (as per spec requirement)
+  if (window.userSettings.general?.preloadAssets) {
+    const tempTheme = t.theme || {};
+    const preloadUrls = [];
+    
+    // Preload season/time assets
+    const seasons = ['summer', 'autumn', 'winter'];
+    const times = ['day', 'night'];
+    
+    seasons.forEach(season => {
+      if (tempTheme.season === season || !tempTheme.season) {
+        times.forEach(time => {
+          if (tempTheme.timeOfDay === time || tempTheme.timeOfDay === 'auto' || !tempTheme.timeOfDay) {
+            const type = `${season}_${time}`;
+            if (THEME_ASSETS[type]) {
+              // Preload one random image of this type
+              const count = THEME_ASSETS[type];
+              const n = 1 + Math.floor(Math.random() * count);
+              preloadUrls.push(`assets/images/${season}-${time}-${n}.png`);
+            }
+          }
+        });
+      }
+    });
+    
+    // Preload rain assets if rain mode changed
+    if (tempTheme.rainMode === 'on' || tempTheme.rainMode === 'auto') {
+      const n = 1 + Math.floor(Math.random() * THEME_ASSETS.rain);
+      preloadUrls.push(`assets/images/rain-bg-${n}.png`);
+      preloadUrls.push('assets/images/rain-drops-overlay.png');
+      preloadUrls.push('assets/audio/rainfall.mp3');
+    }
+    
+    // Silent preload
+    if (preloadUrls.length > 0) {
+      preloadAssets(preloadUrls).catch(() => {}); // Silent fail
+    }
+  }
 }
 
 function clampInt(v, min, max, fallback) {
@@ -524,24 +590,131 @@ async function handleSettingsSave() {
   btn.disabled = true;
   btn.classList.add('btn-saving');
 
-  // Simulate network delay buffer
-  setTimeout(() => {
-    // Apply buffered temp settings to live settings
+  // Update button text to show what's happening
+  const btnText = btn.querySelector('span');
+  const originalText = btnText ? btnText.textContent : 'Save';
+  
+  try {
+    // Phase 1: Indicate we're checking what needs to be loaded
+    if (btnText) btnText.textContent = 'Checking...';
+    
+    // Determine what assets need to be preloaded based on temp settings
+    const tempSettings = window.appState.tempSettings;
+    const currentSettings = window.userSettings;
+    
+    const assetsToPreload = [];
+    const preloadStartTime = performance.now();
+    
+    // Check if theme-related settings changed
+    const themeChanged = (
+      tempSettings.theme?.season !== currentSettings.theme?.season ||
+      tempSettings.theme?.timeOfDay !== currentSettings.theme?.timeOfDay ||
+      tempSettings.theme?.rainMode !== currentSettings.theme?.rainMode
+    );
+    
+    if (themeChanged && tempSettings.general?.preloadAssets !== false) {
+      if (btnText) btnText.textContent = 'Loading assets...';
+      
+      // Determine the new theme type that will be active
+      const tempTheme = tempSettings.theme || {};
+      
+      // Check if we'll be in rain mode
+      let willBeRaining = false;
+      if (tempTheme.rainMode === 'on') {
+        willBeRaining = true;
+      } else if (tempTheme.rainMode === 'auto') {
+        // Check current rain schedule
+        const now = new Date();
+        const minutesSinceEpoch = Math.floor(now.getTime() / 60000);
+        const cyclePos = minutesSinceEpoch % 120;
+        willBeRaining = cyclePos < 45;
+      }
+      
+      if (willBeRaining) {
+        // Preload rain assets
+        const rainCount = THEME_ASSETS.rain || 9;
+        for (let i = 1; i <= Math.min(3, rainCount); i++) { // Preload 3 rain images
+          assetsToPreload.push(`assets/images/rain-bg-${i}.png`);
+        }
+        assetsToPreload.push('assets/images/rain-drops-overlay.png');
+        assetsToPreload.push('assets/audio/rainfall.mp3');
+      } else {
+        // Preload season/time assets
+        const season = tempTheme.season || 'summer';
+        let timeOfDay = tempTheme.timeOfDay || 'auto';
+        
+        if (timeOfDay === 'auto') {
+          // Determine current time of day
+          const tz = tempSettings.general?.timeZone || 'UTC';
+          timeOfDay = determineTimeOfDay(tz);
+        }
+        
+        const themeKey = `${season}_${timeOfDay}`;
+        const imageCount = THEME_ASSETS[themeKey] || 8;
+        
+        // Preload 2-3 images of the new theme
+        for (let i = 1; i <= Math.min(3, imageCount); i++) {
+          assetsToPreload.push(`assets/images/${season}-${timeOfDay}-${i}.png`);
+        }
+      }
+    }
+    
+    // Phase 2: Preload assets if needed
+    let preloadTime = 0;
+    if (assetsToPreload.length > 0) {
+      await preloadAssets(assetsToPreload);
+      preloadTime = performance.now() - preloadStartTime;
+      console.log(`✅ Preloaded ${assetsToPreload.length} assets in ${preloadTime.toFixed(0)}ms`);
+    }
+    
+    // Phase 3: Ensure minimum buffer time for smooth UX
+    const minBufferTime = 500; // Minimum time to show saving state
+    const elapsedTime = performance.now() - preloadStartTime;
+    const remainingTime = Math.max(0, minBufferTime - elapsedTime);
+    
+    if (btnText) btnText.textContent = 'Applying...';
+    
+    // Wait for remaining buffer time
+    if (remainingTime > 0) {
+      await new Promise(resolve => setTimeout(resolve, remainingTime));
+    }
+    
+    // Phase 4: Apply settings
     const next = deepClone(window.appState.tempSettings);
     // Overwrite userSettings in-place (preserves reference)
     for (const k of Object.keys(window.userSettings)) delete window.userSettings[k];
     Object.assign(window.userSettings, next);
-
+    
     // Persist locally
     saveSettings();
-
+    
     // Apply visuals & timer (new durations / rain mode / tz may change UI)
-    if (typeof applyTheme === 'function') applyTheme();
+    if (typeof applyTheme === 'function') await applyTheme();
     if (typeof resetTimer === 'function') resetTimer();
-
-    btn.classList.remove('btn-saving');
-    btn.disabled = false;
-  }, 700);
+    
+    // Success feedback
+    if (btnText) {
+      btnText.textContent = 'Saved!';
+      setTimeout(() => {
+        if (btnText) btnText.textContent = originalText;
+      }, 1000);
+    }
+    
+  } catch (error) {
+    console.error('Save failed:', error);
+    if (btnText) {
+      btnText.textContent = 'Error - Retry';
+      setTimeout(() => {
+        if (btnText) btnText.textContent = originalText;
+      }, 2000);
+    }
+  } finally {
+    // Always clean up the saving state
+    setTimeout(() => {
+      btn.classList.remove('btn-saving');
+      btn.disabled = false;
+    }, 500);
+  }
 }
 
 /* ---------------- Completed Days Tracking ---------------- */
