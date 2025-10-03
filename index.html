@@ -96,6 +96,29 @@
   }
   #settings select option{ background:#111; color:#fff; }
   #settings label { color: #fff; }
+  
+  /* === SAVE BUTTON BUFFER EFFECT (drop ripple spinner) === */
+  #saveBtn {
+    position: relative;
+    isolation: isolate;
+    transition: opacity .2s, filter .2s;
+  }
+  #saveBtn.saving { pointer-events: none; opacity:.8; filter:saturate(.9) }
+  #saveBtn.saving::after{
+    content:"";
+    position:absolute; inset:0;
+    display:block;
+    --sz: 36px;
+    width: var(--sz); height: var(--sz);
+    border-radius: 9999px;
+    border: 3px solid #ffffffcc;
+    border-right-color: transparent;
+    animation: spin .8s linear infinite, bob 1.2s ease-in-out infinite;
+    left: 50%; top: 50%; transform: translate(-50%,-50%);
+  }
+  #saveBtn.saving > span { opacity:0 }
+  @keyframes spin { to { transform: translate(-50%,-50%) rotate(360deg) } }
+  @keyframes bob  { 0%,100%{ box-shadow: 0 8px 0 0 #ffffff33 } 50%{ box-shadow: 0 -8px 0 0 #ffffff33 } }
   </style>
 
   <!-- Firebase (paste your config below in the JS where marked) -->
@@ -347,7 +370,9 @@
         </fieldset>
 
         <div class="text-right">
-          <button class="px-5 py-2 rounded-full bg-[color:var(--primary)] text-white">Save</button>
+          <button id="saveBtn" type="submit" class="relative px-5 py-2 rounded-full bg-[color:var(--primary)] text-white">
+            <span>Save</span>
+          </button>
         </div>
       </form>
     </section>
@@ -630,15 +655,9 @@ let _bgTransitioning = false;
     // switcher called when theme/weather/time changes
     function setParticleTheme(){
       if(state.weather==='rain'){ MODE='rain'; MAX = 240; P.length=0; return; }
-      if(state.timeOfDay==='night'){
-        MODE='fireflies';
-        MAX=60;
-        P.length=0;
-        for(let i=0;i<MAX;i++){ spawn(); }
-        return;
-      }
+      if(state.timeOfDay==='night'){ MODE='fireflies'; MAX=60; P.length=0; for(let i=0;i<MAX;i++) spawn(); return; }
       if(state.season==='winter'){ MODE='snow'; MAX = 140; P.length=0; return; }
-      MODE='leaves'; MAX = 120; P.length=0; // summer/autumn leaves
+      MODE='leaves'; MAX = 120; P.length=0;
     }
     // call whenever theme changes:
     setParticleTheme();
@@ -648,12 +667,18 @@ let _bgTransitioning = false;
       const now = new Date();
       const fmt = new Intl.DateTimeFormat('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false,timeZone:state.tz});
       $('#clock').textContent = fmt.format(now);
+
       const hour = Number(new Intl.DateTimeFormat('en-GB',{hour:'2-digit',hour12:false,timeZone:state.tz}).format(now));
       const auto = (hour>=6 && hour<18) ? 'day' : 'night';
-      const was  = state.timeOfDay;
+      const prev = state.timeOfDay;
+
       state.timeOfDay = state.manualTimeOfDay ?? auto;
-      if (state.timeOfDay !== was){
-        applyTheme(); setParticleTheme(); if (BG_READY) refreshBackground();
+
+      if (state.timeOfDay !== prev){
+        // Priority: Rain > TimeOfDay > Season
+        applyTheme();
+        setParticleTheme();
+        resetBackgroundPipeline(); // flush queue and repaint with new prefix
       }
     }
     setInterval(tickClock, 1000); tickClock();
@@ -668,7 +693,9 @@ let _bgTransitioning = false;
     cur.classList.add('show');
 
     function prefixForState(){
-      return (state.weather === 'rain') ? 'rain-bg' : `${state.season}-${state.timeOfDay}`;
+      // Priority: Rain > Time of Day > Season
+      if (state.weather === 'rain') return 'rain-bg';
+      return `${state.season}-${state.timeOfDay}`;
     }
 
     // discover max available slides (cached 24h)
@@ -709,22 +736,24 @@ let _bgTransitioning = false;
     }
 
     async function preloadItem(i){
+      // Ensure we always honor priority Rain > TimeOfDay > Season
+      const p = (state.weather==='rain') ? 'rain-bg' : currentPrefix || (await makeUrl(i), currentPrefix);
       let url;
-      if (state.weather==='rain'){
+      if (p === 'rain-bg'){
+        if (!currentPrefix || currentPrefix !== 'rain-bg'){
+          currentPrefix = 'rain-bg';
+          currentMax = await discoverMax('rain-bg');
+          queue.length = 0;
+        }
         const j = 1 + Math.floor(Math.random()*currentMax);
-        url = cdn(`assets/images/${currentPrefix}-${j}.png`) + cacheBust();
+        url = cdn(`assets/images/rain-bg-${j}.png`) + cacheBust();
       } else {
         url = await makeUrl(i);
       }
       const img = new Image();
       const t0 = performance.now();
-      img.style.display = "none";
-      img.onload = ()=> img.style.display = "";
       img.src = url;
-      try{
-        if (img.decode) await img.decode();
-        else await new Promise(r=>{img.onload=r;img.onerror=r;});
-      }catch{}
+      try{ if(img.decode) await img.decode(); else await new Promise(res=>{ img.onload=res; img.onerror=res; }); }catch{}
       const readyMs = Math.max(120, performance.now()-t0);
       decodeSamples.push(readyMs); if (decodeSamples.length>8) decodeSamples.shift();
       return { i, url, img, readyMs };
@@ -752,6 +781,16 @@ let _bgTransitioning = false;
       const css = `url("${url}")`;
       document.getElementById('bgA').style.backgroundImage = css;
       document.getElementById('bgB').style.backgroundImage = css;
+    }
+
+    /* === BACKGROUND PIPELINE RESET (ADD near background manager, global scope) === */
+    function resetBackgroundPipeline(forcePrefix = null){
+      currentPrefix = forcePrefix || null;
+      queue.length = 0;
+      slideIdx = 1;
+      if (BG_READY){
+        setBackground().then(()=> refreshBackground()).catch(()=>{});
+      }
     }
 
     function minIntervalMs(){ return Math.max(900, Math.ceil(avg(decodeSamples) + 250)); }
@@ -895,11 +934,11 @@ const RainManager = (() => {
 
   // Apply weather effects to UI
   function applyWeather(){
-    applyTheme();                // propagates CSS vars + favicon + number color + .rain/.night classes
-    setParticleTheme();          // adjust particle system
-    if (BG_READY) refreshBackground(); // switch BG bank
+    applyTheme();                // CSS vars + favicon + classes
+    setParticleTheme();          // particles priority: Rain > Night > Season
     onRainWireClicks(state.weather==='rain');
     updateLockout();
+    resetBackgroundPipeline();   // <— ensure immediate BG bank switch (flush queued non-matching images)
   }
 
   // Audio helpers
@@ -1012,6 +1051,16 @@ const RainManager = (() => {
   function setTestOverride(on){
     state.rainTest = !!on;
     updateLockout();
+    // Force weather state while testing (no lockout), revert to schedule when off
+    if(state.rainTest){
+      startRain();
+      startAudio();
+    }else{
+      stopAudio();
+      // Do not guess: re-evaluate schedule + apply resulting weather immediately
+      schedule();
+      applyWeather();
+    }
   }
 
   // Wire shock effect for clicks on settings when blocked
@@ -1204,32 +1253,174 @@ const RainManager = (() => {
       stream.style.display = (p>0 && p<1) ? 'block' : 'none';
     }
 
-    // ===== Settings submit =====
-    document.getElementById('settings')?.addEventListener('submit', e=>{
-      e.preventDefault();
-      readSettings();
-      applyTheme();
-      if (BG_READY) refreshBackground();
-      stopSlideshow(); startSlideshow();
+    // ===== Settings draft buffer (preview / save buffer) =====
+    // A lightweight draft model that stores in-memory + localStorage so users can
+    // tweak settings and preview assets before committing. It also preloads
+    // candidate background images for a snappy preview.
+    const settingsDraftKey = 'settingsDraft_v1';
+    let draft = {};
 
-      // Recompute rain schedule and apply current weather visuals (if state changed)
-      RainManager.schedule();
-      RainManager.applyWeather();
+    function draftSet(id, value){
+      draft[id] = value;
+      try{ localStorage.setItem(settingsDraftKey, JSON.stringify(draft)); }catch(e){}
+    }
+    function draftReadAll(){
+      try{
+        const raw = localStorage.getItem(settingsDraftKey);
+        if(raw) draft = JSON.parse(raw);
+      }catch(e){ draft = {}; }
+      return {...draft};
+    }
 
-      // Persist user prefs
-      saveSettings({
-        season: state.season,
-        tz: state.tz,
-        slideOn: state.slideOn,
-        slideSec: state.slideSec,
-        rainMode: state.rainMode,
-        creditsHours: state.creditsHours,
-        xMatchTheme: state.xMatchTheme,
-        xColor: state.xColor
+    // Preload a few representative images for the given draft so the background
+    // switch feels instant when previewing. Uses existing helpers makeUrl/discoverMax/preloadItem.
+    function preloadForDraft(d){
+      // Allow calling without arguments; use stored draft if omitted.
+      const used = d || draftReadAll();
+      return new Promise((resolve)=>{
+        try{
+          // compute a visual prefix from draft: rain mode -> 'rain-bg', else season-time
+          const rainMode = used['setRainMode'] ?? state.rainMode;
+          let prefix;
+          if(rainMode === 'rain' || rainMode === 'on' || rainMode === 'storm'){
+            prefix = 'rain-bg';
+          }else{
+            const season = used['setSeason'] ?? state.season;
+            // respect manual day/night preview if user toggled a dedicated input
+            const tOfDay = used['setTimeOfDay'] ?? state.timeOfDay;
+            prefix = `${season}-${tOfDay}`;
+          }
+          const max = Math.max(1, (typeof discoverMax === 'function' ? discoverMax(prefix) : 1));
+          // preload up to 4 images evenly spread across the available set
+          const samples = Math.min(4, max);
+          for(let i=0;i<samples;i++){
+            // pick an index distributed across the range
+            const idx = Math.floor((i * max) / Math.max(1, samples-1)) + 1;
+            const url = (typeof makeUrl === 'function') ? makeUrl(prefix, idx) : null;
+            if(url && typeof preloadItem === 'function') preloadItem({ id: url, url, prefix });
+          }
+        }catch(e){ /* best-effort preload */ }
+        // resolve immediately; preloads run async via browser
+        resolve();
       });
+    }
 
-      const t = $('#toast');
-      if(t){ t.style.opacity = '1'; setTimeout(()=> t.style.opacity='0', 1400); }
+    // Apply a light preview for the draft without committing persistent state.
+    // This updates theme variables and queues background preloads so the user sees
+    // an immediate preview while editing.
+    function applyDraftPreview(d){
+      try{
+        // dim / scrim preview
+        if(d['setDim'] !== undefined){
+          document.documentElement.style.setProperty('--scrim', ((Number(d['setDim'])||28)/100));
+        }
+        // x color & match-theme preview
+        if(d['setXMatchTheme'] !== undefined){
+          const match = d['setXMatchTheme'];
+          const xInput = document.getElementById('setXColor');
+          if(xInput) xInput.disabled = !!match;
+        }
+        if(d['setXColor'] !== undefined){
+          state.xColor = d['setXColor'];
+          // update any visible X marks immediately
+          document.querySelectorAll('.day-x').forEach(x => x.style.fill = state.xColor);
+        }
+        // Preload backgrounds for the draft and nudge the pipeline to refresh when ready
+        preloadForDraft(d);
+        // If background system is ready, reset pipeline so the preview takes effect quickly
+        if(typeof resetBackgroundPipeline === 'function') resetBackgroundPipeline();
+      }catch(e){}
+    }
+
+    // Commit draft values into the live state and trigger existing save / schedule flows.
+    function applyDraftToState(){
+      // Map of draft input ids -> state keys expected by saveSettings/readSettings
+      const mapping = {
+        setSeason: 'season',
+        setTZ: 'tz',
+        setSlide: 'slideOn',
+        setSlideInt: 'slideSec',
+        setRainMode: 'rainMode',
+        setCredits: 'creditsHours',
+        setXMatchTheme: 'xMatchTheme',
+        setXColor: 'xColor'
+      };
+      for(const [k,v] of Object.entries(draft)){
+        if(mapping[k]){
+          const target = mapping[k];
+          // coerce booleans/numbers where appropriate
+          if(typeof state[target] === 'number') state[target] = Number(v) || state[target];
+          else if(typeof state[target] === 'boolean') state[target] = !!v;
+          else state[target] = v;
+        }
+      }
+
+      // Re-run the rain scheduler / visuals and persist via existing saveSettings helper
+      if(typeof RainManager !== 'undefined' && RainManager && typeof RainManager.schedule === 'function') RainManager.schedule();
+      if(typeof RainManager !== 'undefined' && RainManager && typeof RainManager.applyWeather === 'function') RainManager.applyWeather();
+      if(typeof saveSettings === 'function'){
+        saveSettings({
+          season: state.season,
+          tz: state.tz,
+          slideOn: state.slideOn,
+          slideSec: state.slideSec,
+          rainMode: state.rainMode,
+          creditsHours: state.creditsHours,
+          xMatchTheme: state.xMatchTheme,
+          xColor: state.xColor
+        });
+      }
+
+      // clear the draft now that it's committed
+      try{ localStorage.removeItem(settingsDraftKey); draft = {}; }catch(e){}
+      // Force background pipeline refresh to reflect committed changes
+      if(typeof resetBackgroundPipeline === 'function') resetBackgroundPipeline(true);
+    }
+
+    // Wire a light-weight input listener on the settings form to keep the draft in sync
+    const settingsForm = document.getElementById('settings');
+    if(settingsForm){
+      // load any existing draft into memory and preview immediately
+      draftReadAll();
+      applyDraftPreview(draft);
+
+      settingsForm.addEventListener('input', e=>{
+        const t = e.target;
+        if(!t) return;
+        const id = t.id || t.name;
+        if(!id) return;
+        const val = (t.type === 'checkbox') ? t.checked : t.value;
+        draftSet(id, val);
+        // preview when inputs that affect visuals change
+        if(['setSeason','setRainMode','setDim','setXColor','setXMatchTheme','setTimeOfDay','setSlide','setSlideInt'].includes(id)){
+          applyDraftPreview(draft);
+        }
+      }, { passive: true });
+    }
+
+    // ===== Settings submit (buffered save: draft warming + spinner) =====
+    document.getElementById('settings')?.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      // 1) Read all inputs into draft (no UI change yet)
+      draftReadAll();
+
+      // 2) Disable Save + show buffer spinner for 600ms
+      const btn = document.getElementById('saveBtn');
+      if(btn){ btn.classList.add('saving'); btn.disabled = true; }
+
+      // 3) While buffering, ensure the likely images are warmed up
+      try{ await preloadForDraft(); }catch(_){}
+
+      await new Promise(r=> setTimeout(r, 600)); // 500–800ms per spec
+
+      // 4) Apply draft changes to live UI
+      applyDraftToState();
+
+      // 5) Revert Save button
+      if(btn){ btn.classList.remove('saving'); btn.disabled = false; }
+
+      // 6) Toast
+      const t = $('#toast'); if(t){ t.style.opacity='1'; setTimeout(()=> t.style.opacity='0', 1400); }
     });
 
     // Day/Night toggle event listener
@@ -1238,7 +1429,9 @@ const RainManager = (() => {
       toggle.checked = (state.timeOfDay==='night');
       toggle.onchange = ()=>{
         state.manualTimeOfDay = toggle.checked ? 'night' : 'day';
-        applyTheme(); setParticleTheme(); if (BG_READY) refreshBackground();
+        applyTheme();
+        setParticleTheme();
+        resetBackgroundPipeline();
       };
     }
 
