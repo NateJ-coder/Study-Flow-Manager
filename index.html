@@ -1,809 +1,279 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover"
-  />
-  <title>StudyFlow</title>
-
-  <script src="https://cdn.tailwindcss.com"></script>
-
-  <script src="https://unpkg.com/lucide@latest"></script>
-
-  <style>
-  /*
-    ─────────────────────────────────────────────────────────────────────
-    StudyFlow CSS - Full Implementation
-    ─────────────────────────────────────────────────────────────────────
-  */
-
-  :root {
-    --scrim: 0.35;
-    --glass-bg: rgba(255, 255, 255, 0.08);
-    --glass-border: rgba(255, 255, 255, 0.12);
-    --glass-hover: rgba(255, 255, 255, 0.15);
-    --text-primary: rgb(249, 250, 251);
-    --text-secondary: rgb(156, 163, 175);
-    --accent-blue: rgb(59, 130, 246);
-    --accent-green: rgb(34, 197, 94);
-    --accent-amber: rgb(245, 158, 11);
-    --accent-red: rgb(239, 68, 68);
-  }
-
-  /* Global Styles */
-  html, body {
-    height: 100%;
-    overflow-x: hidden;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  }
-
-  * {
-    box-sizing: border-box;
-  }
-
-  /* Background Layers & Animations */
-  .bg-layer {
-    position: fixed;
-    inset: 0;
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    z-index: 0;
-    transition: opacity 1200ms ease;
-    will-change: opacity, background-image;
-  }
-
-  #bgA { opacity: 1; }
-  #bgB { opacity: 0; }
-  #rainOverlay { 
-    opacity: 0; 
-    transition: opacity 800ms ease;
-    z-index: 1;
-    background-blend-mode: multiply;
-  }
-
-  /* Scrim overlay for better text contrast */
-  #scrim {
-    background: linear-gradient(
-      135deg,
-      rgba(0, 0, 0, var(--scrim)) 0%,
-      rgba(0, 0, 0, calc(var(--scrim) * 0.8)) 50%,
-      rgba(0, 0, 0, var(--scrim)) 100%
-    );
-    backdrop-filter: brightness(0.9);
-  }
-
-  /* Glass Morphism Effect */
-  .glass {
-    backdrop-filter: blur(16px) saturate(180%);
-    -webkit-backdrop-filter: blur(16px) saturate(180%);
-    background: var(--glass-bg);
-    border: 1px solid var(--glass-border);
-    box-shadow: 
-      0 8px 32px rgba(0, 0, 0, 0.37),
-      inset 0 1px 0 rgba(255, 255, 255, 0.1);
-    transition: all 300ms ease;
-  }
-
-  .glass:hover {
-    background: var(--glass-hover);
-    border-color: rgba(255, 255, 255, 0.2);
-    box-shadow: 
-      0 12px 40px rgba(0, 0, 0, 0.45),
-      inset 0 1px 0 rgba(255, 255, 255, 0.15);
-  }
-
-  /* Theme Variants */
-  body.night {
-    --scrim: 0.5;
-    --glass-bg: rgba(255, 255, 255, 0.06);
-    --glass-border: rgba(255, 255, 255, 0.08);
-  }
-
-  body.rain {
-    --scrim: 0.6;
-    --glass-bg: rgba(255, 255, 255, 0.12);
-    --glass-border: rgba(255, 255, 255, 0.18);
-  }
-
-  body.rain .glass {
-    backdrop-filter: blur(20px) saturate(200%);
-    -webkit-backdrop-filter: blur(20px) saturate(200%);
-  }
-
-  /* Layout & Navigation */
-  header {
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    background: rgba(0, 0, 0, 0.1);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  }
-
-  #sideNav button {
-    position: relative;
-    overflow: hidden;
-  }
-
-  #sideNav button::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(circle at center, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
-    opacity: 0;
-    transition: opacity 200ms ease;
-  }
-
-  #sideNav button:hover::before {
-    opacity: 1;
-  }
-
-  /* Ring highlight for active nav */
-  .ring-2 {
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.6);
-  }
-
-  /* View System */
-  .view {
-    display: block;
-    animation: fadeIn 400ms ease-out;
-  }
-
-  .view.hidden {
-    display: none;
-  }
-
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  /* Timer Display */
-  #countdown {
-    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5);
-    font-variant-numeric: tabular-nums;
-    letter-spacing: -0.02em;
-  }
-
-  /* Hourglass Animation */
-  #hourglass {
-    width: 140px;
-    height: 180px;
-    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
-    transition: transform 200ms ease;
-  }
-
-  #hourglass:hover {
-    transform: scale(1.05);
-  }
-
-  #sandTop, #sandBottom, #sandStream {
-    transition: all 300ms ease;
-    transform-origin: 50% 100%;
-  }
-
-  #sandStream {
-    opacity: 0;
-    animation: streamFlow 1.5s ease-in-out infinite alternate;
-  }
-
-  @keyframes streamFlow {
-    0%, 100% { 
-      transform: scaleY(0.8) translateY(0); 
-      opacity: 0.8;
-    }
-    50% { 
-      transform: scaleY(1.1) translateY(1px); 
-      opacity: 1;
-    }
-  }
-
-  /* Button States & Interactions */
-  button {
-    position: relative;
-    overflow: hidden;
-    transition: all 200ms ease;
-  }
-
-  button::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 70%);
-    opacity: 0;
-    transition: opacity 150ms ease;
-  }
-
-  button:hover::after {
-    opacity: 1;
-  }
-
-  button:active {
-    transform: scale(0.98);
-  }
-
-  button:disabled {
-    opacity: 0.5;
-    pointer-events: none;
-    filter: grayscale(50%);
-  }
-
-  /* Save Button Loading Animation */
-  .btn-saving {
-    position: relative;
-    pointer-events: none;
-    min-width: 120px; /* Prevent layout shift during text changes */
-  }
-
-  .btn-saving::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-    animation: shimmer 1.5s infinite;
-  }
-
-  .btn-saving::after {
-    content: "";
-    width: 1rem;
-    height: 1rem;
-    border-radius: 50%;
-    border: 2px solid currentColor;
-    border-top-color: transparent;
-    display: inline-block;
-    margin-left: 0.5rem;
-    animation: spin 0.8s linear infinite;
-  }
-
-  /* Save button text transitions */
-  .btn-saving span {
-    transition: opacity 200ms ease;
-  }
-
-  @keyframes shimmer {
-    0% { transform: translateX(-100%); }
-    50% { transform: translateX(100%); }
-    100% { transform: translateX(100%); }
-  }
-
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-
-  /* Calendar Grid */
-  #calGrid {
-    display: grid;
-    grid-template-columns: repeat(7, minmax(0, 1fr));
-    gap: 0.5rem;
-    margin-top: 1rem;
-  }
-
-  #calGrid button {
-    aspect-ratio: 1;
-    min-height: 3rem;
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    justify-content: space-between;
-    padding: 0.25rem;
-    font-size: 0.875rem;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(255, 255, 255, 0.05);
-    transition: all 200ms ease;
-  }
-
-  #calGrid button:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.2);
-    transform: translateY(-1px);
-  }
-
-  #calGrid button.completed {
-    background: rgba(34, 197, 94, 0.2);
-    border-color: rgba(34, 197, 94, 0.4);
-  }
-
-  #calGrid .completion-marker {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--accent-green);
-  }
-
-  #calGrid .completion-count {
-    background: rgba(34, 197, 94, 0.8);
-    color: white;
-    font-size: 0.625rem;
-    padding: 0.125rem 0.375rem;
-    border-radius: 0.375rem;
-    font-weight: 600;
-  }
-
-  /* Form Controls */
-  input, select, textarea {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: var(--text-primary);
-    transition: all 200ms ease;
-  }
-
-  input:focus, select:focus, textarea:focus {
-    outline: none;
-    background: rgba(255, 255, 255, 0.1);
-    border-color: var(--accent-blue);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-  }
-
-  input[type="checkbox"] {
-    accent-color: var(--accent-blue);
-  }
-
-  /* Scrollbars */
-  ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-
-  ::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 4px;
-  }
-
-  ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 4px;
-    transition: background 200ms ease;
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.3);
-  }
-
-  /* Toast Notifications */
-  #toastHost {
-    position: fixed;
-    top: 1rem;
-    right: 1rem;
-    z-index: 1000;
-    pointer-events: none;
-  }
-
-  .toast {
-    background: var(--glass-bg);
-    backdrop-filter: blur(16px);
-    border: 1px solid var(--glass-border);
-    border-radius: 0.75rem;
-    padding: 1rem 1.5rem;
-    margin-bottom: 0.5rem;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.37);
-    animation: slideInRight 300ms ease-out;
-    pointer-events: auto;
-  }
-
-  @keyframes slideInRight {
-    from {
-      transform: translateX(100%);
-      opacity: 0;
-    }
-    to {
-      transform: translateX(0);
-      opacity: 1;
-    }
-  }
-
-  /* Rain Mode Blocker */
-  #rainBlocker {
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 30;
-  }
-
-  /* Responsive Design */
-  @media (max-width: 768px) {
-    header {
-      flex-direction: column;
-      align-items: stretch;
-      gap: 1rem;
-    }
-
-    #remPanel {
-      max-height: 25vh;
-    }
-
-    #sideNav {
-      position: fixed;
-      bottom: 1rem;
-      left: 50%;
-      transform: translateX(-50%);
-      flex-direction: row;
-      background: var(--glass-bg);
-      backdrop-filter: blur(16px);
-      border: 1px solid var(--glass-border);
-      border-radius: 2rem;
-      padding: 0.5rem;
-    }
-
-    #countdown {
-      font-size: 3rem;
-    }
-
-    #hourglass {
-      width: 100px;
-      height: 130px;
-    }
-  }
-
-  /* Accessibility */
-  @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: 0.01ms !important;
-    }
-
-    .bg-layer {
-      transition: none;
-    }
-  }
-
-  /* High contrast mode */
-  @media (prefers-contrast: high) {
-    .glass {
-      background: rgba(255, 255, 255, 0.15);
-      border-color: rgba(255, 255, 255, 0.3);
-    }
-
-    button {
-      border: 2px solid rgba(255, 255, 255, 0.3);
-    }
-  }
-
-  /* Print styles */
-  @media print {
-    .bg-layer, #fx, #sideNav, audio {
-      display: none !important;
-    }
-
-    body {
-      background: white !important;
-      color: black !important;
-    }
-
-    .glass {
-      background: white !important;
-      border: 1px solid #ccc !important;
-      backdrop-filter: none !important;
-    }
-  }
-  </style>
-</head>
-
-<body class="min-h-screen bg-gray-900 text-gray-50 overflow-x-hidden relative">
-  <div id="toastHost" aria-live="polite"></div>
-
-  <div id="bgA" class="bg-layer"></div>
-  <div id="bgB" class="bg-layer"></div>
-  <div id="rainOverlay" class="bg-layer" style="opacity:0; background-size:cover; background-repeat:repeat;"></div>
-  <div id="scrim" class="fixed inset-0 bg-black" style="opacity:var(--scrim)"></div>
-
-  <canvas id="fx" class="fixed inset-0 pointer-events-none z-10"></canvas>
-
-  <header class="w-full sticky top-0 p-4 flex items-start justify-between gap-4">
-    <div class="flex items-center gap-3">
-      <button id="clockBtn" class="glass rounded-xl px-3 py-2 hover:bg-white/10 transition">
-        <i data-lucide="clock" class="w-5 h-5"></i>
-      </button>
-      <div id="clock" class="text-2xl font-semibold tabular-nums">00:00</div>
+<!doctype html>
+<html lang="en" data-app="StudyFlow">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>StudyFlow</title>
+
+    <!-- CSS and JS files -->
+    <link rel="stylesheet" href="style.css">
+    <!-- Backgrounds live under assets/images; audio under assets/audios; JSON under /data. -->
+    <!-- JS will later fetch: data/studyflow_config.json -->
+  </head>
+
+  <body data-page="timer" data-theme="summer" data-daynight="day" data-timezone="Africa/Johannesburg">
+    <noscript>
+      <p style="padding:1rem">StudyFlow requires JavaScript to run.</p>
+    </noscript>
+
+    <!-- ===== Global Background & Effects ===== -->
+    <div id="bg-root" aria-hidden="true">
+      <!-- Rotating/slideshow images get injected here -->
+      <div id="bg-slideshow" role="img" aria-label="Scenery background"></div>
+
+      <!-- Falling particles / snow / leaves / rain / fireflies (canvas or SVG inserted later) -->
+      <div id="particles-layer" aria-hidden="true"></div>
+
+      <!-- Optional glass/tint overlay per theme -->
+      <div id="ui-tint" aria-hidden="true"></div>
     </div>
 
-    <section id="remPanel" class="glass rounded-2xl p-4 w-full max-w-xl overflow-y-auto">
-      <div class="flex items-center justify-between mb-2">
-        <h2 class="text-sm tracking-wide uppercase text-gray-300">Reminders</h2>
-        <i data-lucide="bell" class="w-5 h-5 opacity-80"></i>
+    <!-- ===== Always-on Clock + Reminders Dropdown ===== -->
+    <header id="global-topbar" aria-label="Global clock and quick actions">
+      <div id="clock" aria-live="polite" aria-label="Current time">
+        <time id="clock-time">00:00</time>
+        <button id="clock-reminders-toggle" aria-haspopup="true" aria-controls="reminders-panel" aria-expanded="false" title="Reminders"></button>
       </div>
-      <ul id="remList" class="space-y-2 text-sm">
-        <li class="flex items-center gap-2">
-          <i data-lucide="dot" class="w-4 h-4 opacity-60"></i>
-          <span class="opacity-80">Add your first reminder in Settings → Calendar</span>
-        </li>
-      </ul>
-    </section>
-  </header>
 
-  <nav id="sideNav" class="fixed left-4 top-24 flex flex-col gap-3 z-20">
-    <button id="goTimer" class="glass rounded-xl p-3 hover:bg-white/10" title="Timer">
-      <i data-lucide="timer" class="w-5 h-5"></i>
-    </button>
-    <button id="goCalendar" class="glass rounded-xl p-3 hover:bg-white/10" title="Calendar">
-      <i data-lucide="calendar" class="w-5 h-5"></i>
-    </button>
-    <button id="goSettings" class="glass rounded-xl p-3 hover:bg-white/10" title="Settings">
-      <i data-lucide="settings" class="w-5 h-5"></i>
-    </button>
-  </nav>
+      <!-- Reminders dropdown panel (hidden by default) -->
+      <section id="reminders-panel" aria-label="Reminders" hidden>
+        <header>
+          <h2>Set Reminder</h2>
+        </header>
+        <form id="reminder-form" autocomplete="off">
+          <label>
+            Title
+            <input id="reminder-title" name="title" type="text" placeholder="e.g., Stand up & stretch" />
+          </label>
+          <label>
+            Date &amp; Time
+            <input id="reminder-datetime" name="when" type="datetime-local" />
+          </label>
+          <button id="reminder-save" type="submit">Save</button>
+        </form>
+        <div id="reminder-list" aria-live="polite"></div>
+      </section>
+    </header>
 
-  <main class="relative z-20 max-w-6xl mx-auto px-4 pb-24 pt-6">
-    <section id="timerView" class="view">
-      <div class="grid md:grid-cols-2 gap-8 items-start">
-        <div class="glass rounded-3xl p-8">
-          <h1 class="text-lg tracking-wide uppercase text-gray-300 mb-2">Pomodoro</h1>
-          <div id="countdown" class="text-7xl md:text-8xl font-bold tabular-nums leading-none mt-2">
-            25:00
+    <!-- ===== Side Navigation (contextual icons; auto-hide via CSS/JS later) ===== -->
+    <nav id="sidebar" aria-label="Page navigation">
+      <button class="nav-item" data-target="calendar" aria-label="Open Calendar" title="Calendar" id="nav-calendar"></button>
+      <button class="nav-item" data-target="settings" aria-label="Open Settings" title="Settings" id="nav-settings"></button>
+      <!-- When on non-timer pages, replace items so only the other two show. Controlled by JS later. -->
+    </nav>
+
+    <!-- ===== Rain Lockout Overlay (shown during rain unless dev override) ===== -->
+    <aside id="rain-lockout" role="dialog" aria-modal="true" aria-labelledby="rain-title" hidden>
+      <div class="lockout-card">
+        <h2 id="rain-title">It’s raining!</h2>
+        <p>Don’t touch the electronics—you will get shocked!</p>
+        <p id="rain-countdown" aria-live="polite">45:00</p>
+      </div>
+      <!-- Shock effect & cursor aura will be added via CSS/JS during lockout -->
+    </aside>
+
+    <!-- ===== Main App Views ===== -->
+    <main id="app" aria-live="polite">
+
+      <!-- === TIMER PAGE === -->
+      <section id="page-timer" role="region" aria-label="Pomodoro Timer" data-view="timer">
+        <header class="page-title">
+          <h1>StudyFlow</h1>
+        </header>
+
+        <!-- Decorative frame around timer (SVG/CSS later) -->
+        <div id="timer-frame">
+          <div id="session-indicator" aria-live="polite">
+            <span id="session-current">1</span> of <span id="session-total">4</span>
           </div>
 
-          <div class="mt-8 flex items-center gap-6">
-            <svg id="hourglass" viewBox="0 0 120 160" xmlns="http://www.w3.org/2000/svg" aria-label="Hourglass">
-              <defs>
-                <linearGradient id="glassGrad" x1="0" x2="0" y1="0" y2="1">
-                  <stop offset="0" stop-color="#ffffff" stop-opacity="0.65"/>
-                  <stop offset="1" stop-color="#ffffff" stop-opacity="0.15"/>
-                </linearGradient>
-              </defs>
-              <rect x="18" y="8" width="84" height="12" rx="6" fill="#e5e7eb" opacity=".35"/>
-              <rect x="18" y="140" width="84" height="12" rx="6" fill="#e5e7eb" opacity=".35"/>
-              <path d="M36 20h48c0 0 0 30-24 48C36 86 36 120 36 140h48c0-20 0-54-24-72C36 50 36 20 36 20z" fill="url(#glassGrad)" stroke="#ffffff22" stroke-width="1.5"/>
-              <path id="sandTop" d="M42 34h36c0 10-8 18-18 24c-10-6-18-14-18-24z" fill="#fbbf24" opacity=".9"/>
-              <rect id="sandStream" x="59" y="76" width="2" height="20" rx="1" fill="#fbbf24" />
-              <path id="sandBottom" d="M42 124c0-10 14-16 18-18c4 2 18 8 18 18H42z" fill="#fbbf24" opacity=".95"/>
-            </svg>
+          <!-- Main countdown -->
+          <div id="countdown" aria-live="assertive">
+            <span id="time-mm">45</span>:<span id="time-ss">00</span>
+          </div>
 
-            <div class="flex-1">
-              <div class="flex items-center gap-3">
-                <button id="btnStart" class="glass rounded-xl px-4 py-2 hover:bg-white/10 flex items-center gap-2">
-                  <i data-lucide="play" class="w-5 h-5"></i><span>Start</span>
-                </button>
-                <button id="btnPause" class="glass rounded-xl px-4 py-2 hover:bg-white/10 flex items-center gap-2">
-                  <i data-lucide="pause" class="w-5 h-5"></i><span>Pause</span>
-                </button>
-                <button id="btnReset" class="glass rounded-xl px-4 py-2 hover:bg-white/10 flex items-center gap-2">
-                  <i data-lucide="rotate-ccw" class="w-5 h-5"></i><span>Reset</span>
-                </button>
-              </div>
+          <!-- Hourglass container (SVG/Canvas injected later) -->
+          <div id="hourglass" aria-label="Hourglass animation" aria-hidden="false"></div>
 
-              <p class="text-xs text-gray-400 mt-3">
-                Work • Short Break • Long Break cycles will be wired up in the core script.
-              </p>
+          <!-- Timer controls -->
+          <div id="timer-controls" role="group" aria-label="Timer controls">
+            <button id="btn-start" type="button">Start</button>
+            <button id="btn-pause" type="button" disabled>Pause</button>
+            <button id="btn-reset" type="button">Reset</button>
+            <button id="btn-mode" type="button" data-mode="work" aria-label="Switch mode">Work</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- === CALENDAR PAGE === -->
+      <section id="page-calendar" role="region" aria-label="Calendar" data-view="calendar" hidden>
+        <header class="page-title">
+          <h1>Calendar</h1>
+        </header>
+
+        <!-- Month header -->
+        <div id="calendar-header" role="group" aria-label="Month navigation">
+          <button id="cal-prev" aria-label="Previous month">&larr;</button>
+          <h2 id="cal-title" aria-live="polite">Month YYYY</h2>
+          <button id="cal-next" aria-label="Next month">&rarr;</button>
+        </div>
+
+        <!-- Weekday row -->
+        <div id="calendar-weekdays" aria-hidden="true">
+          <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+        </div>
+
+        <!-- Grid -->
+        <div id="calendar-grid" role="grid" aria-label="Month grid">
+          <!-- JS will generate day cells. Right-click = draw X; left-click = task popup -->
+        </div>
+
+        <!-- Task popup for a selected day -->
+        <dialog id="calendar-task-dialog" aria-label="Tasks for selected day">
+          <form method="dialog" id="task-form" autocomplete="off">
+            <header>
+              <h3 id="task-date-label">Tasks — 2025-01-01</h3>
+            </header>
+
+            <div id="task-list" role="list"></div>
+
+            <div class="task-new">
+              <label>
+                New task
+                <input id="task-input" name="task" type="text" placeholder="Describe your task…" />
+              </label>
+              <button id="task-add" type="button">Add</button>
             </div>
-          </div>
-        </div>
 
-        <div class="glass rounded-3xl p-8">
-          <h2 class="text-lg tracking-wide uppercase text-gray-300 mb-3">Focus Notes</h2>
-          <ul class="text-sm space-y-2">
-            <li class="opacity-80">Use Settings to customize durations and auto-start.</li>
-            <li class="opacity-80">Calendar tracks completed sessions per day.</li>
-          </ul>
-        </div>
-      </div>
+            <menu>
+              <button id="task-move-incomplete" value="move">Move incomplete to next day</button>
+              <button id="task-close" value="cancel">Close</button>
+            </menu>
 
-      <audio id="sfx-splash" src="assets/audio/splash.mp3" preload="auto"></audio>
-      <audio id="sfx-drawing" src="assets/audio/drawing.mp3" preload="auto"></audio>
-      <audio id="sfx-rain" src="assets/audio/rainfall.mp3" preload="auto" loop></audio>
-    </section>
+            <!-- Encouragement message area -->
+            <p id="encouragement" aria-live="polite" hidden></p>
+          </form>
+        </dialog>
+      </section>
 
-    <section id="calendarView" class="view hidden mt-10">
-      <div class="glass rounded-3xl p-6">
-        <div class="flex items-center justify-between">
-          <button id="prevMonth" class="glass rounded-xl px-3 py-2 hover:bg-white/10">
-            <i data-lucide="chevron-left" class="w-5 h-5"></i>
-          </button>
-          <h2 id="calTitle" class="text-xl font-semibold">Month YYYY</h2>
-          <button id="nextMonth" class="glass rounded-xl px-3 py-2 hover:bg-white/10">
-            <i data-lucide="chevron-right" class="w-5 h-5"></i>
-          </button>
-        </div>
+      <!-- === SETTINGS PAGE === -->
+      <section id="page-settings" role="region" aria-label="Settings" data-view="settings" hidden>
+        <header class="page-title">
+          <h1>Settings</h1>
+        </header>
 
-        <div class="mt-4 grid grid-cols-7 text-center text-xs text-gray-300">
-          <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
-        </div>
+        <form id="settings-form" autocomplete="off">
+          <!-- Calendar -->
+          <fieldset id="settings-calendar">
+            <legend>Calendar</legend>
+            <label>
+              Cross color
+              <input id="cross-color" name="calendar_cross_color" type="color" value="#ff4d4d" />
+            </label>
+          </fieldset>
 
-        <div id="calGrid" class="mt-3">
-          <div class="aspect-square glass rounded-xl"></div>
-          <div class="aspect-square glass rounded-xl"></div>
-          <div class="aspect-square glass rounded-xl"></div>
-          <div class="aspect-square glass rounded-xl"></div>
-          <div class="aspect-square glass rounded-xl"></div>
-          <div class="aspect-square glass rounded-xl"></div>
-          <div class="aspect-square glass rounded-xl"></div>
-          </div>
-      </div>
-    </section>
+          <!-- Background & Frames -->
+          <fieldset id="settings-appearance">
+            <legend>Appearance</legend>
+            <label>
+              Background brightness
+              <input id="bg-brightness" name="background_brightness" type="range" min="0" max="100" value="100" />
+            </label>
+            <label>
+              Frame opacity
+              <input id="frame-opacity" name="frame_opacity" type="range" min="0" max="100" value="100" />
+            </label>
+          </fieldset>
 
-    <section id="settingsView" class="view hidden mt-10 relative">
-      <div id="rainBlocker" class="hidden absolute inset-0 z-30 flex items-center justify-center">
-        <div class="glass rounded-3xl p-6 text-center max-w-md">
-          <i data-lucide="cloud-rain" class="w-8 h-8 mx-auto mb-3"></i>
-          <p class="text-sm opacity-90">
-            Settings are temporarily disabled during rain mode. Try again soon.
-          </p>
-        </div>
-      </div>
+          <!-- Season & Time -->
+          <fieldset id="settings-theme">
+            <legend>Theme &amp; Time</legend>
 
-      <form id="settings" class="glass rounded-3xl p-6 grid md:grid-cols-2 gap-6">
-        <h2 class="md:col-span-2 text-xl font-semibold">Settings</h2>
+            <label>
+              Season
+              <select id="season" name="season">
+                <option value="summer">Summer</option>
+                <option value="autumn">Autumn</option>
+                <option value="winter">Winter</option>
+                <option value="rain">Rain</option>
+              </select>
+            </label>
 
-        <fieldset class="space-y-3">
-          <legend class="text-sm uppercase tracking-wide text-gray-300">Durations</legend>
-          <label class="block text-sm">
-            <span class="opacity-80">Work (minutes)</span>
-            <input id="setWork" type="number" min="1" max="180" value="25"
-                   class="mt-1 w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2" />
-          </label>
-          <label class="block text-sm">
-            <span class="opacity-80">Short Break (minutes)</span>
-            <input id="setShort" type="number" min="1" max="60" value="5"
-                   class="mt-1 w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2" />
-          </label>
-          <label class="block text-sm">
-            <span class="opacity-80">Long Break (minutes)</span>
-            <input id="setLong" type="number" min="1" max="90" value="15"
-                   class="mt-1 w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2" />
-          </label>
-          <label class="block text-sm">
-            <span class="opacity-80">Rounds per Cycle (work sessions)</span>
-            <input id="setRounds" type="number" min="1" max="12" value="4"
-                   class="mt-1 w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2" />
-          </label>
-          <label class="inline-flex items-center gap-2 mt-2 text-sm">
-            <input id="setAutostart" type="checkbox" class="rounded" />
-            <span class="opacity-80">Auto-start next session</span>
-          </label>
-        </fieldset>
+            <label>
+              Timezone
+              <select id="timezone" name="timezone">
+                <!-- Options injected from JS, default Africa/Johannesburg -->
+              </select>
+            </label>
 
-        <fieldset class="space-y-3">
-          <legend class="text-sm uppercase tracking-wide text-gray-300">Theme & Weather</legend>
+            <label>
+              Background slideshow
+              <input id="slideshow-enabled" name="slideshow_enabled" type="checkbox" checked />
+            </label>
 
-          <label class="block text-sm">
-            <span class="opacity-80">Season</span>
-            <select id="setSeason"
-                    class="mt-1 w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2">
-              <option value="summer">Summer</option>
-              <option value="autumn">Autumn</option>
-              <option value="winter">Winter</option>
-            </select>
-          </label>
+            <label>
+              Slideshow interval (seconds)
+              <input id="slideshow-interval" name="slideshow_interval_seconds" type="number" min="5" step="5" value="30" />
+            </label>
+          </fieldset>
 
-          <label class="block text-sm">
-            <span class="opacity-80">Time of Day</span>
-            <select id="setTOD"
-                    class="mt-1 w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2">
-              <option value="day">Day</option>
-              <option value="night">Night</option>
-              <option value="auto">Auto</option>
-            </select>
-          </label>
+          <!-- Pomodoro -->
+          <fieldset id="settings-pomodoro">
+            <legend>Pomodoro</legend>
 
-          <label class="block text-sm">
-            <span class="opacity-80">Rain Mode</span>
-            <select id="setRainMode"
-                    class="mt-1 w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2">
-              <option value="auto">Scheduled (Auto)</option>
-              <option value="off">Off</option>
-              <option value="on">Force On</option>
-            </select>
-          </label>
+            <label>
+              Sessions
+              <input id="pomodoro-sessions" name="pomodoro_sessions" type="number" min="1" value="4" />
+            </label>
 
-          <label class="block text-sm">
-            <span class="opacity-80">Time Zone</span>
-            <select id="setTZ"
-                    class="mt-1 w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2">
-              <option value="Africa/Johannesburg">Africa/Johannesburg</option>
-              <option value="UTC">UTC</option>
-              <option value="Europe/London">Europe/London</option>
-              <option value="America/New_York">America/New_York</option>
-              <option value="Asia/Tokyo">Asia/Tokyo</option>
-            </select>
-          </label>
+            <label>
+              Work (minutes)
+              <input id="work-minutes" name="work_minutes" type="number" min="1" value="25" />
+            </label>
 
-          <label class="inline-flex items-center gap-2 mt-2 text-sm">
-            <input id="setRainTest" type="checkbox" class="rounded" />
-            <span class="opacity-80">Developer: Override rain lockout</span>
-          </label>
-        </fieldset>
+            <label>
+              Short break (minutes)
+              <input id="short-break-minutes" name="short_break_minutes" type="number" min="1" value="5" />
+            </label>
 
-        <fieldset class="space-y-3 md:col-span-2">
-          <legend class="text-sm uppercase tracking-wide text-gray-300">Assets & Behavior</legend>
-          <label class="inline-flex items-center gap-2 text-sm">
-            <input id="setPreload" type="checkbox" class="rounded" checked />
-            <span class="opacity-80">Preload assets silently on change</span>
-          </label>
-        </fieldset>
+            <label>
+              Long break (minutes)
+              <input id="long-break-minutes" name="long_break_minutes" type="number" min="1" value="20" />
+            </label>
 
-        <div class="md:col-span-2 flex items-center justify-end gap-3 pt-2">
-          <button id="btnSettingsReset"
-                  type="button"
-                  class="rounded-xl px-4 py-2 border border-white/10 hover:bg-white/5">
-            Reset
-          </button>
-          <button id="btnSettingsSave"
-                  type="button"
-                  class="glass rounded-xl px-5 py-2 hover:bg-white/10 flex items-center gap-2">
-            <i data-lucide="save" class="w-5 h-5"></i>
-            <span>Save</span>
-          </button>
-        </div>
+            <label>
+              Short breaks before long break
+              <input id="short-breaks-before-long" name="short_breaks_before_long" type="number" min="1" value="3" />
+            </label>
+          </fieldset>
 
-        <p class="md:col-span-2 text-xs text-gray-400">
-          Changes are staged until you click <strong>Save</strong>. Theme changes may take a moment to load new assets smoothly.
-        </p>
-      </form>
-    </section>
-  </main>
+          <!-- Weather & Rain -->
+          <fieldset id="settings-weather">
+            <legend>Weather &amp; Rain</legend>
 
-  <script type="module" src="core.js"></script>
+            <label>
+              <input id="devmode-test-rain" name="developer_mode_test_rain_no_lockout" type="checkbox" />
+              Test rain (no lockout)
+            </label>
+          </fieldset>
 
-  <script>
-    // Initialize Lucide icons and clock when DOM is ready
-    window.addEventListener('DOMContentLoaded', () => {
-      // Initialize Lucide icons
-      if (window.lucide && window.lucide.createIcons) {
-        window.lucide.createIcons();
-      }
+          <menu>
+            <button id="settings-save" type="submit">Save</button>
+            <button id="settings-cancel" type="reset">Reset</button>
+          </menu>
+        </form>
+      </section>
+    </main>
 
-      // Initialize clock display
-      function updateClock() {
-        const clock = document.getElementById('clock');
-        if (clock) {
-          const now = new Date();
-          const timeZone = window.userSettings?.general?.timeZone || 'UTC';
-          try {
-            const formatter = new Intl.DateTimeFormat('en-US', {
-              timeZone,
-              hour: '2-digit',
-              minute: '2-digit',
-              hour12: false
-            });
-            clock.textContent = formatter.format(now);
-          } catch {
-            // Fallback to local time
-            clock.textContent = now.toLocaleTimeString('en-US', {
-              hour: '2-digit',
-              minute: '2-digit',
-              hour12: false
-            });
-          }
-        }
-      }
+    <!-- ===== Audio (preloaded, controlled later by JS) ===== -->
+    <audio id="audio-rain" src="assets/audios/rainfall.mp3" preload="auto" loop></audio>
+    <audio id="audio-splash" src="assets/audios/splash.mp3" preload="auto"></audio>
+    <audio id="audio-drawing" src="assets/audios/drawing.mp3" preload="auto"></audio>
 
-      // Update clock immediately and then every second
-      updateClock();
-      const clockInterval = setInterval(updateClock, 1000);
-      
-      // Ensure clock continues updating even when tab is inactive
-      let clockBackupInterval;
-      
-      document.addEventListener('visibilitychange', () => {
-        if (document.hidden) {
-          clockBackupInterval = setInterval(() => {
-            if (document.hidden) updateClock();
-          }, 60000);
-        } else {
-          if (clockBackupInterval) {
-            clearInterval(clockBackupInterval);
-            clockBackupInterval = null;
-          }
-          updateClock();
-        }
-      });
-    });
+    <!-- ===== Data sources (fetched later by JS) ===== -->
+    <!-- studyflow_config.json will be fetched from: /data/studyflow_config.json -->
 
-    // Add error handling for script loading
-    window.addEventListener('error', (event) => {
-      if (event.filename && event.filename.includes('core.js')) {
-        console.error('Failed to load core.js:', event.error);
-        console.log('Make sure core.js exists in the same directory as index.html');
-      }
-    });
-  </script>
-</body>
+    <!-- Firebase init will be added later in JS using your provided config -->
+    <script src="core.js"></script>
+  </body>
 </html>
