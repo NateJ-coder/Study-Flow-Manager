@@ -293,15 +293,8 @@
               </select>
             </label>
             <label class="toggle">
-              <input type="checkbox" id="dayNightToggle">
-              <span>Night / Day</span>
-            </label>
-            <label class="toggle">
-              <input type="checkbox" id="dayNightToggle">
-              <span>Night / Day</span>
-            </label>
-            <label class="toggle">
-              <input type="checkbox" id="dayNightToggle">
+            <label class="toggle flex items-center gap-2">
+              <input type="checkbox" id="dayNightToggle" class="h-5 w-5 accent-[color:var(--primary)]">
               <span>Night / Day</span>
             </label>
             <label>Slideshow <input id="setSlide" type="checkbox" checked class="h-5 w-5 accent-[color:var(--primary)]"></label>
@@ -429,15 +422,7 @@ function toast(msg, ms=2800){
       _remTimers.set(r.id, id);
     }
 
-    function scheduleTick(){
-      setInterval(()=>{
-        const now = Date.now();
-        for(const [id, r] of reminders){
-          if(!r.fired && now >= r.when){ r.fired = true; saveReminders(); try{ document.getElementById('sfx-splash')?.play?.(); }catch{}; toast(r.text||"⏰ Time’s up!"); if('Notification' in window && Notification.permission === 'granted'){ new Notification('Reminder', { body: r.text || 'Time!' }); } }
-        }
-      }, 15_000);
-    }
-    scheduleTick();
+    function scheduleTick(){ /* disabled to avoid duplicate reminders (use scheduleReminderTimeout path) */ }
     (async ()=>{ if ('Notification' in window && Notification.permission==='default'){ try{ await Notification.requestPermission(); }catch{} }})();
 
     // Hook up Save button (new reminders)
@@ -494,8 +479,9 @@ function toast(msg, ms=2800){
 
     // ===== State =====
     const state = {
-      season: 'summer',                 // summer | autumn | winter
-      timeOfDay: 'day',                 // day | night (auto by clock)
+  season: 'summer',                 // summer | autumn | winter
+  timeOfDay: 'day',                 // day | night (auto by clock)
+  manualTimeOfDay: null,            // null = auto by clock; 'day' or 'night' = manual
       weather: 'clear',                 // clear | rain (scheduled)
       slideIndex: 1,
       slideOn: true,
@@ -552,6 +538,7 @@ let _bgTransitioning = false;
     let lastMouse = null;
     document.addEventListener('mousemove', e=>{
       const cur = {x:e.clientX, y:e.clientY};
+      if (MODE === 'rain') { lastMouse = cur; return; } // no trail during rain
       if(lastMouse){
         const dx = cur.x - lastMouse.x, dy = cur.y - lastMouse.y;
         const steps = Math.max(1, Math.hypot(dx,dy)/10);
@@ -656,12 +643,11 @@ let _bgTransitioning = false;
       const fmt = new Intl.DateTimeFormat('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false,timeZone:state.tz});
       $('#clock').textContent = fmt.format(now);
       const hour = Number(new Intl.DateTimeFormat('en-GB',{hour:'2-digit',hour12:false,timeZone:state.tz}).format(now));
-      const was = state.timeOfDay;
-      state.timeOfDay = (hour>=6 && hour<18) ? 'day' : 'night';
+      const auto = (hour>=6 && hour<18) ? 'day' : 'night';
+      const was  = state.timeOfDay;
+      state.timeOfDay = state.manualTimeOfDay ?? auto;
       if (state.timeOfDay !== was){
-        applyTheme(); 
-        setParticleTheme();
-        if (BG_READY) refreshBackground();
+        applyTheme(); setParticleTheme(); if (BG_READY) refreshBackground();
       }
     }
     setInterval(tickClock, 1000); tickClock();
@@ -1136,6 +1122,7 @@ let _bgTransitioning = false;
     $('#settings')?.addEventListener('submit', e=>{
       e.preventDefault();
   readSettings(); applyTheme(); refreshBackground(); stopSlideshow(); startSlideshow();
+  scheduleRainCycle();
       
       // Save settings to localStorage
       saveSettings({
@@ -1147,17 +1134,14 @@ let _bgTransitioning = false;
     });
 
     // Day/Night toggle event listener
-    const toggle=document.getElementById('dayNightToggle');
-    toggle.addEventListener('change',()=>{
-      if(toggle.checked){
-        state.timeOfDay='night';
-      } else {
-        state.timeOfDay='day';
-      }
-      applyTheme();
-      setParticleTheme();
-      refreshBackground();
-    });
+    const toggle = document.getElementById('dayNightToggle');
+    if (toggle){
+      toggle.checked = (state.timeOfDay==='night');
+      toggle.onchange = ()=>{
+        state.manualTimeOfDay = toggle.checked ? 'night' : 'day';
+        applyTheme(); setParticleTheme(); if (BG_READY) refreshBackground();
+      };
+    }
 
   // ==== Reminders (simple local scheduler) ====
   const remModal = $('#remModal'), remTime = $('#remTime'), remText = $('#remText');
@@ -1241,13 +1225,23 @@ let _bgTransitioning = false;
     // scheduleReminderTimeout is defined earlier and reused
 
   // ===== Calendar =====
+  // Helper to ensure day X SVG exists
+    function ensureDayX(cell){
+      if(cell.querySelector('.day-x')) return;
+      cell.insertAdjacentHTML('beforeend',
+        `<svg class="day-x" viewBox="0 0 100 100" aria-hidden="true">
+           <line x1="20" y1="20" x2="80" y2="80"></line>
+           <line x1="80" y1="20" x2="20" y2="80"></line>
+         </svg>`);
+    }
+
   // Call this after you render each day cell:
     function wireDayCell(cell){ // cell must have data-date="YYYY-MM-DD"
+      ensureDayX(cell);
       const date = cell.dataset.date;
       // right-click toggles an X with a draw animation
-      cell.addEventListener('contextmenu', (e)=>{
+      cell.addEventListener('contextmenu', (e)=>{  
         e.preventDefault();
-        if(!date) return; // guard
         const isCrossed = crossed.has(date);
         if (isCrossed){
           crossed.delete(date);
@@ -1264,9 +1258,7 @@ let _bgTransitioning = false;
       cell.addEventListener('click', ()=> openTasks(date));
       // initialize visual
       cell.classList.toggle('crossed', crossed.has(date));
-    }
-
-    // Simple celebrate popup
+    }    // Simple celebrate popup
     const praise = [
       "All done! You crushed it! 🎉",
       "Nice! Streak maintained. 🔥",
@@ -1349,44 +1341,15 @@ let _bgTransitioning = false;
         cell.className = 'relative p-3 h-20 glass rounded-lg select-none day day-cell';
         cell.innerHTML = `<div class="text-sm opacity-80">${day}</div>`;
         
-        const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
-        svg.setAttribute('class','day-x');
-        svg.setAttribute('viewBox','0 0 100 100');
-        svg.innerHTML = `
-          <line class="cross a" x1="15" y1="15" x2="85" y2="85"></line>
-          <line class="cross b" x1="85" y1="15" x2="15" y2="85"></line>`;
-        cell.appendChild(svg);
-        
         // set data-date as YYYY-MM-DD
         const mm = String(month+1).padStart(2,'0');
         const dd = String(day).padStart(2,'0');
         const iso = `${year}-${mm}-${dd}`;
         cell.dataset.date = iso;
 
-        // right-click toggle (draw animation + persistence)
-        cell.addEventListener('contextmenu', (e)=>{
-          e.preventDefault();
-          const d = cell.dataset.date;
-          const nowCrossed = !crossed.has(d);
-          cell.classList.toggle('crossed', nowCrossed);
-          if (nowCrossed){
-            crossed.add(d);
-            cell.classList.add('cross-anim'); setTimeout(()=>cell.classList.remove('cross-anim'), 260);
-            celebrate(); // your toast
-          } else {
-            crossed.delete(d);
-          }
-          // play drawing sound
-          const draw = document.getElementById('sfx-drawing');
-          if (draw){ draw.currentTime = 0; draw.play().catch(()=>{}); }
-          persistCrossed();
-        });
-
-        // left-click opens tasks
-        cell.addEventListener('click', ()=> openTasks(iso));
-
-        // initial state
+        ensureDayX(cell);
         cell.classList.toggle('crossed', crossed.has(iso));
+        wireDayCell(cell);
 
         grid.appendChild(cell);
       }
