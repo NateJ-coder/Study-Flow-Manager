@@ -139,8 +139,22 @@ export { showView };
 // Make showView available globally for inline scripts
 window.showView = showView;
 
+// TESTING: Enable rain lockout override
+window.userSettings.dev.overrideRainLockout = true;
+
+// Development function to clear corrupted localStorage
+window.clearStudyFlowData = function() {
+  localStorage.removeItem('studyflow_settings');
+  localStorage.removeItem('studyflow_completed');
+  console.log('🧹 StudyFlow localStorage cleared. Reload the page.');
+  // Optionally reload automatically
+  // window.location.reload();
+};
+
 // Log successful module loading
 console.log('✅ StudyFlow core.js loaded successfully');
+console.log('🔧 Testing mode: Rain lockout override enabled');
+console.log('🛠️  To clear settings, run: clearStudyFlowData()');
 
 // Global error handler for better debugging
 window.addEventListener('error', (event) => {
@@ -887,6 +901,9 @@ document.addEventListener('DOMContentLoaded', () => {
   loadSettings();
   // Sync form from settings
   loadSettingsForm();
+  
+  // CRITICAL: Apply theme immediately to initialize layers cleanly
+  applyTheme();
 
   // Wire settings form to live buffer
   const settingsForm = qs('#settings');
@@ -916,6 +933,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Initial calendar render for current date
   renderCalendar(new Date());
+  
+  // Wire up navigation buttons (moved from inline script)
+  const goTimer = qs('#goTimer');
+  const goCalendar = qs('#goCalendar');
+  const goSettings = qs('#goSettings');
+
+  if (goTimer) {
+    goTimer.addEventListener('click', () => showView('timerView'));
+  }
+
+  if (goCalendar) {
+    goCalendar.addEventListener('click', () => showView('calendarView'));
+  }
+
+  if (goSettings) {
+    goSettings.addEventListener('click', () => showView('settingsView'));
+  }
+
+  // Initialize with timer view
+  showView('timerView');
 });
 
 

@@ -743,111 +743,58 @@
   <script type="module" src="core.js"></script>
 
   <script>
-    // Initialize Lucide icons and navigation when DOM is ready
+    // Initialize Lucide icons and clock when DOM is ready
     window.addEventListener('DOMContentLoaded', () => {
       // Initialize Lucide icons
       if (window.lucide && window.lucide.createIcons) {
         window.lucide.createIcons();
       }
 
-      // Wait a moment for the module to load, then initialize navigation
-      setTimeout(() => {
-        // Wire up navigation buttons
-        const goTimer = document.getElementById('goTimer');
-        const goCalendar = document.getElementById('goCalendar');
-        const goSettings = document.getElementById('goSettings');
-
-        if (goTimer) {
-          goTimer.addEventListener('click', () => {
-            if (window.showView) {
-              window.showView('timerView');
-            } else {
-              console.warn('showView function not available yet');
-            }
-          });
+      // Initialize clock display
+      function updateClock() {
+        const clock = document.getElementById('clock');
+        if (clock) {
+          const now = new Date();
+          const timeZone = window.userSettings?.general?.timeZone || 'UTC';
+          try {
+            const formatter = new Intl.DateTimeFormat('en-US', {
+              timeZone,
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: false
+            });
+            clock.textContent = formatter.format(now);
+          } catch {
+            // Fallback to local time
+            clock.textContent = now.toLocaleTimeString('en-US', {
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: false
+            });
+          }
         }
+      }
 
-        if (goCalendar) {
-          goCalendar.addEventListener('click', () => {
-            if (window.showView) {
-              window.showView('calendarView');
-            } else {
-              console.warn('showView function not available yet');
-            }
-          });
-        }
-
-        if (goSettings) {
-          goSettings.addEventListener('click', () => {
-            if (window.showView) {
-              window.showView('settingsView');
-            } else {
-              console.warn('showView function not available yet');
-            }
-          });
-        }
-
-        // Initialize with timer view
-        if (window.showView) {
-          window.showView('timerView');
+      // Update clock immediately and then every second
+      updateClock();
+      const clockInterval = setInterval(updateClock, 1000);
+      
+      // Ensure clock continues updating even when tab is inactive
+      let clockBackupInterval;
+      
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+          clockBackupInterval = setInterval(() => {
+            if (document.hidden) updateClock();
+          }, 60000);
         } else {
-          console.warn('showView function not available - core.js may not have loaded properly');
-          // Fallback: show timer view manually
-          const views = document.querySelectorAll('.view');
-          views.forEach(view => view.classList.add('hidden'));
-          const timerView = document.getElementById('timerView');
-          if (timerView) timerView.classList.remove('hidden');
-        }
-
-        // Initialize clock display
-        function updateClock() {
-          const clock = document.getElementById('clock');
-          if (clock) {
-            const now = new Date();
-            const timeZone = window.userSettings?.general?.timeZone || 'UTC';
-            try {
-              const formatter = new Intl.DateTimeFormat('en-US', {
-                timeZone,
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false
-              });
-              clock.textContent = formatter.format(now);
-            } catch {
-              // Fallback to local time
-              clock.textContent = now.toLocaleTimeString('en-US', {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false
-              });
-            }
+          if (clockBackupInterval) {
+            clearInterval(clockBackupInterval);
+            clockBackupInterval = null;
           }
+          updateClock();
         }
-
-        // Update clock immediately and then every second
-        updateClock();
-        const clockInterval = setInterval(updateClock, 1000);
-        
-        // Ensure clock continues updating even when tab is inactive
-        // Some browsers throttle setInterval, so we add visibility change handling
-        let clockBackupInterval;
-        
-        document.addEventListener('visibilitychange', () => {
-          if (document.hidden) {
-            // Tab became inactive - add backup interval at max 60 seconds
-            clockBackupInterval = setInterval(() => {
-              if (document.hidden) updateClock();
-            }, 60000); // Max 1 minute as requested
-          } else {
-            // Tab became active - clear backup and ensure main interval works
-            if (clockBackupInterval) {
-              clearInterval(clockBackupInterval);
-              clockBackupInterval = null;
-            }
-            updateClock(); // Immediate update when tab becomes visible
-          }
-        });
-      }, 100); // Small delay to ensure module loads
+      });
     });
 
     // Add error handling for script loading
