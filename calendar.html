@@ -19,6 +19,8 @@
 
   <!-- CSS and JS files -->
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/wooden-buttons.css">
+  <link rel="stylesheet" href="css/calendar-page.css">
   <!-- Backgrounds live under assets/images; audio under assets/audio; JSON under /data. -->
     <!-- JS will later fetch: data/studyflow_config.json -->
   </head>
@@ -34,6 +36,10 @@
       <div id="particles-layer" aria-hidden="true"></div>
       <div id="ui-tint" aria-hidden="true"></div>
     </div>
+
+    <!-- ===== Background Navigation Arrows ===== -->
+    <button class="bg-nav prev" aria-label="Previous background">‹</button>
+    <button class="bg-nav next" aria-label="Next background">›</button>
 
     <!-- ===== Always-on Clock + Reminders Dropdown ===== -->
     <header id="global-topbar" aria-label="Global clock and quick actions">
@@ -61,6 +67,11 @@
       </div>
     </aside>
 
+    <!-- ===== StudyFlow Title ===== -->
+    <div id="app-title" class="animate-text">
+      <span>S</span><span>t</span><span>u</span><span>d</span><span>y</span><span>F</span><span>l</span><span>o</span><span>w</span>
+    </div>
+
     <!-- ===== CALENDAR PAGE ===== -->
     <main id="app" aria-live="polite">
       <section id="page-calendar" role="region" aria-label="Calendar" data-view="calendar">
@@ -80,10 +91,12 @@
 
         <div id="calendar-grid" role="grid" aria-label="Month grid"></div>
 
-        <dialog id="calendar-task-dialog" aria-label="Tasks for selected day">
-          <form method="dialog" id="task-form" autocomplete="off">
+        <!-- Task popup - positioned next to clicked day -->
+        <div id="calendar-task-popup" class="task-popup hidden" aria-label="Tasks for selected day">
+          <form id="task-form" autocomplete="off">
             <header>
               <h3 id="task-date-label">Tasks — 2025-01-01</h3>
+              <button type="button" id="task-close" class="close-btn" aria-label="Close">&times;</button>
             </header>
 
             <div id="task-list" role="list"></div>
@@ -92,17 +105,29 @@
               <label>
                 <input id="new-task-input" name="task_text" type="text" placeholder="New task" />
               </label>
-              <button id="task-add" type="button">Add</button>
+              <button id="task-add" type="button">Add Task</button>
             </div>
 
-            <menu>
-              <button id="task-move-incomplete" value="move">Move incomplete to next day</button>
-              <button id="task-close" value="cancel">Close</button>
-            </menu>
+            <!-- Reminder Section -->
+            <div class="reminder-section">
+              <h4>Set Reminder</h4>
+              <div class="reminder-new">
+                <div class="reminder-inputs">
+                  <input id="new-reminder-text" type="text" placeholder="Reminder message" />
+                  <input id="new-reminder-time" type="time" />
+                </div>
+                <button id="reminder-add" type="button">Add Reminder</button>
+              </div>
+              <div id="reminder-list" class="reminder-list"></div>
+            </div>
+
+            <div class="task-actions">
+              <button id="task-move-incomplete" type="button">Move incomplete to next day</button>
+            </div>
 
             <p id="encouragement" aria-live="polite" hidden></p>
           </form>
-        </dialog>
+        </div>
       </section>
     </main>
 
@@ -112,6 +137,8 @@
   <audio id="audio-drawing" src="assets/audio/drawing.mp3" preload="auto"></audio>
   <audio id="audio-click" src="assets/audio/click.mp3" preload="auto"></audio>
 
+    <script src="assets/audio/splash.js"></script>
+    <script src="assets/audio/drawing.js"></script>
     <script src="js/core.js"></script>
     <script type="module" src="js/core-modern.js"></script>
   </body>

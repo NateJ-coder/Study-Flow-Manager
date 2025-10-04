@@ -18,6 +18,7 @@
 
   <!-- CSS and JS files -->
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/wooden-buttons.css">
   <!-- Backgrounds live under assets/images; audio under assets/audio; JSON under /data. -->
     <!-- JS will later fetch: data/studyflow_config.json -->
   </head>
@@ -245,13 +246,13 @@
               </div>
             </div>
             
-            <!-- 4) corner SVG buttons overlay -->
-            <div id="frame-buttons">
-              <button id="btn-start" type="button" class="frame-svg-button" aria-label="Start Pomodoro Timer" tabindex="0">
-                <span class="button-text">START</span>
+            <!-- Clean Wooden Buttons -->
+            <div class="wooden-buttons-container">
+              <button id="wooden-start-btn" class="wooden-btn" type="button" aria-label="Start Pomodoro Timer">
+                START
               </button>
-              <button id="btn-reset" type="button" class="frame-svg-button" aria-label="Reset Timer to 25 Minutes" tabindex="0">
-                <span class="button-text">RESET</span>
+              <button id="wooden-reset-btn" class="wooden-btn" type="button" aria-label="Reset Timer">
+                RESET
               </button>
             </div>
           </div>
@@ -261,6 +262,48 @@
         <button id="btn-set-reminder" type="button" class="text-button">
           Set Reminder
         </button>
+
+        <!-- Reminder Dialog -->
+        <div id="reminder-dialog" class="reminder-dialog hidden">
+          <div class="reminder-dialog-content">
+            <header>
+              <h3>Set Reminder</h3>
+              <button type="button" id="reminder-dialog-close" class="close-btn" aria-label="Close">&times;</button>
+            </header>
+            
+            <form id="reminder-form">
+              <div class="form-group">
+                <label for="reminder-name">Reminder Name:</label>
+                <input type="text" id="reminder-name" placeholder="Enter reminder message" required />
+              </div>
+              
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="reminder-date-option">Date:</label>
+                  <select id="reminder-date-option">
+                    <option value="today">Today</option>
+                    <option value="custom">Select Date</option>
+                  </select>
+                </div>
+                
+                <div class="form-group">
+                  <label for="reminder-time">Time:</label>
+                  <input type="time" id="reminder-time" required />
+                </div>
+              </div>
+              
+              <div class="form-group" id="custom-date-group" style="display: none;">
+                <label for="reminder-custom-date">Select Date:</label>
+                <input type="date" id="reminder-custom-date" />
+              </div>
+              
+              <div class="form-actions">
+                <button type="button" id="reminder-cancel">Cancel</button>
+                <button type="submit" id="reminder-submit">Set Reminder</button>
+              </div>
+            </form>
+          </div>
+        </div>
 
         <!-- Season Test Button (temporary - hide for production) -->
         <button id="btn-season" type="button" onclick="testSeasonSwitch()" aria-label="Test seasons" class="dev-only" style="position: absolute; top: 60px; right: 20px; background: rgba(0,0,0,0.5); color: var(--ui-tint-primary); border: 1px solid var(--ui-tint-primary); border-radius: 4px; padding: 8px 12px; cursor: pointer; font-size: 12px; z-index: 200;">🌻</button>

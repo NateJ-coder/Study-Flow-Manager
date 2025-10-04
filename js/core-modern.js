@@ -1,10 +1,11 @@
 // core-modern.js — modern ES6 entry point that enhances the existing core.js
 console.log("[core-modern.js] StudyFlow modern modules loading 🌀");
 
-import { swirlInTitle, startWindTrails, enableFrameAnimations } from "./animation-frame.js";
-import { initializeTimerButtons, enhanceTimerDisplay } from "./timer-module.js";
+import { startWindTrails, enableFrameAnimations } from "./animation-frame.js";
+import { initializeTimerButtons, enhanceTimerDisplay, initializeReminderDialog, initializeExistingTimerReminders } from "./timer-module.js";
 import { loadSettings, applyThemeSettings } from "./settings.js";
 import { safeInsertSVG, applySVGTheming } from "./svg-utils.js";
+import { initializeCalendar, requestNotificationPermission } from "./calendar.js";
 
 // Wait for the legacy core.js to load first, then enhance it
 document.addEventListener("DOMContentLoaded", () => {
@@ -24,15 +25,29 @@ async function initializeModernFeatures() {
     const settings = loadSettings();
     applyThemeSettings(settings);
 
-    // Initialize timer enhancements
-    initializeTimerButtons();
-    enhanceTimerDisplay();
+    // Initialize page-specific functionality
+    const currentPage = document.body.getAttribute('data-page');
+    
+    if (currentPage === 'timer') {
+      // Timer page functionality
+      initializeTimerButtons();
+      enhanceTimerDisplay();
+      initializeReminderDialog();
+      initializeExistingTimerReminders();
+      initializeWoodenButtons();
+    } else if (currentPage === 'calendar') {
+      // Calendar page functionality
+      initializeCalendar();
+      
+      // Request notification permission for reminders
+      requestNotificationPermission();
+      
+      console.log("[core-modern.js] Calendar enhanced with seasonal features and reminders");
+    }
 
-    // Load SVG buttons safely
-    await loadSafeSVGButtons(settings);
+    // SVG buttons removed - using CSS-only wooden buttons now
 
-    // Start intro animations
-    swirlInTitle();
+    // Start intro animations (character pop-up only)
     enableFrameAnimations();
     initializeTitleAnimation();
 
@@ -55,90 +70,31 @@ function initializeTitleAnimation() {
   const appTitle = document.getElementById('app-title');
   if (!appTitle) return;
 
-  const animationStyles = ['', 'style-bounce', 'style-glow'];
-  let currentStyleIndex = 0;
-
-  // Cycle through animation styles every 8 seconds
-  setInterval(() => {
-    // Remove current style class
-    animationStyles.forEach(style => {
-      if (style) appTitle.classList.remove(style);
-    });
-
-    // Add next style class
-    currentStyleIndex = (currentStyleIndex + 1) % animationStyles.length;
-    if (animationStyles[currentStyleIndex]) {
-      appTitle.classList.add(animationStyles[currentStyleIndex]);
-    }
-  }, 8000);
-
-  // Add click interaction to manually cycle animations
-  appTitle.addEventListener('click', () => {
-    animationStyles.forEach(style => {
-      if (style) appTitle.classList.remove(style);
-    });
-    
-    currentStyleIndex = (currentStyleIndex + 1) % animationStyles.length;
-    if (animationStyles[currentStyleIndex]) {
-      appTitle.classList.add(animationStyles[currentStyleIndex]);
-    }
-  });
-
-  // Add hover effect for better interactivity
-  appTitle.style.cursor = 'pointer';
-  appTitle.title = 'Click to change animation style';
+  // Animation only plays once on load - no cycling, no perpetual loop
+  console.log("[core-modern.js] StudyFlow title animation initialized - plays once only");
+  
+  // Remove cursor pointer and click handler - no more manual cycling
+  appTitle.style.cursor = 'default';
+  appTitle.title = '';
 }
 
-async function loadSafeSVGButtons(settings) {
-  try {
-    const currentSeason = settings?.season || 'summer';
-    
-    // Load and safely insert start button
-    const startResponse = await fetch('assets/images/start-button.svg');
-    if (!startResponse.ok) throw new Error(`Failed to load start button: ${startResponse.status}`);
-    
-    const startSvg = await startResponse.text();
-    const startBtn = document.getElementById('btn-start');
-    if (startBtn) {
-      const themedSvg = applySVGTheming(startSvg, currentSeason);
-      safeInsertSVG(startBtn, themedSvg);
-    }
-    
-    // Load and safely insert reset button  
-    const resetResponse = await fetch('assets/images/reset-button.svg');
-    if (!resetResponse.ok) throw new Error(`Failed to load reset button: ${resetResponse.status}`);
-    
-    const resetSvg = await resetResponse.text();
-    const resetBtn = document.getElementById('btn-reset');
-    if (resetBtn) {
-      const themedSvg = applySVGTheming(resetSvg, currentSeason);
-      safeInsertSVG(resetBtn, themedSvg);
-    }
-    
-    console.log("[core-modern.js] SVG buttons safely loaded and themed");
-  } catch (error) {
-    console.warn("[core-modern.js] Could not load SVG buttons:", error);
-    
-    // Fallback: ensure text labels are visible and properly styled
-    const startBtn = document.getElementById('btn-start');
-    const resetBtn = document.getElementById('btn-reset');
-    
-    if (startBtn) {
-      const textSpan = startBtn.querySelector('.button-text');
-      if (textSpan) {
-        textSpan.style.display = 'block';
-        textSpan.style.fontSize = 'clamp(12px, 1.5vw, 16px)';
-      }
-    }
-    
-    if (resetBtn) {
-      const textSpan = resetBtn.querySelector('.button-text');
-      if (textSpan) {
-        textSpan.style.display = 'block';
-        textSpan.style.fontSize = 'clamp(12px, 1.5vw, 16px)';
-      }
-    }
-    
-    console.log("[core-modern.js] Using text fallback for buttons");
+function initializeWoodenButtons() {
+  console.log("[core-modern.js] Initializing clean wooden buttons");
+  
+  const startBtn = document.getElementById('wooden-start-btn');
+  const resetBtn = document.getElementById('wooden-reset-btn');
+  
+  if (startBtn) {
+    startBtn.onclick = startTimer;
+    console.log("[core-modern.js] START button connected");
+  } else {
+    console.warn("[core-modern.js] START button not found");
+  }
+  
+  if (resetBtn) {
+    resetBtn.onclick = resetTimer;
+    console.log("[core-modern.js] RESET button connected");
+  } else {
+    console.warn("[core-modern.js] RESET button not found");
   }
 }

@@ -205,9 +205,9 @@ body {
 /* ===== E) App Title Positioning ===== */
 #app-title {
   position: fixed;
-  top: 30px;
+  top: 15px;
   left: 30px;
-  font-size: clamp(1.8rem, 4vw, 2.5rem);
+  font-size: clamp(16px, 2.2vw, 22px); /* Same size as clock */
   color: var(--ui-tint-primary, #dff6ff);
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
   font-weight: 600;
@@ -389,126 +389,42 @@ body {
   animation-play-state: paused !important;
 }
 
-/* ===== Frame SVG Buttons ===== */
-/* Buttons now anchor to the window */
-#frame-buttons {
-  position: absolute;
-  inset: 0;           /* fill the .frame-window */
-  pointer-events: none;
-}
+/* Clean button styles will be added here */
 
-.frame-svg-button {
-  position: absolute;
-  width: clamp(80px, 10vw, 120px);
-  height: clamp(35px, 5vw, 45px);
-  background: 
-    linear-gradient(90deg, transparent 0%, rgba(139, 69, 19, 0.3) 20%, transparent 40%, rgba(139, 69, 19, 0.3) 60%, transparent 80%, rgba(139, 69, 19, 0.3) 100%),
-    linear-gradient(145deg, #8B4513 0%, #A0522D 50%, #654321 100%);
-  border: 2px solid #5D4037;
-  border-radius: 8px;
-  box-shadow: 
-    inset 0 1px 0 rgba(255, 255, 255, 0.2),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.3),
-    0 3px 8px rgba(0, 0, 0, 0.4);
-  pointer-events: auto;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-  font-family: 'Georgia', serif;
-  font-weight: bold;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
 
-/* tweak these to taste; now relative to the window */
-#btn-start { bottom: 7%; left: 50%; transform: translate(-160%, 0); }
-#btn-reset { bottom: 7%; left: 50%; transform: translate(60%, 0); }
 
-.frame-svg-button svg {
-  width: 100%;
-  height: 100%;
-  display: block;
-  position: absolute;
-  top: 0;
-  left: 0;
-}
 
-.frame-svg-button .button-text {
-  font-size: clamp(12px, 1.5vw, 16px);
-  color: var(--button-text-color, #E8F5E8);
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
-  z-index: 1;
-  position: relative;
-}
 
-/* Hide text when SVG is successfully loaded */
-.frame-svg-button:has(svg) .button-text {
-  display: none;
-}
 
-.frame-svg-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 
-    inset 0 1px 0 rgba(255, 255, 255, 0.3),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.2),
-    0 5px 12px rgba(0, 0, 0, 0.5);
-}
 
-.frame-svg-button:active {
-  transform: translateY(0);
-  box-shadow: 
-    inset 0 2px 4px rgba(0, 0, 0, 0.3),
-    0 1px 2px rgba(0, 0, 0, 0.3);
-}
 
-/* Seasonal button text colors */
-[data-theme="summer"] .frame-svg-button .button-text {
-  --button-text-color: #4ECDC4; /* Light turquoise for summer */
-}
 
-[data-theme="autumn"] .frame-svg-button .button-text {
-  --button-text-color: #FF8C42; /* Warm orange for autumn */
-}
 
-[data-theme="winter"] .frame-svg-button .button-text {
-  --button-text-color: #74B9FF; /* Cool blue for winter */
-}
 
-[data-theme="spring"] .frame-svg-button .button-text {
-  --button-text-color: #81C784; /* Fresh green for spring */
-}
 
-[data-theme="rain"] .frame-svg-button .button-text {
-  --button-text-color: #9E9E9E; /* Muted gray for rain */
-}
 
 /* ===== Set Reminder Button ===== */
 #btn-set-reminder {
   position: fixed;
   bottom: 40px;
   left: 40px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 2px solid var(--ui-tint-primary, #dff6ff);
+  background: transparent;
+  border: none;
   color: var(--ui-tint-primary, #dff6ff);
   font-size: clamp(16px, 2.5vw, 20px);
   padding: 12px 24px;
-  border-radius: 12px;
   cursor: pointer;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
   z-index: 150;
   transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-  font-weight: 500;
+  font-weight: 600;
 }
 
 #btn-set-reminder:hover {
-  background: var(--ui-tint-primary, #dff6ff);
-  color: var(--bg-primary, #1a1a2e);
+  background: transparent;
+  color: var(--ui-tint-primary, #dff6ff);
   transform: translateY(-8px) scale(1.1);
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+  text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.9);
   animation: buttonPop 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
@@ -1022,31 +938,107 @@ body {
   }
 }
 
-/* ===== CUSTOM CURSOR ===== */
+/* ===== CUSTOM WOODEN CURSOR ===== */
 /* Hide native cursor when custom cursor is enabled */
 .has-custom-cursor * { cursor: none !important; }
 
-#custom-cursor { width: 40px; height: 40px; border-radius: 50%; position: fixed; pointer-events: none; z-index: 10001; transform: translate(-50%,-50%); display: flex; align-items: center; justify-content: center; }
+/* CSS guardrails - native cursor fallbacks only when custom cursor is NOT active */
+html:not(.has-custom-cursor) body {
+  cursor: url("assets/images/cursor-default.svg") 2 2, auto;
+}
+html:not(.has-custom-cursor) button:hover,
+html:not(.has-custom-cursor) a:hover,
+html:not(.has-custom-cursor) .frame-svg-button:hover {
+  cursor: url("assets/images/cursor-click.svg") 16 8, pointer;
+}
 
-/* Image inside the cursor (default vs click) */
-#custom-cursor img { display: block; width: 26px; height: 26px; }
+/* Custom cursor container */
+#custom-cursor { 
+  width: 32px; 
+  height: 32px; 
+  position: fixed; 
+  pointer-events: none; 
+  z-index: 10001; 
+  transform: translate(-2px, -2px); /* Offset for proper hotspot */
+  display: block;
+  transition: transform 0.1s ease;
+  background: none !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
 
-/* Press animation for the click svg - finger moves down slightly */
-.cursor-press { transform: translateY(6px) scale(0.98); transition: transform 120ms cubic-bezier(.2,.9,.3,1); }
+/* SVG cursor images */
+#custom-cursor img { 
+  display: block; 
+  width: 32px; 
+  height: 32px;
+  filter: none !important; /* Prevent theme color changes */
+}
+
+/* Cursor press animation */
+.cursor-press { 
+  transform: translate(-2px, -2px) scale(0.9); 
+  transition: transform 120ms cubic-bezier(.2,.9,.3,1); 
+}
+
+/* Ensure wooden cursors maintain consistent appearance */
+#custom-cursor img[src*="cursor-"] {
+  /* Lock the wooden cursor colors to prevent theme interference */
+  filter: none !important;
+  opacity: 1 !important;
+  mix-blend-mode: normal !important;
+}
+
+/* Override any theme-based cursor modifications */
+[data-theme] #custom-cursor img,
+[data-daynight] #custom-cursor img,
+.has-custom-cursor #custom-cursor img {
+  filter: none !important;
+  -webkit-filter: none !important;
+}
+
+/* Prevent cursor from being affected by seasonal colors or theme changes */
+#custom-cursor img[src*="assets/images/cursor"] {
+  /* Maintain wooden appearance regardless of page theme */
+  filter: none !important;
+  color: inherit !important;
+  background: none !important;
+}
 
 /* ===== SCREENSAVER (clean UI, background-first) ===== */
 /* When screensaver is active, reduce UI chrome but keep background bright */
 
 
-.screensaver-active #app,
-.screensaver-active header#global-topbar,
+/* Keep clock and StudyFlow title visible in screensaver */
 .screensaver-active #sidebar,
 .screensaver-active .page-title,
 .screensaver-active #timer-controls,
-.screensaver-active .nav-item {
+.screensaver-active .nav-item,
+.screensaver-active #btn-set-reminder {
   opacity: 0; /* hide interactive chrome */
   pointer-events: none;
   transform: translateY(6px);
+}
+
+/* Hide most of the main app but keep timer */
+.screensaver-active #app > *:not(#page-timer) {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Hide timer elements except the countdown and buttons */
+.screensaver-active #page-timer > *:not(#active-mode-timer) {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Keep header (clock) and app title visible */
+.screensaver-active header#global-topbar,
+.screensaver-active #app-title {
+  opacity: 1;
+  pointer-events: auto;
+  transform: none;
 }
 
 .screensaver-active #timer-frame {
@@ -1056,15 +1048,32 @@ body {
   opacity: 0.85;
 }
 
-/* Make the countdown smaller and place it low center to mimic the sleep image */
-.screensaver-active #countdown {
-  font-size: 28px;
-  color: rgba(255,255,255,0.95);
-  text-shadow: 0 2px 8px rgba(0,0,0,0.25);
-  position: absolute;
-  left: 50%;
-  bottom: 48px;
-  transform: translateX(-50%);
+/* Shrink and reposition the entire timer for screensaver mode */
+.screensaver-active #active-mode-timer {
+  position: fixed !important;
+  top: auto !important;
+  left: 50% !important;
+  bottom: 60px !important;
+  transform: translateX(-50%) scale(0.6) !important;
+  transform-origin: center bottom;
+  transition: all 0.8s ease-in-out;
+  z-index: 1000;
+}
+
+/* Hide frame decorations in screensaver mode */
+.screensaver-active .frame-ornate,
+.screensaver-active .frame-window,
+.screensaver-active .timer-ui .session-label,
+.screensaver-active #btn-season {
+  opacity: 0.3;
+  transition: opacity 0.8s ease;
+}
+
+/* Keep countdown and buttons visible */
+.screensaver-active .timer-ui .countdown,
+.screensaver-active .wooden-buttons-container {
+  opacity: 1;
+  transform: scale(1.2); /* Slightly larger for visibility */
 }
 
 /* Emphasize background slightly by scaling the slideshow layer */
@@ -1803,20 +1812,18 @@ body {
   pointer-events: auto;
 }
 
-/* Clock styling */
+/* Clock styling - flush with background */
 #clock {
   position: fixed;
   top: 20px;
   right: 30px;
-  font-size: 18px;
-  font-weight: 700;
+  font-size: clamp(12px, 1.8vw, 14px);
+  font-weight: 600;
   color: var(--ui-tint-primary, #dff6ff);
-  background: rgba(0, 0, 0, 0.3);
+  background: transparent;
   padding: 8px 16px;
-  border-radius: 12px;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+  border: none;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
   z-index: 1200;
   display: flex;
   align-items: center;
@@ -1824,9 +1831,7 @@ body {
 }
 
 #clock img {
-  width: 20px;
-  height: 20px;
-  filter: drop-shadow(0 0 3px rgba(0,0,0,.4));
+  display: none;
 }
 
 /* Background navigation arrows */
@@ -1939,11 +1944,11 @@ body.dev-mode .dev-only {
 
 /* ===== Enhanced Cursor Visibility ===== */
 html, body {
-  cursor: url("assets/images/cursor-default.svg") 4 4, auto;
+  cursor: url("assets/images/cursor-default.svg") 2 2, auto;
 }
 
 button:hover, a:hover, .frame-svg-button:hover {
-  cursor: url("assets/images/cursor-click.svg") 4 4, pointer;
+  cursor: url("assets/images/cursor-click.svg") 16 8, pointer;
 }
 
 /* Cursor contrast enhancement */
@@ -1956,12 +1961,13 @@ body[data-cursor-enhanced="true"] {
   transition: transform 1.2s ease-out, opacity 1.2s ease-out;
 }
 
-/* StudyFlow character animation */
+/* StudyFlow character animation - play once on load */
 #app-title.animate-text span {
   display: inline-block;
-  animation: charWave 3s ease-in-out infinite;
+  animation: charWaveOnce 2s ease-out forwards;
   animation-delay: calc(var(--char-index, 0) * 0.1s);
   transform-origin: center;
+  opacity: 0;
 }
 
 #app-title.animate-text span:nth-child(1) { --char-index: 0; }
@@ -1974,49 +1980,27 @@ body[data-cursor-enhanced="true"] {
 #app-title.animate-text span:nth-child(8) { --char-index: 7; }
 #app-title.animate-text span:nth-child(9) { --char-index: 8; }
 
-@keyframes charWave {
-  0%, 20%, 100% { 
-    transform: translateY(0) scale(1) rotateZ(0deg); 
+@keyframes charWaveOnce {
+  0% { 
+    opacity: 0;
+    transform: translateY(0) scale(1);
     color: var(--ui-tint-primary, #dff6ff);
   }
-  10% { 
-    transform: translateY(-20px) scale(1.2) rotateZ(5deg); 
+  50% { 
+    opacity: 1;
+    transform: translateY(-15px) scale(1.1);
     color: #FFD700;
-    text-shadow: 0 0 20px #FFD700, 2px 2px 4px rgba(0, 0, 0, 0.7);
+    text-shadow: 0 0 15px #FFD700, 2px 2px 4px rgba(0, 0, 0, 0.7);
   }
-}
-
-/* Alternative animation styles for different effects */
-#app-title.animate-text.style-bounce span {
-  animation: charBounce 2.5s ease-in-out infinite;
-}
-
-#app-title.animate-text.style-glow span {
-  animation: charGlow 4s ease-in-out infinite;
-}
-
-@keyframes charBounce {
-  0%, 20%, 50%, 80%, 100% { 
-    transform: translateY(0); 
-  }
-  40% { 
-    transform: translateY(-15px); 
-  }
-  60% { 
-    transform: translateY(-7px); 
-  }
-}
-
-@keyframes charGlow {
-  0%, 100% { 
+  100% { 
+    opacity: 1;
+    transform: translateY(0) scale(1);
     color: var(--ui-tint-primary, #dff6ff);
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
   }
-  50% { 
-    color: #00FFFF;
-    text-shadow: 0 0 30px #00FFFF, 0 0 40px #00FFFF, 2px 2px 4px rgba(0, 0, 0, 0.7);
-  }
 }
+
+/* Animation styles removed - using single load animation only */
 
 /* ===== Accessibility: Reduced Motion Support ===== */
 @media (prefers-reduced-motion: reduce) {
@@ -2089,5 +2073,177 @@ select:focus {
   outline: 3px solid #FFD700 !important;
   outline-offset: 3px !important;
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.8) !important;
+}
+
+/* ===== Timer Page Reminder Dialog ===== */
+.reminder-dialog {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.reminder-dialog.hidden {
+  display: none;
+}
+
+.reminder-dialog-content {
+  background: linear-gradient(145deg, #2a1810, #3d2418);
+  border: 2px solid var(--svg-wood-primary);
+  border-radius: 12px;
+  padding: 24px;
+  min-width: 400px;
+  max-width: 90vw;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  position: relative;
+}
+
+.reminder-dialog header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(184, 106, 45, 0.3);
+}
+
+.reminder-dialog h3 {
+  color: var(--svg-wood-primary);
+  font-size: 1.4em;
+  font-weight: 600;
+  margin: 0;
+}
+
+.reminder-dialog .close-btn {
+  background: none;
+  border: none;
+  color: var(--svg-wood-primary);
+  font-size: 24px;
+  cursor: pointer;
+  padding: 4px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.reminder-dialog .close-btn:hover {
+  background: rgba(184, 106, 45, 0.2);
+}
+
+.reminder-dialog .form-group {
+  margin-bottom: 16px;
+}
+
+.reminder-dialog .form-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.reminder-dialog .form-row .form-group {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.reminder-dialog label {
+  display: block;
+  color: var(--svg-leaf-primary);
+  font-weight: 500;
+  margin-bottom: 6px;
+  font-size: 0.95em;
+}
+
+.reminder-dialog input,
+.reminder-dialog select {
+  width: 100%;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(184, 106, 45, 0.4);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 14px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.reminder-dialog input:focus,
+.reminder-dialog select:focus {
+  outline: none;
+  border-color: var(--svg-wood-primary);
+  box-shadow: 0 0 0 2px rgba(184, 106, 45, 0.2);
+}
+
+.reminder-dialog input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.reminder-dialog .form-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(184, 106, 45, 0.3);
+}
+
+.reminder-dialog button {
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  font-size: 14px;
+}
+
+.reminder-dialog #reminder-cancel {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.reminder-dialog #reminder-cancel:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.reminder-dialog #reminder-submit {
+  background: linear-gradient(145deg, var(--svg-wood-primary), var(--svg-wood-secondary));
+  color: #fff;
+  border-color: var(--svg-wood-primary);
+}
+
+.reminder-dialog #reminder-submit:hover {
+  background: linear-gradient(145deg, var(--svg-wood-secondary), var(--svg-wood-tertiary));
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(184, 106, 45, 0.3);
+}
+
+/* Responsive adjustments */
+@media (max-width: 500px) {
+  .reminder-dialog-content {
+    min-width: 320px;
+    padding: 20px;
+    margin: 20px;
+  }
+  
+  .reminder-dialog .form-row {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .reminder-dialog .form-actions {
+    flex-direction: column;
+  }
 }
 

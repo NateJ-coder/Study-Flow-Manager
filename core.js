@@ -1072,25 +1072,26 @@ function ensureCustomCursor() {
   wrapper.style.position = 'fixed';
   wrapper.style.left = '0px';
   wrapper.style.top = '0px';
-  wrapper.style.width = '40px';
-  wrapper.style.height = '40px';
-  wrapper.style.borderRadius = '50%';
+  wrapper.style.width = '32px';
+  wrapper.style.height = '32px';
   wrapper.style.pointerEvents = 'none';
-  wrapper.style.zIndex = '10001';
-  wrapper.style.transform = 'translate(-50%, -50%)';
-  wrapper.style.display = 'flex';
-  wrapper.style.alignItems = 'center';
-  wrapper.style.justifyContent = 'center';
-  wrapper.style.transition = 'background-color 200ms linear, transform 80ms linear';
+  wrapper.style.zIndex = '999999';
+  wrapper.style.transform = 'translate(-2px, -2px)';
+  wrapper.style.display = 'block';
+  wrapper.style.background = 'none';
+  wrapper.style.border = 'none';
+  wrapper.style.borderRadius = '0';
+  wrapper.style.boxShadow = 'none';
 
   const img = document.createElement('img');
   img.id = 'custom-cursor-img';
   img.src = 'assets/images/cursor-default.svg';
   img.alt = '';
-  img.style.width = '26px';
-  img.style.height = '26px';
+  img.style.width = '32px';
+  img.style.height = '32px';
   img.style.pointerEvents = 'none';
   img.style.transition = 'transform 140ms ease-out, filter 200ms linear';
+  img.style.filter = 'none'; // Ensure wooden cursors don't change with themes
 
   wrapper.appendChild(img);
   document.body.appendChild(wrapper);
@@ -1099,7 +1100,7 @@ function ensureCustomCursor() {
   // Add a class to hide the native cursor while custom cursor is present
   document.documentElement.classList.add('has-custom-cursor');
 
-  // Pointer move to update cursor and spawn trail particles
+  // Pointer move to update cursor position and spawn trail particles
   window.addEventListener('pointermove', (e) => {
     if (!STATE.customCursor) return;
     STATE.customCursor.style.left = `${e.clientX}px`;
@@ -1132,36 +1133,79 @@ function ensureCustomCursor() {
     const imgEl = document.getElementById('custom-cursor-img');
     if (!imgEl) return;
 
-    // brief delay to allow click animation to show
+    // Remove press state
+    imgEl.classList.remove('cursor-press');
+
+    // brief delay to allow click animation to show, then check what's under cursor
     setTimeout(() => {
-      imgEl.src = 'assets/images/cursor-default.svg';
+      const elementUnderCursor = document.elementFromPoint(e.clientX, e.clientY);
+      const isHoverable = elementUnderCursor && (
+        elementUnderCursor.matches('button, a, input, select, textarea, [onclick], [role="button"], .clickable, .calendar-day, .wooden-btn, .task-delete, .reminder-delete') ||
+        elementUnderCursor.closest('button, a, input, select, textarea, [onclick], [role="button"], .clickable, .calendar-day, .wooden-btn, .task-delete, .reminder-delete')
+      );
+      
+      imgEl.src = isHoverable ? 'assets/images/cursor-click.svg' : 'assets/images/cursor-default.svg';
     }, 110);
+  }, { passive: true });
+
+  // Treat these as interactive for "hover intent"
+  function isInteractive(el) {
+    return !!el && el.closest?.(
+      [
+        // native interactive
+        'button','a','[role="button"]','input','select','textarea','label',
+        // app-specific
+        '.nav-item','.frame-svg-button','.wooden-btn','.task-delete','.task-checkbox',
+        '.calendar-day' // created by calendar.js render
+      ].join(',')
+    );
+  }
+
+  const hoverImg = document.getElementById('custom-cursor-img');
+
+  // Change wooden cursor image on hover enter/leave
+  window.addEventListener('pointerover', (e) => {
+    if (!hoverImg) return;
+    if (isInteractive(e.target)) {
+      hoverImg.src = 'assets/images/cursor-click.svg';
+      hoverImg.style.transform = 'scale(1.02)';
+    }
+  }, { passive: true });
+
+  window.addEventListener('pointerout', (e) => {
+    if (!hoverImg) return;
+    if (isInteractive(e.target)) {
+      hoverImg.src = 'assets/images/cursor-default.svg';
+      hoverImg.style.transform = '';
+    }
   }, { passive: true });
 }
 
 function applyCursorTintForParticleType(particleType) {
-  if (!STATE.customCursor) return;
-  const wrapper = STATE.customCursor;
-  const imgEl = document.getElementById('custom-cursor-img');
+  // Keeping the wooden cursor clean and theme-independent
+  // No seasonal tinting or background effects applied
+  return;
+}
 
-  // Season tinting sets the wrapper background and image filter for contrast
-  if (particleType.includes('green')) {
-    wrapper.style.backgroundColor = 'rgba(124,207,107,0.18)';
-    wrapper.style.boxShadow = '0 0 8px rgba(124,207,107,0.25)';
-    if (imgEl) imgEl.style.filter = 'brightness(1) saturate(1.05)';
-  } else if (particleType.includes('burnt') || particleType.includes('brown') || particleType.includes('orange')) {
-    wrapper.style.backgroundColor = 'rgba(196,106,43,0.18)';
-    wrapper.style.boxShadow = '0 0 8px rgba(196,106,43,0.22)';
-    if (imgEl) imgEl.style.filter = 'brightness(0.98) saturate(0.9)';
-  } else if (particleType === 'snowflakes') {
-    wrapper.style.backgroundColor = 'rgba(255,255,255,0.18)';
-    wrapper.style.boxShadow = '0 0 10px rgba(255,255,255,0.45)';
-    if (imgEl) imgEl.style.filter = 'brightness(1.2) contrast(1.05)';
-  } else {
-    // default
-    wrapper.style.backgroundColor = 'rgba(255,255,255,0.12)';
-    wrapper.style.boxShadow = 'none';
-    if (imgEl) imgEl.style.filter = 'none';
+function attachCustomCursorTo(container) {
+  ensureCustomCursor();
+  const node = STATE.customCursor;
+  if (node && container && !container.contains(node)) {
+    container.appendChild(node);
+    node.style.position = 'fixed';
+    node.style.pointerEvents = 'none';
+    node.style.zIndex = '2147483646'; // ensure it's above dialog contents
+  }
+}
+
+function detachCustomCursorToBody() {
+  ensureCustomCursor();
+  const node = STATE.customCursor;
+  if (node && document.body && !document.body.contains(node)) {
+    document.body.appendChild(node);
+    node.style.position = 'fixed';
+    node.style.pointerEvents = 'none';
+    node.style.zIndex = '10001';
   }
 }
 
@@ -3508,4 +3552,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // initial render using STATE, falls back to today
     renderCalendar(STATE.currentMonth, STATE.currentYear);
   }
+
+  // No dialog cursor tracking needed - using positioned popup instead
 });

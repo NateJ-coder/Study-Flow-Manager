@@ -1,12 +1,28 @@
 // timer.js — responsible for timer controls (start/reset)
 console.log("[timer.js] Module loaded ✅");
 
-// Timer state will be imported from core.js
+// Global timer state management
+let currentTimerInterval = null;
+let isTimerRunning = false;
+
+// Pomodoro session management
+let currentSession = 1;
+let totalSessions = 4;
+let isBreakTime = false;
+const WORK_DURATION = 25 * 60; // 25 minutes in seconds
+const SHORT_BREAK_DURATION = 5 * 60; // 5 minutes in seconds
+const LONG_BREAK_DURATION = 15 * 60; // 15 minutes in seconds
+
 export function startTimer() {
   console.log("⏱ Timer started");
   
+  // If timer is already running, don't start another one
+  if (isTimerRunning) {
+    console.warn("[timer.js] Timer already running, ignoring start request");
+    return;
+  }
+  
   // Get timer elements
-  const startBtn = document.getElementById("btn-start");
   const countdown = document.getElementById("active-countdown");
   const mmElement = document.getElementById("active-time-mm");
   const ssElement = document.getElementById("active-time-ss");
@@ -16,9 +32,10 @@ export function startTimer() {
     return;
   }
 
-  // Basic timer logic - starts from 25:00
-  let timeRemaining = 25 * 60; // 25 minutes in seconds
-  let timerInterval;
+  // Get current time from display (in case it was partially used)
+  const currentMinutes = parseInt(mmElement.textContent) || 25;
+  const currentSeconds = parseInt(ssElement.textContent) || 0;
+  let timeRemaining = (currentMinutes * 60) + currentSeconds;
 
   function updateDisplay() {
     const minutes = Math.floor(timeRemaining / 60);
@@ -32,51 +49,138 @@ export function startTimer() {
     updateDisplay();
     
     if (timeRemaining <= 0) {
-      clearInterval(timerInterval);
-      console.log("⏰ Timer completed!");
-      // Play completion sound or switch to break mode
+      // Timer completed - handle Pomodoro progression
+      clearInterval(currentTimerInterval);
+      currentTimerInterval = null;
+      isTimerRunning = false;
+      
+      handlePomodoroCompletion();
     }
   }
 
   // Start the timer
-  timerInterval = setInterval(tick, 1000);
+  currentTimerInterval = setInterval(tick, 1000);
+  isTimerRunning = true;
   
   // Update button state
-  if (startBtn) {
-    startBtn.textContent = "Pause";
-    startBtn.onclick = () => pauseTimer(timerInterval);
+  const woodenStartBtn = document.getElementById("wooden-start-btn");
+  if (woodenStartBtn) {
+    woodenStartBtn.textContent = "PAUSE";
+    woodenStartBtn.onclick = pauseTimer;
   }
 }
 
-export function pauseTimer(interval) {
+export function pauseTimer() {
   console.log("⏸ Timer paused");
-  if (interval) {
-    clearInterval(interval);
-  }
   
-  const startBtn = document.getElementById("btn-start");
-  if (startBtn) {
-    startBtn.textContent = "Start";
-    startBtn.onclick = startTimer;
+  // Clear the current timer
+  if (currentTimerInterval) {
+    clearInterval(currentTimerInterval);
+    currentTimerInterval = null;
+  }
+  isTimerRunning = false;
+  
+  // Update button state
+  const woodenStartBtn = document.getElementById("wooden-start-btn");
+  if (woodenStartBtn) {
+    woodenStartBtn.textContent = "START";
+    woodenStartBtn.onclick = startTimer;
   }
 }
 
 export function resetTimer() {
   console.log("🔁 Timer reset");
   
-  // Reset display to 25:00
+  // FIRST: Stop any running timer
+  if (currentTimerInterval) {
+    clearInterval(currentTimerInterval);
+    currentTimerInterval = null;
+    console.log("⏹ Stopped running timer before reset");
+  }
+  isTimerRunning = false;
+  
+  // SECOND: Reset to work session
+  currentSession = 1;
+  isBreakTime = false;
+  updateTimerDisplay(WORK_DURATION);
+  updateSessionDisplay();
+  
+  // THIRD: Reset button state
+  const woodenStartBtn = document.getElementById("wooden-start-btn");
+  if (woodenStartBtn) {
+    woodenStartBtn.textContent = "START";
+    woodenStartBtn.onclick = startTimer;
+  }
+}
+
+function handlePomodoroCompletion() {
+  console.log("⏰ Pomodoro session completed!");
+  
+  if (!isBreakTime) {
+    // Work session completed - start break
+    if (currentSession >= totalSessions) {
+      // Long break after completing all sessions
+      console.log("🎉 All sessions completed! Starting long break.");
+      isBreakTime = true;
+      updateTimerDisplay(LONG_BREAK_DURATION);
+    } else {
+      // Short break
+      console.log(`📝 Session ${currentSession} completed! Starting short break.`);
+      isBreakTime = true;
+      updateTimerDisplay(SHORT_BREAK_DURATION);
+    }
+  } else {
+    // Break completed - start next work session or reset
+    if (currentSession >= totalSessions) {
+      // All sessions completed, reset to beginning
+      console.log("🔄 All sessions and breaks completed! Resetting to session 1.");
+      currentSession = 1;
+      isBreakTime = false;
+      updateTimerDisplay(WORK_DURATION);
+    } else {
+      // Move to next session
+      currentSession++;
+      isBreakTime = false;
+      updateTimerDisplay(WORK_DURATION);
+      console.log(`🚀 Starting session ${currentSession}`);
+    }
+  }
+  
+  updateSessionDisplay();
+  
+  // Reset button state
+  const woodenStartBtn = document.getElementById("wooden-start-btn");
+  if (woodenStartBtn) {
+    woodenStartBtn.textContent = "START";
+    woodenStartBtn.onclick = startTimer;
+  }
+  
+  // Auto-start next session after a brief pause (optional)
+  setTimeout(() => {
+    if (!isTimerRunning) {
+      startTimer();
+    }
+  }, 3000);
+}
+
+function updateTimerDisplay(seconds) {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
   const mmElement = document.getElementById("active-time-mm");
   const ssElement = document.getElementById("active-time-ss");
   
   if (mmElement && ssElement) {
-    mmElement.textContent = "25";
-    ssElement.textContent = "00";
+    mmElement.textContent = minutes.toString().padStart(2, '0');
+    ssElement.textContent = remainingSeconds.toString().padStart(2, '0');
   }
+}
+
+function updateSessionDisplay() {
+  const currentElement = document.getElementById("active-session-current");
+  const totalElement = document.getElementById("active-session-total");
   
-  // Reset button state
-  const startBtn = document.getElementById("btn-start");
-  if (startBtn) {
-    startBtn.textContent = "Start";
-    startBtn.onclick = startTimer;
+  if (currentElement && totalElement) {
+    currentElement.textContent = currentSession;
+    totalElement.textContent = totalSessions;
   }
 }
