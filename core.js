@@ -1247,6 +1247,10 @@ function startTimer() {
   console.log(`▶️ Starting ${STATE.timerMode} timer: ${STATE.timeRemaining} seconds`);
   
   STATE.isTimerRunning = true;
+  
+  // Start scene animations
+  setSceneRunning(true);
+  
   STATE.timerInterval = setInterval(() => {
     STATE.timeRemaining--;
     updateTimerDisplay();
@@ -1299,6 +1303,9 @@ function resetTimer() {
   }
   
   STATE.isTimerRunning = false;
+  
+  // Pause scene animations
+  setSceneRunning(false);
   
   // Reset to work mode with full duration
   const workMinutes = STATE.userSettings?.work_minutes || 25;
@@ -3025,6 +3032,57 @@ function getAudioPath(soundName) {
   return STATE.config?.timer?.sounds?.[soundName] || `assets/audio/${soundName}.mp3`;
 }
 
+/* ===== BACKGROUND NAVIGATION ===== */
+function initBackgroundNavigation() {
+  const prevBtn = document.querySelector('.bg-nav.prev');
+  const nextBtn = document.querySelector('.bg-nav.next');
+
+  if (prevBtn) {
+    prevBtn.addEventListener('click', () => {
+      // Manual background change - cycle backwards through season backgrounds
+      cycleBgManually('prev');
+    });
+  }
+
+  if (nextBtn) {
+    nextBtn.addEventListener('click', () => {
+      // Manual background change - cycle forwards through season backgrounds
+      cycleBgManually('next');
+    });
+  }
+}
+
+function cycleBgManually(direction) {
+  // Simple implementation: just trigger a background update
+  // In a more advanced version, you could cycle through specific background arrays
+  updateBackground(STATE.currentSeason, STATE.isNight, STATE.isRaining);
+  console.log(`🖼️ Manual background cycle: ${direction}`);
+}
+
+/* ===== ANIMATED SCENE CONTROLS ===== */
+// Season switcher: 'leaves' or 'snow'
+function setSeason(season) {
+  const studyFrame = document.getElementById('studyframe');
+  if (studyFrame) {
+    studyFrame.setAttribute('data-season', season);
+  }
+}
+
+// Auto-set season by month (simple default)
+function initSeasonalScene() {
+  const month = new Date().getMonth();
+  const winterMonths = [11, 0, 1, 2]; // Dec, Jan, Feb, Mar
+  setSeason(winterMonths.includes(month) ? 'snow' : 'leaves');
+}
+
+// Pause/resume tied to your timer controls
+function setSceneRunning(isRunning) {
+  const studyFrame = document.getElementById('studyframe');
+  if (studyFrame) {
+    studyFrame.classList.toggle('paused', !isRunning);
+  }
+}
+
 /* ===== Init on Page Load ===== */
 window.onload = async () => {
   // Load configuration first
@@ -3269,6 +3327,12 @@ function enhancePlaceholderFrame() {
   
   // Initialize timer display
   resetTimer();
+
+  // Initialize background navigation arrows
+  initBackgroundNavigation();
+  
+  // Initialize seasonal scene
+  initSeasonalScene();
 
   // Debug: report rain-related initialization states
   try {

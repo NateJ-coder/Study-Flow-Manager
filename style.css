@@ -287,49 +287,105 @@ body {
   z-index: 100;
 }
 
-#timer-frame-container {
+/* New frame layout system */
+.frame-wrap {
+  --win-top: 15%;   /* tweak these 3 until the SVG sits perfectly */
+  --win-left: 28%;
+  --win-width: 44%;
+
   position: relative;
-  width: 100%;
-  height: auto;
+  width: min(90vw, 980px);
+  margin: 0 auto;
+  aspect-ratio: 16/10; /* overall box – adjust if your frame is taller/shorter */
 }
 
-#timer-svg {
-  width: 100%;
-  height: auto;
-  display: block;
-  filter: drop-shadow(0 0 20px var(--ui-tint-primary)) drop-shadow(0 0 40px var(--ui-tint-primary));
-  opacity: 0.9;
-}
-
-#active-timer-content {
+.frame-ornate {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  text-align: center;
-  color: #ffffff;
-  z-index: 15;
-  background: rgba(0, 0, 0, 0.3);
-  padding: 30px 40px;
-  border-radius: 20px;
-  backdrop-filter: blur(15px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none; /* click-through */
+  filter: drop-shadow(0 8px 24px rgba(0,0,0,.45));
 }
 
-#active-session-indicator {
+/* The window area that holds the animated scene */
+.frame-window {
+  position: absolute;
+  top: var(--win-top);
+  left: var(--win-left);
+  width: var(--win-width);
+  /* lock the scene to its native ratio (our inline SVG uses 900 x 560) */
+  aspect-ratio: 900 / 560;
+  overflow: hidden;           /* clip particles inside the glass */
+  border-radius: 10px;        /* subtle rounding like the mock */
+}
+
+/* Make the inline SVG scale nicely */
+.frame-window > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Timer UI overlay (on top of frame) */
+.timer-ui {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none; /* so clicks pass to buttons only */
+  color: #fff;
+  text-align: center;
+  z-index: 20;
+}
+
+.timer-ui .session-label {
   font-size: clamp(16px, 2.8vw, 22px);
   color: var(--ui-tint-primary, #dff6ff);
   margin-bottom: 15px;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+  text-shadow: 0 2px 3px rgba(0,0,0,.35);
   font-weight: 500;
 }
 
-#active-countdown {
+.timer-ui .countdown {
   font-size: clamp(48px, 8vw, 80px);
   font-weight: bold;
-  text-shadow: 3px 3px 8px rgba(0, 0, 0, 0.6);
+  text-shadow: 0 2px 3px rgba(0,0,0,.35);
   letter-spacing: 4px;
   color: var(--ui-tint-primary, #dff6ff);
+  margin-bottom: 20px;
+}
+
+.timer-ui .wood-btn {
+  pointer-events: auto; /* re-enable on the buttons themselves */
+  margin: 0 .5rem;
+  background: rgba(139, 69, 19, 0.8);
+  border: 2px solid #8B4513;
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(5px);
+}
+
+.timer-ui .wood-btn:hover {
+  background: rgba(139, 69, 19, 1);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.timer-ui .frame-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+/* Optional: pause all animations when you add .paused on #studyframe */
+#studyframe.paused * {
+  animation-play-state: paused !important;
 }
 
 /* ===== Frame SVG Buttons ===== */
@@ -496,38 +552,6 @@ body {
 /* ===== F) Screensaver Styles ===== */
 .screensaver-active {
   cursor: none;
-}
-
-.screensaver-active #countdown {
-  transform: scale(0.6);
-  opacity: 0.7;
-  transition: transform 1s ease, opacity 1s ease;
-}
-
-.screensaver-active #hourglass {
-  transform: scale(0.8);
-  opacity: 0.8;
-  transition: transform 1s ease, opacity 1s ease;
-}
-
-.screensaver-active .nav-item,
-.screensaver-active .nav-icon {
-  opacity: 0.4;
-  transition: opacity 1s ease;
-}
-
-/* Keep title and clock visible during screensaver */
-.screensaver-active .page-title,
-.screensaver-active #global-topbar,
-.screensaver-active #clock {
-  opacity: 1 !important;
-  pointer-events: auto !important;
-  transform: none !important;
-}
-
-/* Pulse animation for screensaver mode */
-.screensaver-active .hourglass {
-  animation: hourglassPulse 3s ease-in-out infinite;
 }
 
 @keyframes hourglassPulse {
@@ -1770,6 +1794,53 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+#clock img {
+  width: 20px;
+  height: 20px;
+  filter: drop-shadow(0 0 3px rgba(0,0,0,.4));
+}
+
+/* Background navigation arrows */
+.bg-nav {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(0,0,0,.35);
+  color: #fff;
+  font-size: 32px;
+  line-height: 56px;
+  text-align: center;
+  border: 1px solid rgba(255,255,255,.5);
+  z-index: 900;
+  backdrop-filter: blur(6px);
+  cursor: pointer;
+}
+
+.bg-nav.prev {
+  left: 24px;
+}
+
+.bg-nav.next {
+  right: 24px;
+}
+
+.bg-nav:hover {
+  background: rgba(0,0,0,.5);
+}
+
+/* Developer/debug elements - hide for production */
+.dev-only {
+  display: none;
+}
+
+/* Show dev elements when body has dev-mode class */
+body.dev-mode .dev-only {
+  display: block;
 }
 
 /* Developer mode toggle button styling */

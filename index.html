@@ -23,9 +23,14 @@
       <div id="ui-tint" aria-hidden="true"></div>
     </div>
 
+    <!-- ===== Background Navigation Arrows ===== -->
+    <button class="bg-nav prev" aria-label="Previous background">‹</button>
+    <button class="bg-nav next" aria-label="Next background">›</button>
+
     <!-- ===== Always-on Clock + Reminders Dropdown ===== -->
     <header id="global-topbar" aria-label="Global clock and quick actions">
       <div id="clock" aria-live="polite" aria-label="Current time">
+        <img src="assets/images/clock-icon.svg" alt="" aria-hidden="true">
         <time id="clock-time">00:00</time>
       </div>
     </header>
@@ -74,55 +79,161 @@
 
         <!-- Active Mode Timer (centered with frame) -->
         <div id="active-mode-timer" class="timer-mode active">
-          <!-- Decorative Frame -->
-          <div id="timer-frame-container">
-            <svg id="timer-svg" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
-              <!-- Decorative frame with corner elements -->
-              <defs>
-                <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-                  <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-                  <feMerge> 
-                    <feMergeNode in="coloredBlur"/>
-                    <feMergeNode in="SourceGraphic"/> 
-                  </feMerge>
-                </filter>
-              </defs>
-              <!-- Main frame -->
-              <rect x="20" y="20" width="360" height="260" 
-                    fill="none" 
-                    stroke="var(--ui-tint-primary, #dff6ff)" 
-                    stroke-width="3" 
-                    rx="20" 
-                    opacity="0.8"
-                    filter="url(#glow)"/>
-              <!-- Corner decorations -->
-              <circle cx="35" cy="35" r="8" fill="var(--ui-tint-primary, #dff6ff)" opacity="0.6"/>
-              <circle cx="365" cy="35" r="8" fill="var(--ui-tint-primary, #dff6ff)" opacity="0.6"/>
-              <circle cx="35" cy="265" r="8" fill="var(--ui-tint-primary, #dff6ff)" opacity="0.6"/>
-              <circle cx="365" cy="265" r="8" fill="var(--ui-tint-primary, #dff6ff)" opacity="0.6"/>
-              <!-- Center ornament -->
-              <path d="M200 30 L210 40 L200 50 L190 40 Z" fill="var(--ui-tint-primary, #dff6ff)" opacity="0.5"/>
-            </svg>
-          </div>
-          
-          <!-- Timer Content (centered in frame) -->
-          <div id="active-timer-content">
-            <div id="active-session-indicator">
-              session <span id="active-session-current">1</span> of <span id="active-session-total">4</span>
+          <div class="frame-wrap">
+            <!-- 1) the glass "window" container -->
+            <div class="frame-window" aria-hidden="true">
+              <!-- Animated inline SVG scene -->
+              <svg id="studyframe" viewBox="0 0 900 560" xmlns="http://www.w3.org/2000/svg" data-season="leaves">
+                <style>
+                  /* Cat tail animation */
+                  #cat-tail { transform-origin: 18% 86%; animation: tailSwish 3s ease-in-out infinite alternate; }
+                  @keyframes tailSwish {
+                    0% { transform: rotate(-8deg); }
+                    100% { transform: rotate(15deg); }
+                  }
+
+                  /* Steam animation */
+                  #steam { animation: steamRise 2.5s ease-in-out infinite; }
+                  @keyframes steamRise {
+                    0% { opacity: 0.3; transform: translateY(2px) scale(0.9); }
+                    50% { opacity: 0.7; transform: translateY(-1px) scale(1.05); }
+                    100% { opacity: 0.4; transform: translateY(1px) scale(0.95); }
+                  }
+
+                  /* Particle animations */
+                  .particle { animation: fall linear infinite; }
+                  .particle:nth-child(1) { animation-duration: 8s; animation-delay: -1s; }
+                  .particle:nth-child(2) { animation-duration: 6s; animation-delay: -3s; }
+                  .particle:nth-child(3) { animation-duration: 9s; animation-delay: -2s; }
+                  .particle:nth-child(4) { animation-duration: 7s; animation-delay: -4s; }
+                  .particle:nth-child(5) { animation-duration: 8.5s; animation-delay: -1.5s; }
+                  .particle:nth-child(6) { animation-duration: 7.5s; animation-delay: -2.5s; }
+
+                  @keyframes fall {
+                    0% { transform: translateY(-20px) rotate(0deg); opacity: 0; }
+                    10% { opacity: 1; }
+                    90% { opacity: 1; }
+                    100% { transform: translateY(580px) rotate(360deg); opacity: 0; }
+                  }
+
+                  /* Season-specific particles */
+                  #studyframe[data-season="leaves"] .snow-particle { display: none; }
+                  #studyframe[data-season="snow"] .leaf-particle { display: none; }
+
+                  /* Paused state */
+                  #studyframe.paused * { animation-play-state: paused !important; }
+                </style>
+
+                <defs>
+                  <filter id="steam-blur" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur in="SourceGraphic" stdDeviation="2"/>
+                  </filter>
+                </defs>
+
+                <!-- Background gradient -->
+                <rect width="900" height="560" fill="url(#sceneGradient)"/>
+                <defs>
+                  <linearGradient id="sceneGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" style="stop-color:#87CEEB;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#98FB98;stop-opacity:1" />
+                  </linearGradient>
+                </defs>
+
+                <!-- Hills/landscape -->
+                <path d="M0 400 Q200 350 400 380 T800 400 L900 400 L900 560 L0 560 Z" fill="#90EE90" opacity="0.8"/>
+                <path d="M100 420 Q300 380 500 410 T900 420 L900 560 L100 560 Z" fill="#98FB98" opacity="0.7"/>
+
+                <!-- Table -->
+                <rect x="200" y="380" width="500" height="120" fill="#8B4513" opacity="0.9"/>
+                <rect x="180" y="490" width="540" height="20" fill="#654321" opacity="0.8"/>
+
+                <!-- Kettle -->
+                <ellipse cx="450" cy="420" rx="80" ry="60" fill="#C0C0C0"/>
+                <ellipse cx="450" cy="410" rx="70" ry="50" fill="#E5E5E5"/>
+                <rect x="530" y="400" width="40" height="8" rx="4" fill="#8B4513"/>
+                <circle cx="460" cy="380" r="6" fill="#FFD700"/>
+
+                <!-- Steam from kettle -->
+                <g id="steam" filter="url(#steam-blur)">
+                  <path d="M450 350 Q455 340 450 330 Q445 320 450 310" stroke="#F0F8FF" stroke-width="3" fill="none" opacity="0.6"/>
+                  <path d="M460 355 Q465 345 460 335 Q455 325 460 315" stroke="#F0F8FF" stroke-width="2" fill="none" opacity="0.5"/>
+                  <path d="M440 352 Q435 342 440 332 Q445 322 440 312" stroke="#F0F8FF" stroke-width="2" fill="none" opacity="0.4"/>
+                </g>
+
+                <!-- Cat body -->
+                <ellipse cx="350" cy="450" rx="60" ry="40" fill="#FFA500"/>
+                <circle cx="320" cy="430" r="35" fill="#FFA500"/>
+
+                <!-- Cat features -->
+                <circle cx="315" cy="425" r="3" fill="#000"/>
+                <circle cx="325" cy="425" r="3" fill="#000"/>
+                <path d="M320 435 L315 440 M320 435 L325 440" stroke="#000" stroke-width="2"/>
+                <path d="M305 415 L310 405 L315 415" fill="#FFA500"/>
+                <path d="M325 415 L330 405 L335 415" fill="#FFA500"/>
+
+                <!-- Cat tail (animated) -->
+                <g id="cat-tail">
+                  <path d="M410 460 Q430 440 420 420 Q415 400 425 380" stroke="#FFA500" stroke-width="15" fill="none" stroke-linecap="round"/>
+                </g>
+
+                <!-- Books -->
+                <rect x="550" y="400" width="15" height="60" fill="#FF6B6B"/>
+                <rect x="570" y="405" width="15" height="55" fill="#4ECDC4"/>
+                <rect x="590" y="395" width="15" height="65" fill="#45B7D1"/>
+
+                <!-- Seasonal particles -->
+                <g id="particles">
+                  <!-- Leaves (autumn) -->
+                  <g class="particle leaf-particle" transform="translate(150,0)">
+                    <path d="M0 0 Q5 -3 8 0 Q5 3 0 0" fill="#D2691E"/>
+                  </g>
+                  <g class="particle leaf-particle" transform="translate(300,0)">
+                    <path d="M0 0 Q4 -2 6 0 Q4 2 0 0" fill="#CD853F"/>
+                  </g>
+                  <g class="particle leaf-particle" transform="translate(500,0)">
+                    <path d="M0 0 Q6 -4 9 0 Q6 4 0 0" fill="#DEB887"/>
+                  </g>
+                  <g class="particle leaf-particle" transform="translate(650,0)">
+                    <path d="M0 0 Q5 -3 7 0 Q5 3 0 0" fill="#D2691E"/>
+                  </g>
+                  <g class="particle leaf-particle" transform="translate(750,0)">
+                    <path d="M0 0 Q4 -2 6 0 Q4 2 0 0" fill="#CD853F"/>
+                  </g>
+                  <g class="particle leaf-particle" transform="translate(400,0)">
+                    <path d="M0 0 Q5 -3 8 0 Q5 3 0 0" fill="#DEB887"/>
+                  </g>
+
+                  <!-- Snow (winter) -->
+                  <circle class="particle snow-particle" cx="200" cy="0" r="2" fill="#FFF"/>
+                  <circle class="particle snow-particle" cx="350" cy="0" r="1.5" fill="#F0F8FF"/>
+                  <circle class="particle snow-particle" cx="500" cy="0" r="2" fill="#FFF"/>
+                  <circle class="particle snow-particle" cx="680" cy="0" r="1" fill="#F0F8FF"/>
+                  <circle class="particle snow-particle" cx="800" cy="0" r="2" fill="#FFF"/>
+                  <circle class="particle snow-particle" cx="450" cy="0" r="1.5" fill="#F0F8FF"/>
+                </g>
+              </svg>
             </div>
-            <div id="active-countdown">
-              <span id="active-time-mm">25</span>:<span id="active-time-ss">00</span>
+
+            <!-- 2) the ornate gold frame -->
+            <img class="frame-ornate" src="assets/images/frame.svg" alt="" />
+
+            <!-- 3) timer UI overlay -->
+            <div class="timer-ui">
+              <div class="session-label">
+                session <span id="active-session-current">1</span> of <span id="active-session-total">4</span>
+              </div>
+              <div class="countdown" id="active-countdown">
+                <span id="active-time-mm">25</span>:<span id="active-time-ss">00</span>
+              </div>
+              <div class="frame-buttons">
+                <button id="btn-start" type="button" class="wood-btn" aria-label="Start timer">
+                  Start
+                </button>
+                <button id="btn-reset" type="button" class="wood-btn" aria-label="Reset timer">
+                  Reset
+                </button>
+              </div>
             </div>
-          </div>
-          
-          <!-- SVG Buttons positioned at frame corners -->
-          <div id="frame-buttons">
-            <button id="btn-start" type="button" class="frame-svg-button" aria-label="Start timer">
-              <!-- Start SVG will be loaded here -->
-            </button>
-            <button id="btn-reset" type="button" class="frame-svg-button" aria-label="Reset timer">
-              <!-- Reset SVG will be loaded here -->
-            </button>
           </div>
         </div>
 
@@ -131,92 +242,13 @@
           Set Reminder
         </button>
 
-        <!-- Season Test Button (temporary) -->
-        <button id="btn-season" type="button" onclick="testSeasonSwitch()" aria-label="Test seasons" style="position: absolute; top: 60px; right: 20px; background: rgba(0,0,0,0.5); color: var(--ui-tint-primary); border: 1px solid var(--ui-tint-primary); border-radius: 4px; padding: 8px 12px; cursor: pointer; font-size: 12px; z-index: 200;">🌻</button>
+        <!-- Season Test Button (temporary - hide for production) -->
+        <button id="btn-season" type="button" onclick="testSeasonSwitch()" aria-label="Test seasons" class="dev-only" style="position: absolute; top: 60px; right: 20px; background: rgba(0,0,0,0.5); color: var(--ui-tint-primary); border: 1px solid var(--ui-tint-primary); border-radius: 4px; padding: 8px 12px; cursor: pointer; font-size: 12px; z-index: 200;">🌻</button>
       </section>
 
     </main>
-              <input id="frame-opacity" name="frame_opacity" type="range" min="0" max="100" value="100" />
-            </label>
-          </fieldset>
 
-          <!-- Season & Time -->
-          <fieldset id="settings-theme">
-            <legend>Theme &amp; Time</legend>
-
-            <label>
-              Season
-              <select id="season" name="season">
-                <option value="summer">Summer</option>
-                <option value="autumn">Autumn</option>
-                <option value="winter">Winter</option>
-              </select>
-            </label>
-
-            <label>
-              Timezone
-              <select id="timezone" name="timezone">
-                <!-- Options injected from JS, default Africa/Johannesburg -->
-              </select>
-            </label>
-
-            <label>
-              Background slideshow
-              <input id="slideshow-enabled" name="slideshow_enabled" type="checkbox" checked />
-            </label>
-
-            <label>
-              Slideshow interval (seconds)
-              <input id="slideshow-interval" name="slideshow_interval_seconds" type="number" min="5" step="5" value="30" />
-            </label>
-          </fieldset>
-
-          <!-- Pomodoro -->
-          <fieldset id="settings-pomodoro">
-            <legend>Pomodoro</legend>
-
-            <label>
-              Sessions
-              <input id="pomodoro-sessions" name="pomodoro_sessions" type="number" min="1" value="4" />
-            </label>
-
-            <label>
-              Work (minutes)
-              <input id="work-minutes" name="work_minutes" type="number" min="1" value="25" />
-            </label>
-
-            <label>
-              Short break (minutes)
-              <input id="short-break-minutes" name="short_break_minutes" type="number" min="1" value="5" />
-            </label>
-
-            <label>
-              Long break (minutes)
-              <input id="long-break-minutes" name="long_break_minutes" type="number" min="1" value="20" />
-            </label>
-
-            <label>
-              Short breaks before long break
-              <input id="short-breaks-before-long" name="short_breaks_before_long" type="number" min="1" value="3" />
-            </label>
-          </fieldset>
-
-          <!-- Weather & Rain -->
-          <fieldset id="settings-weather">
-            <legend>Weather &amp; Rain</legend>
-
-            <button id="rain-toggle" type="button">Start Rain</button>
-          </fieldset>
-
-          <menu>
-            <button id="settings-save" type="submit">Save</button>
-            <button id="settings-cancel" type="reset">Reset</button>
-          </menu>
-        </form>
-      </section>
-    </main>
-
-    <!-- ===== Audio (preloaded, controlled later by JS) ===== -->
+    <!-- ===== Audio ===== -->
   <audio id="audio-rain" src="assets/audio/rainfall.mp3" preload="auto" loop></audio>
   <audio id="audio-splash" src="assets/audio/splash.mp3" preload="auto"></audio>
   <audio id="audio-drawing" src="assets/audio/drawing.mp3" preload="auto"></audio>
