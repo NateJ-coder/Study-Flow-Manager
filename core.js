@@ -657,36 +657,10 @@ function startSeasonParticles(particleType, isRainMode) {
   }
 
   // Start continuous particle generation with improved logic
-  startSeasonalParticleInterval(particleType);
+  startSeasonalParticles();
 }
 
-// Helper to start the seasonal particle interval with better control
-function startSeasonalParticleInterval(particleType) {
-  if (STATE.seasonParticleInterval) {
-    clearInterval(STATE.seasonParticleInterval);
-  }
 
-  if (STATE.seasonParticleActive) {
-    // Use a consistent, relatively fast check interval (every 250ms)
-    STATE.seasonParticleInterval = setInterval(() => {
-      let spawnChance = 0; // % chance to spawn a particle at this interval
-
-      if (particleType === 'snowflakes') {
-        spawnChance = 0.95; // Higher chance for steady snowfall
-      } else if (particleType.includes('leaves-green')) {
-        spawnChance = 0.7; // Moderate chance for summer leaves
-      } else if (particleType.includes('leaves') && (particleType.includes('brown') || particleType.includes('burnt') || particleType.includes('orange'))) {
-        spawnChance = 0.8; // 80% chance for autumn leaves - more consistent flow
-      } else if (particleType === 'fireflies') {
-        return; // Fireflies are created once, not continuously
-      }
-
-      if (Math.random() < spawnChance) {
-        createEnhancedSeasonParticle(particleType);
-      }
-    }, 250); // Check every 250 milliseconds
-  }
-}
 
 function stopSeasonParticles() {
   STATE.seasonParticleActive = false;
@@ -760,53 +734,91 @@ function createFireflyParticles() {
   }
 }
 
-// Enhanced particle creation with size, rotation and drift variations
-function createEnhancedSeasonParticle(particleType) {
+// Refined seasonal particle generation with fixed interval and probability
+function startSeasonalParticles() {
+  if (STATE.seasonParticleInterval) {
+    clearInterval(STATE.seasonParticleInterval);
+  }
+
+  if (STATE.seasonParticleActive) {
+    STATE.seasonParticleInterval = setInterval(() => {
+      const season = STATE.currentSeason;
+      let particleType = null;
+      let spawnChance = 0; 
+      
+      if (season === 'autumn') {
+        // High chance for steady leaf fall
+        spawnChance = 0.85; 
+        particleType = STATE.isNight ? 'leaves-burnt_orange_brown' : 'leaves-green';
+      } else if (season === 'summer') {
+        // Lower chance for subtle summer leaves
+        spawnChance = 0.5;
+        particleType = STATE.isNight ? 'fireflies' : 'leaves-green';
+      } else if (season === 'winter') {
+        spawnChance = 0.9;
+        particleType = 'snowflakes';
+      } 
+      
+      // Call the enhanced creator if chance succeeds
+      if (particleType && Math.random() < spawnChance) {
+        // Use the refined function for all seasonal particles
+        createEnhancedParticle(particleType);
+      }
+    }, 200); // Check every 200 milliseconds for smooth flow rate
+  }
+}
+
+// Enhanced particle creation with visual improvements
+function createEnhancedParticle(type) {
   const container = document.getElementById('particles-layer');
   if (!container) return;
 
   let particle;
   
-  if (particleType === 'snowflakes') {
+  if (type === 'snowflakes') {
     particle = document.createElement("div");
-    particle.className = "snowflake";
-    particle.textContent = "❄";
-    particle.style.fontSize = 12 + Math.random() * 16 + "px";
-  } else if (particleType.includes('leaves-green')) {
+    particle.className = "particle snowflake";
+    // Add custom logic for snowflakes if needed (less rotation)
+    particle.style.setProperty('--particle-scale', (0.8 + Math.random() * 0.4).toString());
+    particle.style.setProperty('--particle-drift', `${(Math.random() - 0.5) * 100}px`);
+    particle.style.opacity = (0.6 + Math.random() * 0.4).toString();
+  } else if (type.includes('leaves-green') || type === 'leaves-green') {
     particle = document.createElement("div");
-    particle.className = "falling-leaf";
-    particle.textContent = "🍃";
-    particle.style.fontSize = 20 + Math.random() * 20 + "px";
-  } else if (particleType.includes('leaves') && (particleType.includes('brown') || particleType.includes('burnt') || particleType.includes('orange'))) {
+    particle.className = "particle leaves-green";
+  } else if (type.includes('leaves') && (type.includes('brown') || type.includes('burnt') || type.includes('orange'))) {
     particle = document.createElement("div");
-    particle.className = "autumn-leaf";
-    particle.textContent = "🍁";
+    particle.className = "particle leaves-burnt_orange_brown";
+  }
+  
+  if (particle && type.startsWith('leaves')) {
+    // 1. Random Size (Scale)
+    // Scale is applied in CSS via the variable, so we only need to set the variable
+    const sizeMultiplier = 0.6 + Math.random() * 0.6; // From 60% to 120% scale
+    particle.style.setProperty('--particle-scale', sizeMultiplier.toString());
     
-    // Apply enhanced variations for autumn leaves
-    const colors = ["#e57373","#ffb74d","#ff8a65","#fdd835"];
-    particle.style.color = colors[Math.floor(Math.random() * colors.length)];
-    
-    // Size variation for more natural look
-    const sizeMultiplier = 0.6 + Math.random() * 0.8; // 60% to 140% of base size
-    particle.style.transform = `scale(${sizeMultiplier})`;
-    
-    // Opacity variation for depth
-    particle.style.opacity = 0.5 + Math.random() * 0.5; // 50% to 100%
-    
-    // Random initial rotation
+    // 2. Random Opacity
+    particle.style.opacity = (0.4 + Math.random() * 0.6).toString(); // 40% to 100%
+
+    // 3. Random Rotation (for the CSS animation keyframe)
     const initialRotation = Math.random() * 360;
     particle.style.setProperty('--initial-rotate', `${initialRotation}deg`);
     
-    // Random horizontal drift
-    const driftX = (Math.random() - 0.5) * 50; // -25px to +25px
+    // 4. Random Horizontal Drift (for the CSS animation keyframe)
+    const driftX = (Math.random() - 0.5) * 80; // Random drift from -40px to +40px
     particle.style.setProperty('--particle-drift', `${driftX}px`);
+    
+    // 5. Set fall duration
+    particle.style.setProperty('--fall-duration', (6 + Math.random() * 4) + 's');
   }
   
   if (particle) {
     particle.style.left = Math.random() * 100 + "vw";
+    particle.style.top = "-10px";
     particle.style.animationDelay = Math.random() * 2 + "s";
     container.appendChild(particle);
   }
+  
+  return particle;
 }
 
 /* ===== MOUSE TRAIL & CUSTOM CURSOR ===== */
@@ -921,23 +933,31 @@ function createTrailParticle(x, y, trailType) {
   const p = document.createElement('div');
   p.className = 'trail-particle';
 
-  if (trailType.includes('green')) p.classList.add('trail-leaf', 'leaf-green');
-  else if (trailType.includes('burnt') || trailType.includes('brown') || trailType.includes('orange')) p.classList.add('trail-leaf', 'leaf-brown');
-  else if (trailType === 'snowflakes') p.classList.add('trail-snow');
-  else p.classList.add('trail-dot');
+  // Use same particle type system as seasonal particles
+  if (trailType.includes('green')) {
+    p.classList.add('leaves-green');
+  } else if (trailType.includes('burnt') || trailType.includes('brown') || trailType.includes('orange')) {
+    p.classList.add('leaves-burnt_orange_brown');
+  } else if (trailType === 'snowflakes') {
+    p.classList.add('snowflakes');
+  } else {
+    p.classList.add('default');
+  }
 
   p.style.left = `${x}px`;
   p.style.top = `${y}px`;
 
-  // Randomize small size
-  const size = 6 + Math.random() * 8;
-  p.style.width = `${size}px`;
-  p.style.height = `${trailType === 'snowflakes' ? size : size * 0.6}px`;
+  // Add small random variations like seasonal particles
+  const sizeVariation = 0.8 + Math.random() * 0.4; // 80% to 120% size
+  p.style.transform = `scale(${sizeVariation})`;
+  
+  // Slight opacity variation for depth
+  p.style.opacity = (0.7 + Math.random() * 0.25).toString(); // 70% to 95%
 
   container.appendChild(p);
 
-  // Remove after short life
-  setTimeout(() => { if (p && p.parentNode) p.remove(); }, 900 + Math.random() * 400);
+  // Remove after short life (slightly shorter than before for cleaner trail)
+  setTimeout(() => { if (p && p.parentNode) p.remove(); }, 800 + Math.random() * 200);
 }
 
 /* ===== CLICK SFX FOR BUTTONS ===== */
