@@ -3,10 +3,22 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      script-src 'self';
+      style-src 'self' 'unsafe-inline';
+      img-src 'self' data: https:;
+      font-src 'self' data:;
+      media-src 'self' https:;
+      connect-src 'self';
+      object-src 'none';
+      base-uri 'self';
+      frame-ancestors 'none';
+    ">
     <title>StudyFlow — Calendar</title>
 
   <!-- CSS and JS files -->
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="css/style.css">
   <!-- Backgrounds live under assets/images; audio under assets/audio; JSON under /data. -->
     <!-- JS will later fetch: data/studyflow_config.json -->
   </head>
@@ -100,6 +112,7 @@
   <audio id="audio-drawing" src="assets/audio/drawing.mp3" preload="auto"></audio>
   <audio id="audio-click" src="assets/audio/click.mp3" preload="auto"></audio>
 
-    <script src="core.js"></script>
+    <script src="js/core.js"></script>
+    <script type="module" src="js/core-modern.js"></script>
   </body>
 </html>
