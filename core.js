@@ -655,6 +655,37 @@ function startSeasonParticles(particleType, isRainMode) {
   } else if (particleType === 'fireflies') {
     createFireflyParticles();
   }
+
+  // Start continuous particle generation with improved logic
+  startSeasonalParticleInterval(particleType);
+}
+
+// Helper to start the seasonal particle interval with better control
+function startSeasonalParticleInterval(particleType) {
+  if (STATE.seasonParticleInterval) {
+    clearInterval(STATE.seasonParticleInterval);
+  }
+
+  if (STATE.seasonParticleActive) {
+    // Use a consistent, relatively fast check interval (every 250ms)
+    STATE.seasonParticleInterval = setInterval(() => {
+      let spawnChance = 0; // % chance to spawn a particle at this interval
+
+      if (particleType === 'snowflakes') {
+        spawnChance = 0.95; // Higher chance for steady snowfall
+      } else if (particleType.includes('leaves-green')) {
+        spawnChance = 0.7; // Moderate chance for summer leaves
+      } else if (particleType.includes('leaves') && (particleType.includes('brown') || particleType.includes('burnt') || particleType.includes('orange'))) {
+        spawnChance = 0.8; // 80% chance for autumn leaves - more consistent flow
+      } else if (particleType === 'fireflies') {
+        return; // Fireflies are created once, not continuously
+      }
+
+      if (Math.random() < spawnChance) {
+        createEnhancedSeasonParticle(particleType);
+      }
+    }, 250); // Check every 250 milliseconds
+  }
 }
 
 function stopSeasonParticles() {
@@ -726,6 +757,55 @@ function createFireflyParticles() {
     f.style.animationDuration = 8 + Math.random() * 5 + "s";
     f.style.width = f.style.height = 4 + Math.random() * 4 + "px";
     container.appendChild(f);
+  }
+}
+
+// Enhanced particle creation with size, rotation and drift variations
+function createEnhancedSeasonParticle(particleType) {
+  const container = document.getElementById('particles-layer');
+  if (!container) return;
+
+  let particle;
+  
+  if (particleType === 'snowflakes') {
+    particle = document.createElement("div");
+    particle.className = "snowflake";
+    particle.textContent = "❄";
+    particle.style.fontSize = 12 + Math.random() * 16 + "px";
+  } else if (particleType.includes('leaves-green')) {
+    particle = document.createElement("div");
+    particle.className = "falling-leaf";
+    particle.textContent = "🍃";
+    particle.style.fontSize = 20 + Math.random() * 20 + "px";
+  } else if (particleType.includes('leaves') && (particleType.includes('brown') || particleType.includes('burnt') || particleType.includes('orange'))) {
+    particle = document.createElement("div");
+    particle.className = "autumn-leaf";
+    particle.textContent = "🍁";
+    
+    // Apply enhanced variations for autumn leaves
+    const colors = ["#e57373","#ffb74d","#ff8a65","#fdd835"];
+    particle.style.color = colors[Math.floor(Math.random() * colors.length)];
+    
+    // Size variation for more natural look
+    const sizeMultiplier = 0.6 + Math.random() * 0.8; // 60% to 140% of base size
+    particle.style.transform = `scale(${sizeMultiplier})`;
+    
+    // Opacity variation for depth
+    particle.style.opacity = 0.5 + Math.random() * 0.5; // 50% to 100%
+    
+    // Random initial rotation
+    const initialRotation = Math.random() * 360;
+    particle.style.setProperty('--initial-rotate', `${initialRotation}deg`);
+    
+    // Random horizontal drift
+    const driftX = (Math.random() - 0.5) * 50; // -25px to +25px
+    particle.style.setProperty('--particle-drift', `${driftX}px`);
+  }
+  
+  if (particle) {
+    particle.style.left = Math.random() * 100 + "vw";
+    particle.style.animationDelay = Math.random() * 2 + "s";
+    container.appendChild(particle);
   }
 }
 

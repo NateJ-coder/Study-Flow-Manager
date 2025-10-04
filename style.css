@@ -489,7 +489,30 @@ body {
   opacity: 0.9;
   pointer-events: none;
   z-index: 3;
-  animation: fallAutumn 8s ease-in infinite;
+  animation: fall-with-drift 8s ease-in infinite;
+}
+
+@keyframes fall-with-drift {
+  0% {
+    transform: 
+      translate3d(0, 0, 0)
+      rotateZ(var(--initial-rotate, 0deg));
+    opacity: 0.9;
+  }
+  
+  50% {
+    transform: 
+      translate3d(calc(var(--particle-drift, 0px) * 0.5), 50vh, 0) 
+      rotateZ(calc(var(--initial-rotate, 0deg) + 180deg));
+    opacity: 0.7;
+  }
+  
+  100% {
+    transform: 
+      translate3d(var(--particle-drift, 0px), 100vh, 0)
+      rotateZ(calc(var(--initial-rotate, 0deg) + 360deg));
+    opacity: 0;
+  }
 }
 
 @keyframes fallAutumn {
@@ -1287,6 +1310,8 @@ body {
   gap: 10px;
   justify-content: center;
   margin-top: 20px;
+  z-index: 1100; /* Higher than the frame */
+  position: relative;
 }
 
 #timer-controls button {
@@ -1351,6 +1376,8 @@ body {
   font-size: 16px;
   color: var(--ui-tint-primary, #dff6ff);
   margin-bottom: 10px;
+  z-index: 1100; /* Higher than the frame */
+  position: relative;
 }
 
 /* ===== O) Navigation Styling ===== */
