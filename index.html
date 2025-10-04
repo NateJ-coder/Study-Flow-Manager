@@ -85,40 +85,49 @@
               <!-- Animated inline SVG scene -->
               <svg id="studyframe" viewBox="0 0 900 560" xmlns="http://www.w3.org/2000/svg" data-season="leaves">
                 <style>
-                  /* Cat tail animation */
-                  #cat-tail { transform-origin: 18% 86%; animation: tailSwish 3s ease-in-out infinite alternate; }
-                  @keyframes tailSwish {
-                    0% { transform: rotate(-8deg); }
-                    100% { transform: rotate(15deg); }
+                  /* Tail */
+                  #cat-tail{
+                    transform-box: fill-box;
+                    transform-origin: 18% 86%;
+                    animation: tailSwish 4.6s ease-in-out infinite alternate;
+                  }
+                  @keyframes tailSwish{
+                    from{ transform: rotate(-8deg) }
+                    to  { transform: rotate( 12deg) }
                   }
 
-                  /* Steam animation */
-                  #steam { animation: steamRise 2.5s ease-in-out infinite; }
-                  @keyframes steamRise {
-                    0% { opacity: 0.3; transform: translateY(2px) scale(0.9); }
-                    50% { opacity: 0.7; transform: translateY(-1px) scale(1.05); }
-                    100% { opacity: 0.4; transform: translateY(1px) scale(0.95); }
+                  /* Steam — stagger three paths */
+                  #steam > path{
+                    opacity: 0;
+                    transform-box: fill-box;
+                    animation: steamRise 3.6s linear infinite;
+                  }
+                  #steam > path:nth-child(2){ animation-delay: .9s }
+                  #steam > path:nth-child(3){ animation-delay: 1.8s }
+
+                  @keyframes steamRise{
+                    0%   { opacity:0;   transform: translateY(8px)  scale(.9) }
+                    20%  { opacity:.7 }
+                    100% { opacity:0;   transform: translateY(-36px) scale(1.12) }
                   }
 
-                  /* Particle animations */
-                  .particle { animation: fall linear infinite; }
-                  .particle:nth-child(1) { animation-duration: 8s; animation-delay: -1s; }
-                  .particle:nth-child(2) { animation-duration: 6s; animation-delay: -3s; }
-                  .particle:nth-child(3) { animation-duration: 9s; animation-delay: -2s; }
-                  .particle:nth-child(4) { animation-duration: 7s; animation-delay: -4s; }
-                  .particle:nth-child(5) { animation-duration: 8.5s; animation-delay: -1.5s; }
-                  .particle:nth-child(6) { animation-duration: 7.5s; animation-delay: -2.5s; }
-
-                  @keyframes fall {
-                    0% { transform: translateY(-20px) rotate(0deg); opacity: 0; }
-                    10% { opacity: 1; }
-                    90% { opacity: 1; }
-                    100% { transform: translateY(580px) rotate(360deg); opacity: 0; }
+                  /* particle animation (you already have something similar) */
+                  .particle{
+                    animation: fall var(--dur,9s) linear infinite, sway 3.2s ease-in-out infinite;
+                    animation-delay: var(--delay,0s);
+                    transform-origin: center;
+                    color: #D2691E; /* leaf color */
                   }
+                  .particle.snow-particle {
+                    color: #FFF; /* snow color */
+                  }
+                  
+                  @keyframes fall{from{transform:translateY(-70px)}to{transform:translateY(420px)}}
+                  @keyframes sway{0%,100%{translate:0 0;rotate:0}50%{translate:10px 0;rotate:8deg}}
 
-                  /* Season-specific particles */
-                  #studyframe[data-season="leaves"] .snow-particle { display: none; }
-                  #studyframe[data-season="snow"] .leaf-particle { display: none; }
+                  /* show/hide types per season */
+                  #studyframe[data-season="leaves"] .snow-particle{display:none}
+                  #studyframe[data-season="snow"]   .leaf-particle{display:none}
 
                   /* Paused state */
                   #studyframe.paused * { animation-play-state: paused !important; }
@@ -142,6 +151,33 @@
                 <!-- Hills/landscape -->
                 <path d="M0 400 Q200 350 400 380 T800 400 L900 400 L900 560 L0 560 Z" fill="#90EE90" opacity="0.8"/>
                 <path d="M100 420 Q300 380 500 410 T900 420 L900 560 L100 560 Z" fill="#98FB98" opacity="0.7"/>
+
+                <!-- Seasonal particles inside the window -->
+                <defs>
+                  <symbol id="leaf" viewBox="0 0 20 20">
+                    <path d="M10 1C3 3,1 10,8 12C9 16,15 19,18 12C19 7,16 2,10 1Z" fill="currentColor"/>
+                  </symbol>
+                  <symbol id="flake" viewBox="0 0 20 20">
+                    <g stroke="currentColor" stroke-width="1.2" stroke-linecap="round">
+                      <path d="M10 1V19"/><path d="M1 10H19"/><path d="M3 3L17 17"/><path d="M17 3L3 17"/>
+                    </g>
+                  </symbol>
+                </defs>
+
+                <g id="particles">
+                  <!-- switch via data-season on #studyframe -->
+                  <use href="#leaf"  class="particle leaf-particle" x="180" y="-40" style="--dur:9s;--delay:0s"/>
+                  <use href="#leaf"  class="particle leaf-particle" x="260" y="-60" style="--dur:7s;--delay:-2s"/>
+                  <use href="#leaf"  class="particle leaf-particle" x="340" y="-50" style="--dur:8s;--delay:-1s"/>
+                  <use href="#leaf"  class="particle leaf-particle" x="420" y="-70" style="--dur:6s;--delay:-3s"/>
+                  <use href="#leaf"  class="particle leaf-particle" x="500" y="-55" style="--dur:8.5s;--delay:-1.5s"/>
+                  <use href="#leaf"  class="particle leaf-particle" x="600" y="-45" style="--dur:7.5s;--delay:-2.5s"/>
+                  <use href="#flake" class="particle snow-particle" x="220" y="-65" style="--dur:8s;--delay:-1s"/>
+                  <use href="#flake" class="particle snow-particle" x="350" y="-50" style="--dur:9s;--delay:-2s"/>
+                  <use href="#flake" class="particle snow-particle" x="460" y="-80" style="--dur:7s;--delay:0s"/>
+                  <use href="#flake" class="particle snow-particle" x="580" y="-40" style="--dur:8.5s;--delay:-3s"/>
+                  <use href="#flake" class="particle snow-particle" x="700" y="-70" style="--dur:6.5s;--delay:-1.5s"/>
+                </g>
 
                 <!-- Table -->
                 <rect x="200" y="380" width="500" height="120" fill="#8B4513" opacity="0.9"/>
@@ -181,36 +217,7 @@
                 <rect x="570" y="405" width="15" height="55" fill="#4ECDC4"/>
                 <rect x="590" y="395" width="15" height="65" fill="#45B7D1"/>
 
-                <!-- Seasonal particles -->
-                <g id="particles">
-                  <!-- Leaves (autumn) -->
-                  <g class="particle leaf-particle" transform="translate(150,0)">
-                    <path d="M0 0 Q5 -3 8 0 Q5 3 0 0" fill="#D2691E"/>
-                  </g>
-                  <g class="particle leaf-particle" transform="translate(300,0)">
-                    <path d="M0 0 Q4 -2 6 0 Q4 2 0 0" fill="#CD853F"/>
-                  </g>
-                  <g class="particle leaf-particle" transform="translate(500,0)">
-                    <path d="M0 0 Q6 -4 9 0 Q6 4 0 0" fill="#DEB887"/>
-                  </g>
-                  <g class="particle leaf-particle" transform="translate(650,0)">
-                    <path d="M0 0 Q5 -3 7 0 Q5 3 0 0" fill="#D2691E"/>
-                  </g>
-                  <g class="particle leaf-particle" transform="translate(750,0)">
-                    <path d="M0 0 Q4 -2 6 0 Q4 2 0 0" fill="#CD853F"/>
-                  </g>
-                  <g class="particle leaf-particle" transform="translate(400,0)">
-                    <path d="M0 0 Q5 -3 8 0 Q5 3 0 0" fill="#DEB887"/>
-                  </g>
 
-                  <!-- Snow (winter) -->
-                  <circle class="particle snow-particle" cx="200" cy="0" r="2" fill="#FFF"/>
-                  <circle class="particle snow-particle" cx="350" cy="0" r="1.5" fill="#F0F8FF"/>
-                  <circle class="particle snow-particle" cx="500" cy="0" r="2" fill="#FFF"/>
-                  <circle class="particle snow-particle" cx="680" cy="0" r="1" fill="#F0F8FF"/>
-                  <circle class="particle snow-particle" cx="800" cy="0" r="2" fill="#FFF"/>
-                  <circle class="particle snow-particle" cx="450" cy="0" r="1.5" fill="#F0F8FF"/>
-                </g>
               </svg>
             </div>
 

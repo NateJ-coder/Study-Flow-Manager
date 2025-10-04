@@ -494,6 +494,9 @@ function applyTheme(season, isNight, isRain) {
   // Update calendar/clock aesthetics
   updateCalendarClockAesthetic(season, isNight, isRain);
   
+  // Update inline SVG season
+  setSVGSeasonFromApp(season);
+  
   console.log("✅ Theme applied successfully");
 }
 
@@ -546,6 +549,17 @@ function setUITintColors(season, isNight, isRain) {
   // Use the secondary color for icon accent
   const iconTint = colors.secondary || colors.primary || '#ffffff';
   root.style.setProperty('--nav-icon-tint', iconTint);
+}
+
+/**
+ * Helper function for inline SVG frame season control
+ */
+function setSVGSeasonFromApp(season){
+  const svg = document.getElementById('studyframe');
+  if (!svg) return;
+  // map app season to SVG season
+  const svgSeason = (season === 'winter') ? 'snow' : 'leaves';
+  svg.setAttribute('data-season', svgSeason);
 }
 
 /**
