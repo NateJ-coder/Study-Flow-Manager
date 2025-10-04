@@ -11,7 +11,7 @@
     "images": {
       "backgrounds": "assets/images"
     },
-    "audio": "assets/audios",
+  "audio": "assets/audio",
     "js": "assets/js",
     "css": "assets/CSS",
     "data": "data"
@@ -69,7 +69,7 @@
       },
       "timer_text_color": "#d8eef7",
       "particles": "rain",
-      "audio": "assets/audios/rainfall.mp3"
+  "audio": "assets/audio/rainfall.mp3"
     }
   },
   "slideshow": {
@@ -98,8 +98,8 @@
     "long_break_minutes_default": 20,
     "short_breaks_before_long_default": 3,
     "sounds": {
-      "work_done": "assets/audios/splash.mp3",
-      "break_done": "assets/audios/splash.mp3"
+  "work_done": "assets/audio/splash.mp3",
+  "break_done": "assets/audio/splash.mp3"
     },
     "hourglass": {
       "synced_to_timer": true,
@@ -109,6 +109,10 @@
         "autumn": "#f7f7f7",
         "winter": "#222222"
       }
+    },
+    "frame": {
+      "svg_path": "assets/images/frame.svg",
+      "display_on_timer": true
     },
     "inactivity": {
       "shrink_ui_after_seconds": 120,
@@ -141,7 +145,7 @@
   "calendar": {
     "draw_cross_on_right_click": {
       "enabled": true,
-      "sound": "assets/audios/drawing.mp3",
+  "sound": "assets/audio/drawing.mp3",
       "color_default": "#ff4d4d"
     },
     "left_click_task_popup": {
