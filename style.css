@@ -144,12 +144,16 @@ body {
 }
 
 .page-title h1 {
-  /* responsive title sizing for a range of laptop screens */
-  font-size: clamp(24px, 3.5vw, 48px);
-  font-weight: bold;
+  /* Move the main app title to top-left, smaller and unobtrusive */
+  position: fixed;
+  top: 16px;
+  left: 18px;
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
   color: var(--timer-text-color, #ffffff);
-  margin-bottom: 30px;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.45);
+  z-index: 1200;
 }
 
 /* ===== E) Hourglass Animation ===== */
@@ -252,6 +256,15 @@ body {
 .screensaver-active .nav-icon {
   opacity: 0.4;
   transition: opacity 1s ease;
+}
+
+/* Keep title and clock visible during screensaver */
+.screensaver-active .page-title,
+.screensaver-active #global-topbar,
+.screensaver-active #clock {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  transform: none !important;
 }
 
 /* Pulse animation for screensaver mode */
@@ -584,9 +597,10 @@ body {
   align-items: center;
   justify-content: center;
   z-index: 9; /* behind the main app content but above bg */
+  padding: 28px; /* inset the svg so it frames the content */
 }
 
-.timer-frame-svg { width: 100%; height: 100%; opacity: 0.98; }
+.timer-frame-svg { width: calc(100% - 56px); height: calc(100% - 56px); opacity: 0.98; max-width: 760px; max-height: 760px; }
 
 /* If the frame contains a cat tail or head parts, animate them subtly */
 .timer-frame-svg .cat-tail, .cat-tail { transform-origin: 50% 0%; animation: catTailSwing 1.1s ease-in-out infinite; }
@@ -1346,19 +1360,20 @@ body {
 /* Clock styling */
 #clock {
   position: fixed;
-  top: 20px;
-  left: 20px;
-  font-size: 18px;
-  font-weight: bold;
+  top: 14px;
+  right: 18px;
+  font-size: 16px;
+  font-weight: 700;
   color: var(--timer-text-color, #ffffff);
-  background: rgba(0, 0, 0, 0.3);
-  padding: 10px 15px;
-  border-radius: 10px;
-  backdrop-filter: blur(10px);
-  z-index: 1000;
+  /* Remove background so clock sits flush */
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  backdrop-filter: none;
+  z-index: 1200;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 /* Developer mode toggle button styling */
@@ -1383,22 +1398,7 @@ body {
   transform: scale(0.95);
 }
 
-/* Clock reminders button styling */
-#clock-reminders-toggle {
-  background: none;
-  border: none;
-  color: var(--timer-text-color, #ffffff);
-  font-size: 16px;
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
-  transition: all 0.2s ease;
-}
-
-#clock-reminders-toggle:hover {
-  background: rgba(255, 255, 255, 0.2);
-  transform: scale(1.1);
-}
+/* clock reminders UI removed; styles cleaned up */
 
 /* Rain toggle button styling */
 #rain-toggle {

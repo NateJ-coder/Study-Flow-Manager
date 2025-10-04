@@ -27,26 +27,7 @@
     <header id="global-topbar" aria-label="Global clock and quick actions">
       <div id="clock" aria-live="polite" aria-label="Current time">
         <time id="clock-time">00:00</time>
-        <button id="clock-reminders-toggle" aria-haspopup="true" aria-controls="reminders-panel" aria-expanded="false" title="Reminders">📅</button>
       </div>
-
-      <section id="reminders-panel" aria-label="Reminders" hidden>
-        <header>
-          <h2>Set Reminder</h2>
-        </header>
-        <form id="reminder-form" autocomplete="off">
-          <label>
-            Title
-            <input id="reminder-title" name="title" type="text" placeholder="e.g., Stand up & stretch" />
-          </label>
-          <label>
-            Date &amp; Time
-            <input id="reminder-datetime" name="when" type="datetime-local" />
-          </label>
-          <button id="reminder-save" type="submit">Save</button>
-        </form>
-        <div id="reminder-list" aria-live="polite"></div>
-      </section>
     </header>
 
     <!-- ===== Side Navigation (contextual icons; auto-hide via CSS/JS later) ===== -->
