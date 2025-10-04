@@ -816,6 +816,19 @@ function toggleTimerMode() {
   }
 }
 
+// Add click handlers for mode switching
+function setupModeToggling() {
+  const restTimer = document.getElementById('rest-mode-timer');
+  const setReminderBtn = document.getElementById('btn-set-reminder');
+  
+  if (restTimer) {
+    restTimer.addEventListener('click', toggleTimerMode);
+  }
+  if (setReminderBtn) {
+    setReminderBtn.addEventListener('click', toggleTimerMode);
+  }
+}
+
 // Function to load individual SVG button with theming
 async function loadSVGButton(buttonId, svgFileName) {
   const button = document.getElementById(buttonId);
@@ -899,11 +912,21 @@ function testSeasonSwitch() {
   const emojis = { summer: '🌻', autumn: '🍁', winter: '❄️' };
   if (btn) btn.textContent = emojis[season];
   
-  // Apply the theme
-  document.body.classList.remove('summer-theme', 'autumn-theme', 'winter-theme');
+  // Apply the theme to body and other elements
+  document.body.classList.remove('summer-theme', 'autumn-theme', 'winter-theme', 'rain-theme');
   document.body.classList.add(`${season}-theme`);
   
-  // Update SVG themes
+  // Apply to other elements that need theming
+  const elementsToTheme = ['clock', 'calendar-grid'];
+  elementsToTheme.forEach(id => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.classList.remove('summer-theme', 'autumn-theme', 'winter-theme', 'rain-theme');
+      element.classList.add(`${season}-theme`);
+    }
+  });
+  
+  // Update SVG themes and reload frame
   updateSVGButtonThemes();
   
   console.log(`🎨 Switched to ${season} theme for testing`);
@@ -3120,6 +3143,15 @@ function loadFrameSVG() {
   
   // Add debugging info
   console.log('🖼️ Frame SVG loading initiated for:', timerSvg);
+  
+  // If no SVG found, make sure placeholder is enhanced
+  if (!timerSvg) {
+    console.log('❌ No timer-svg element found');
+    return;
+  }
+  
+  // Enhance the placeholder immediately while we try to load the real frame
+  enhancePlaceholderFrame();
 }
 
 // Function to enhance the placeholder frame design if no SVG is found
@@ -3171,6 +3203,7 @@ function enhancePlaceholderFrame() {
   setupTimerButtons();
   loadFrameSVG(); // Load the actual frame.svg content
   loadSVGButtons(); // Load custom SVG buttons
+  setupModeToggling(); // Setup click handlers for mode switching
   setupScreensaver();
   setupRainClickEffects();
   initializeCalendar();

@@ -207,11 +207,10 @@ body {
   position: absolute;
   top: 20px;
   left: 20px;
-  font-size: clamp(24px, 4vw, 32px);
+  font-size: 16px;
   color: var(--ui-tint-primary, #dff6ff);
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-  font-weight: 300;
-  letter-spacing: 2px;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+  font-weight: 400;
   z-index: 200;
 }
 
@@ -383,25 +382,7 @@ body {
   color: var(--ui-tint-secondary, #b7f0c6);
 }
 
-/* ===== Debug Controls (temporary) ===== */
-#debug-controls {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  display: flex;
-  gap: 10px;
-  z-index: 200;
-}
 
-#debug-controls button {
-  padding: 8px 12px;
-  background: rgba(0, 0, 0, 0.5);
-  color: var(--ui-tint-primary, #dff6ff);
-  border: 1px solid var(--ui-tint-primary, #dff6ff);
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 12px;
-}
 
 /* Hourglass flip animation */
 .hourglass.flip {
