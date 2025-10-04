@@ -54,31 +54,69 @@
 
       <!-- === TIMER PAGE === -->
       <section id="page-timer" role="region" aria-label="Pomodoro Timer" data-view="timer">
-        <header class="page-title">
-          <h1>StudyFlow</h1>
-        </header>
+        <!-- Page title - positioned top left -->
+        <div id="app-title">
+          StudyFlow
+        </div>
 
-        <!-- Decorative frame (background layer) -->
-        <div id="timer-frame"></div>
-        
-        <!-- Timer content (overlay layer) -->
-        <div id="timer-view">
-          <div id="session-indicator" aria-live="polite">
-            <span id="session-current">1</span> of <span id="session-total">4</span>
+        <!-- Rest Mode Timer (bottom of screen) -->
+        <div id="rest-mode-timer" class="timer-mode active">
+          <div id="hourglass-icon">⏳</div>
+          <div id="rest-timer-display">
+            <div id="rest-session-indicator">
+              session <span id="rest-session-current">2</span> of <span id="rest-session-total">4</span>
+            </div>
+            <div id="rest-countdown">
+              <span id="rest-time-mm">40</span>:<span id="rest-time-ss">56</span>
+            </div>
           </div>
+        </div>
 
-          <!-- Main countdown -->
-          <div id="countdown" aria-live="assertive">
-            <span id="time-mm">45</span>:<span id="time-ss">00</span>
+        <!-- Active Mode Timer (centered with frame) -->
+        <div id="active-mode-timer" class="timer-mode">
+          <!-- Decorative Frame -->
+          <div id="timer-frame-container">
+            <svg id="timer-svg" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+              <!-- Placeholder frame - will be replaced by actual frame.svg -->
+              <rect x="20" y="20" width="360" height="260" 
+                    fill="none" 
+                    stroke="var(--ui-tint-primary, #dff6ff)" 
+                    stroke-width="3" 
+                    rx="15" 
+                    opacity="0.8"/>
+            </svg>
           </div>
+          
+          <!-- Timer Content (centered in frame) -->
+          <div id="active-timer-content">
+            <div id="active-session-indicator">
+              session <span id="active-session-current">1</span> of <span id="active-session-total">4</span>
+            </div>
+            <div id="active-countdown">
+              <span id="active-time-mm">45</span>:<span id="active-time-ss">00</span>
+            </div>
+          </div>
+          
+          <!-- SVG Buttons positioned at frame corners -->
+          <div id="frame-buttons">
+            <button id="btn-start" type="button" class="frame-svg-button" aria-label="Start timer">
+              <!-- Start SVG will be loaded here -->
+            </button>
+            <button id="btn-reset" type="button" class="frame-svg-button" aria-label="Reset timer">
+              <!-- Reset SVG will be loaded here -->
+            </button>
+          </div>
+        </div>
 
-          <!-- Timer controls -->
-          <div id="timer-controls" role="group" aria-label="Timer controls">
-            <button id="btn-start" type="button">Start</button>
-            <button id="btn-pause" type="button" disabled>Pause</button>
-            <button id="btn-reset" type="button">Reset</button>
-            <button id="btn-mode" type="button" data-mode="work" aria-label="Switch mode">Work</button>
-          </div>
+        <!-- Set Reminder Button (bottom left) -->
+        <button id="btn-set-reminder" type="button" class="text-button">
+          Set Reminder
+        </button>
+
+        <!-- Mode/Season Test Buttons (temporary) -->
+        <div id="debug-controls">
+          <button id="btn-mode" type="button" data-mode="work" onclick="toggleTimerMode()">Toggle Mode</button>
+          <button id="btn-season" type="button" onclick="testSeasonSwitch()" aria-label="Test seasons">🌻</button>
         </div>
       </section>
 

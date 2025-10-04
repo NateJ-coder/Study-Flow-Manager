@@ -678,11 +678,19 @@ function createSummerLeafParticles() {
   
   for (let i = 0; i < 15; i++) {
     const leaf = document.createElement("div");
-    leaf.className = "falling-leaf";
-    leaf.textContent = "🍃";
+    leaf.className = "particle leaves-green";
+    // No emoji - pure CSS styling
     leaf.style.left = Math.random() * 100 + "vw";
+    leaf.style.top = "-10px";
     leaf.style.animationDelay = Math.random() * 10 + "s";
-    leaf.style.fontSize = 20 + Math.random() * 20 + "px";
+    
+    // Add random variations
+    const sizeMultiplier = 0.8 + Math.random() * 0.4;
+    leaf.style.setProperty('--particle-scale', sizeMultiplier.toString());
+    leaf.style.setProperty('--initial-rotate', Math.random() * 360 + 'deg');
+    leaf.style.setProperty('--particle-drift', (Math.random() - 0.5) * 60 + 'px');
+    leaf.style.setProperty('--fall-duration', (8 + Math.random() * 4) + 's');
+    
     container.appendChild(leaf);
   }
 }
@@ -691,14 +699,21 @@ function createAutumnLeafParticles() {
   const container = document.getElementById('particles-layer');
   if (!container) return;
   
-  const colors = ["#e57373","#ffb74d","#ff8a65","#fdd835"];
   for (let i = 0; i < 20; i++) {
     const leaf = document.createElement("div");
-    leaf.className = "autumn-leaf";
-    leaf.textContent = "🍁";
+    leaf.className = "particle leaves-burnt_orange_brown";
+    // No emoji - pure CSS styling
     leaf.style.left = Math.random() * 100 + "vw";
+    leaf.style.top = "-10px";
     leaf.style.animationDelay = Math.random() * 8 + "s";
-    leaf.style.color = colors[Math.floor(Math.random()*colors.length)];
+    
+    // Add random variations
+    const sizeMultiplier = 0.7 + Math.random() * 0.6;
+    leaf.style.setProperty('--particle-scale', sizeMultiplier.toString());
+    leaf.style.setProperty('--initial-rotate', Math.random() * 360 + 'deg');
+    leaf.style.setProperty('--particle-drift', (Math.random() - 0.5) * 80 + 'px');
+    leaf.style.setProperty('--fall-duration', (6 + Math.random() * 4) + 's');
+    
     container.appendChild(leaf);
   }
 }
@@ -709,11 +724,20 @@ function createSnowParticles() {
   
   for (let i = 0; i < 25; i++) {
     const snow = document.createElement("div");
-    snow.className = "snowflake";
-    snow.textContent = "❄";
+    snow.className = "particle snowflakes";
+    // No emoji - pure CSS styling with white particles
     snow.style.left = Math.random() * 100 + "vw";
+    snow.style.top = "-10px";
     snow.style.animationDelay = Math.random() * 12 + "s";
-    snow.style.fontSize = 12 + Math.random() * 16 + "px";
+    snow.style.backgroundColor = "#ffffff";
+    snow.style.boxShadow = "0 0 3px rgba(255,255,255,0.6)";
+    
+    // Add random variations
+    const sizeMultiplier = 0.6 + Math.random() * 0.8;
+    snow.style.setProperty('--particle-scale', sizeMultiplier.toString());
+    snow.style.setProperty('--particle-drift', (Math.random() - 0.5) * 50 + 'px');
+    snow.style.setProperty('--fall-duration', (10 + Math.random() * 4) + 's');
+    
     container.appendChild(snow);
   }
 }
@@ -766,6 +790,170 @@ function startSeasonalParticles() {
       }
     }, 200); // Check every 200 milliseconds for smooth flow rate
   }
+}
+
+// Function to load and apply seasonal theming to SVG buttons
+function loadSVGButtons() {
+  loadSVGButton('btn-start', 'assets/images/start-button.svg');
+  loadSVGButton('btn-reset', 'assets/images/reset-button.svg');
+}
+
+// Function to toggle between rest and active timer modes
+function toggleTimerMode() {
+  const restMode = document.getElementById('rest-mode-timer');
+  const activeMode = document.getElementById('active-mode-timer');
+  
+  if (restMode.classList.contains('active')) {
+    // Switch to active mode
+    restMode.classList.remove('active');
+    activeMode.classList.add('active');
+    console.log('Switched to Active Mode');
+  } else {
+    // Switch to rest mode
+    activeMode.classList.remove('active');
+    restMode.classList.add('active');
+    console.log('Switched to Rest Mode');
+  }
+}
+
+// Function to load individual SVG button with theming
+async function loadSVGButton(buttonId, svgFileName) {
+  const button = document.getElementById(buttonId);
+  if (!button) return;
+
+  try {
+    const response = await fetch(svgFileName);
+    if (!response.ok) {
+      console.log(`SVG button ${svgFileName} not found, keeping text button`);
+      return;
+    }
+    
+    const svgText = await response.text();
+    
+    // Parse and theme the SVG
+    const themedSVG = applySVGTheming(svgText);
+    
+    // Insert the SVG into the button
+    button.innerHTML = themedSVG;
+    
+    console.log(`✅ Loaded SVG button: ${buttonId}`);
+  } catch (err) {
+    console.log(`Error loading SVG button ${buttonId}:`, err.message);
+  }
+}
+
+// Function to apply seasonal theming to SVG content
+function applySVGTheming(svgText) {
+  // Replace SVG color values with CSS variables for dynamic theming
+  let themedSVG = svgText
+    // Remove white/light backgrounds
+    .replace(/fill="#ffffff"/g, 'fill="none"')
+    .replace(/fill="#f4f4f6"/g, 'fill="none"')
+    .replace(/fill="white"/g, 'fill="none"')
+    
+    // Wood gradients
+    .replace(/#b86a2d/g, 'var(--svg-wood-primary)')
+    .replace(/#a15523/g, 'var(--svg-wood-secondary)')
+    .replace(/#7e3c15/g, 'var(--svg-wood-tertiary)')
+    .replace(/#c77a3d/g, 'var(--svg-wood-primary)')
+    .replace(/#8a471b/g, 'var(--svg-wood-secondary)')
+    
+    // Leaf gradients
+    .replace(/#b8ff5a/g, 'var(--svg-leaf-primary)')
+    .replace(/#2b8a2e/g, 'var(--svg-leaf-secondary)')
+    
+    // Vine gradients
+    .replace(/#8af06b/g, 'var(--svg-vine-primary)')
+    .replace(/#1e7a23/g, 'var(--svg-vine-secondary)')
+    
+    // Additional wood tones that might appear
+    .replace(/#9b5825/g, 'var(--svg-wood-secondary)')
+    .replace(/#753812/g, 'var(--svg-wood-tertiary)')
+    .replace(/#6e3213/g, 'var(--svg-wood-tertiary)')
+    .replace(/#5e2a0e/g, 'var(--svg-wood-tertiary)')
+    
+    // Leaf accent colors
+    .replace(/#83d24a/g, 'var(--svg-leaf-primary)')
+    .replace(/#0d4c18/g, 'var(--svg-leaf-secondary)');
+    
+  return themedSVG;
+}
+
+// Function to update SVG button themes when season changes
+function updateSVGButtonThemes() {
+  // Re-load buttons to apply new theme colors
+  loadSVGButtons();
+  // Also refresh the frame SVG with new theming
+  loadFrameSVG();
+}
+
+// Test function to cycle through seasons (for demonstration)
+let testSeasons = ['summer', 'autumn', 'winter'];
+let currentTestSeason = 0;
+function testSeasonSwitch() {
+  currentTestSeason = (currentTestSeason + 1) % testSeasons.length;
+  const season = testSeasons[currentTestSeason];
+  
+  // Update the button emoji
+  const btn = document.getElementById('btn-season');
+  const emojis = { summer: '🌻', autumn: '🍁', winter: '❄️' };
+  if (btn) btn.textContent = emojis[season];
+  
+  // Apply the theme
+  document.body.classList.remove('summer-theme', 'autumn-theme', 'winter-theme');
+  document.body.classList.add(`${season}-theme`);
+  
+  // Update SVG themes
+  updateSVGButtonThemes();
+  
+  console.log(`🎨 Switched to ${season} theme for testing`);
+}
+
+// Function to load and integrate the actual frame.svg content
+function loadFrameSVG() {
+  const timerSvg = document.getElementById('timer-svg');
+  if (!timerSvg) return;
+  
+  // Attempt to fetch the actual frame.svg file
+  fetch('assets/images/frame.svg')
+    .then(response => {
+      if (!response.ok) {
+        console.log('Frame SVG not found, using placeholder design');
+        return null;
+      }
+      return response.text();
+    })
+    .then(svgText => {
+      if (svgText) {
+        // Parse the SVG content
+        const parser = new DOMParser();
+        const svgDoc = parser.parseFromString(svgText, 'image/svg+xml');
+        const frameSvg = svgDoc.documentElement;
+        
+        // Get the viewBox from the original SVG
+        const viewBox = frameSvg.getAttribute('viewBox') || '0 0 400 300';
+        timerSvg.setAttribute('viewBox', viewBox);
+        
+        // Clear placeholder content but preserve the foreignObject
+        const foreignObject = timerSvg.querySelector('foreignObject');
+        timerSvg.innerHTML = '';
+        
+        // Copy frame SVG content
+        Array.from(frameSvg.children).forEach(child => {
+          timerSvg.appendChild(child.cloneNode(true));
+        });
+        
+        // Re-add the foreignObject with timer content
+        if (foreignObject) {
+          timerSvg.appendChild(foreignObject);
+        }
+        
+        console.log('✅ Frame SVG loaded successfully');
+      }
+    })
+    .catch(err => {
+      console.log('Using placeholder frame design:', err.message);
+    });
 }
 
 // Enhanced particle creation with visual improvements
@@ -1004,6 +1192,10 @@ function updateCalendarClockAesthetic(season, isNight, isRain) {
   const themeClass = isRain ? 'rain-theme' : `${season}-theme`;
   const timeClass = isNight ? 'night-mode' : 'day-mode';
   
+  // Apply theme to body for global CSS variables
+  document.body.classList.remove('summer-theme', 'autumn-theme', 'winter-theme', 'rain-theme');
+  document.body.classList.add(themeClass);
+  
   [clockElement, calendarElement].forEach(element => {
     if (element) {
       element.classList.add(themeClass, timeClass);
@@ -1022,6 +1214,9 @@ function updateCalendarClockAesthetic(season, isNight, isRain) {
   }
   
   console.log(`🕐 Calendar/Clock aesthetic updated: ${themeClass} ${timeClass}`);
+  
+  // Update SVG button themes
+  updateSVGButtonThemes();
 }
 
 /* ===== TIMER LOGIC ===== */
@@ -2870,6 +3065,103 @@ window.onload = () => {
       }, Math.random() * 1200);
     }
   }
+
+// Function to load and integrate the actual frame.svg content
+function loadFrameSVG() {
+  const timerSvg = document.getElementById('timer-svg');
+  if (!timerSvg) return;
+  
+  // Attempt to fetch the actual frame.svg file
+  fetch('assets/images/frame.svg')
+    .then(response => {
+      if (!response.ok) {
+        console.log('Frame SVG not found, using placeholder design');
+        return null;
+      }
+      return response;
+    })
+    .then(response => {
+      if (!response.ok) {
+        console.log('Frame SVG not found, using placeholder design');
+        return null;
+      }
+      return response.text();
+    })
+    .then(svgText => {
+      if (svgText) {
+        // Parse the SVG content and apply seasonal theming
+        const parser = new DOMParser();
+        const themedSvgText = applySVGTheming(svgText);
+        const svgDoc = parser.parseFromString(themedSvgText, 'image/svg+xml');
+        const frameSvg = svgDoc.documentElement;
+        
+        // Get the viewBox from the original SVG
+        const viewBox = frameSvg.getAttribute('viewBox') || '0 0 400 300';
+        timerSvg.setAttribute('viewBox', viewBox);
+        
+        // Clear placeholder content and replace with frame SVG content
+        timerSvg.innerHTML = '';
+        
+        // Copy frame SVG content (excluding any existing foreignObject elements)
+        Array.from(frameSvg.children).forEach(child => {
+          if (child.tagName.toLowerCase() !== 'foreignobject') {
+            timerSvg.appendChild(child.cloneNode(true));
+          }
+        });
+        
+        console.log('✅ Frame SVG loaded and integrated successfully');
+      }
+    })
+    .catch(err => {
+      console.log('Using placeholder frame design:', err.message);
+      // Enhance placeholder design
+      enhancePlaceholderFrame();
+    });
+  
+  // Add debugging info
+  console.log('🖼️ Frame SVG loading initiated for:', timerSvg);
+}
+
+// Function to enhance the placeholder frame design if no SVG is found
+function enhancePlaceholderFrame() {
+  const timerSvg = document.getElementById('timer-svg');
+  if (!timerSvg) return;
+  
+  // Add more decorative elements to the placeholder
+  const decorativeElements = `
+    <!-- Enhanced placeholder frame -->
+    <defs>
+      <linearGradient id="frameGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:var(--ui-tint-primary, #dff6ff);stop-opacity:0.8" />
+        <stop offset="100%" style="stop-color:var(--ui-tint-primary, #dff6ff);stop-opacity:0.4" />
+      </linearGradient>
+    </defs>
+    <rect x="15" y="15" width="370" height="270" 
+          fill="none" 
+          stroke="url(#frameGradient)" 
+          stroke-width="4" 
+          rx="20" 
+          opacity="0.9"/>
+    <rect x="25" y="25" width="350" height="250" 
+          fill="none" 
+          stroke="var(--ui-tint-primary, #dff6ff)" 
+          stroke-width="1" 
+          rx="15" 
+          opacity="0.5"/>
+    <!-- Corner decorations -->
+    <circle cx="45" cy="45" r="5" fill="var(--ui-tint-primary, #dff6ff)" opacity="0.7"/>
+    <circle cx="355" cy="45" r="5" fill="var(--ui-tint-primary, #dff6ff)" opacity="0.7"/>
+    <circle cx="45" cy="255" r="5" fill="var(--ui-tint-primary, #dff6ff)" opacity="0.7"/>
+    <circle cx="355" cy="255" r="5" fill="var(--ui-tint-primary, #dff6ff)" opacity="0.7"/>
+  `;
+  
+  // Insert enhanced decorations before the foreignObject
+  const foreignObject = timerSvg.querySelector('foreignObject');
+  if (foreignObject) {
+    foreignObject.insertAdjacentHTML('beforebegin', decorativeElements);
+  }
+}
+
   setupNavigation();
   setupNavHiding();
   loadSettings();
@@ -2877,12 +3169,13 @@ window.onload = () => {
   setupRainToggle();
   startPerpetualClock();
   setupTimerButtons();
+  loadFrameSVG(); // Load the actual frame.svg content
+  loadSVGButtons(); // Load custom SVG buttons
   setupScreensaver();
   setupRainClickEffects();
   initializeCalendar();
 
-  // Inject decorative SVG frame into timer-frame so it can be themed/animated
-  injectFrameSVG();
+  // SVG frame is now loaded directly into the inline SVG structure
   
   // Apply initial theme (ensure rain is never automatically activated)
   let initialSeason = STATE.userSettings?.season || "summer";

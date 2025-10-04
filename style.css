@@ -85,6 +85,51 @@ body {
   filter: drop-shadow(0 2px 2px rgba(0,0,0,0.12)) drop-shadow(0 0 6px var(--nav-icon-tint, transparent));
 }
 
+/* ===== Seasonal SVG Button Color Theming ===== */
+:root {
+  /* Default/Base SVG Button Colors */
+  --svg-wood-primary: #b86a2d;
+  --svg-wood-secondary: #a15523;
+  --svg-wood-tertiary: #7e3c15;
+  --svg-leaf-primary: #b8ff5a;
+  --svg-leaf-secondary: #2b8a2e;
+  --svg-vine-primary: #8af06b;
+  --svg-vine-secondary: #1e7a23;
+}
+
+/* Summer theme colors */
+.summer-theme {
+  --svg-wood-primary: #d4a574;
+  --svg-wood-secondary: #c0956a;
+  --svg-wood-tertiary: #9c7452;
+  --svg-leaf-primary: #90ff3e;
+  --svg-leaf-secondary: #4ab83d;
+  --svg-vine-primary: #7aff55;
+  --svg-vine-secondary: #2e9834;
+}
+
+/* Winter theme colors */
+.winter-theme {
+  --svg-wood-primary: #8b6f47;
+  --svg-wood-secondary: #7a5f3c;
+  --svg-wood-tertiary: #5a4529;
+  --svg-leaf-primary: #c4e8ff;
+  --svg-leaf-secondary: #6bb6ff;
+  --svg-vine-primary: #a8d4ff;
+  --svg-vine-secondary: #4a90c2;
+}
+
+/* Autumn theme colors */
+.autumn-theme {
+  --svg-wood-primary: #a0653a;
+  --svg-wood-secondary: #8b5630;
+  --svg-wood-tertiary: #6b4025;
+  --svg-leaf-primary: #ff8c42;
+  --svg-leaf-secondary: #d2691e;
+  --svg-vine-primary: #ff7f33;
+  --svg-vine-secondary: #cc5500;
+}
+
 /* Clock icon micro-rotation for seconds tick */
 .nav-icon-rotate { transform-origin: 50% 50%; transition: transform 220ms ease; }
 
@@ -122,18 +167,23 @@ body {
   height: 100vh; /* Full viewport height for absolute positioning */
   background: transparent; /* Allow background to show through */
   z-index: 10; /* Above background layers */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 #app section {
   width: 100%;
   /* slightly narrower max-width for better readability on laptops */
   max-width: 720px;
+  position: relative;
   padding: 20px;
   text-align: center;
   background: transparent; /* Allow background to show through */
-  position: relative;
   z-index: 10; /* Above background layers */
 }
+
+
 
 #app section[hidden] {
   display: none;
@@ -152,42 +202,205 @@ body {
   z-index: 1200;
 }
 
-/* ===== E) Timer Frame and Overlay Positioning ===== */
-/* The frame acts as the background layer */
-#timer-frame {
+/* ===== E) App Title Positioning ===== */
+#app-title {
   position: absolute;
-  inset: 0; /* Makes it cover the entire main area */
-  z-index: 900;
-  background-image: url('assets/images/frame.svg');
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-  background-color: transparent;
-  /* Add centering logic for frame content */
+  top: 20px;
+  left: 20px;
+  font-size: clamp(24px, 4vw, 32px);
+  color: var(--ui-tint-primary, #dff6ff);
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  font-weight: 300;
+  letter-spacing: 2px;
+  z-index: 200;
+}
+
+/* ===== Timer Mode System ===== */
+.timer-mode {
+  position: absolute;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+
+.timer-mode.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ===== Rest Mode Timer (bottom of screen) ===== */
+#rest-mode-timer {
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
-  justify-content: center;
   align-items: center;
+  gap: 20px;
+  z-index: 100;
 }
 
-/* Timer view overlays on top of the frame */
-#timer-view {
-  position: absolute;
-  inset: 0; /* Makes it cover the entire main area */
-  z-index: 1000; /* Must be higher than timer-frame */
-  
-  /* Center the timer content within this overlay view */
-  display: flex;
-  flex-direction: column;
-  justify-content: center; /* Center vertically */
-  align-items: center; /* Center horizontally */
-
-  background: transparent; /* Allows the frame image to show through */
+#hourglass-icon {
+  font-size: clamp(24px, 4vw, 36px);
+  color: var(--ui-tint-primary, #dff6ff);
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }
 
-/* Ensure the display elements themselves are also safe */
-#timer-display, #timer-controls {
+#rest-timer-display {
+  text-align: center;
+  color: #ffffff;
+}
+
+#rest-session-indicator {
+  font-size: clamp(12px, 2vw, 16px);
+  color: var(--ui-tint-primary, #dff6ff);
+  margin-bottom: 5px;
+}
+
+#rest-countdown {
+  font-size: clamp(32px, 6vw, 48px);
+  font-weight: bold;
+  text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.4);
+  letter-spacing: 2px;
+}
+
+/* ===== Active Mode Timer (centered with frame) ===== */
+#active-mode-timer {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(80vw, 80vh);
+  max-width: 600px;
+  max-height: 450px;
+  z-index: 100;
+}
+
+#timer-frame-container {
   position: relative;
-  z-index: 1001; /* Even higher */
+  width: 100%;
+  height: auto;
+}
+
+#timer-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+#active-timer-content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  color: #ffffff;
+  z-index: 2;
+}
+
+#active-session-indicator {
+  font-size: clamp(14px, 2.5vw, 18px);
+  color: var(--ui-tint-primary, #dff6ff);
+  margin-bottom: 10px;
+}
+
+#active-countdown {
+  font-size: clamp(40px, 8vw, 72px);
+  font-weight: bold;
+  text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.4);
+  letter-spacing: 3px;
+}
+
+/* ===== Frame SVG Buttons ===== */
+#frame-buttons {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.frame-svg-button {
+  position: absolute;
+  width: clamp(60px, 8vw, 100px);
+  height: clamp(45px, 6vw, 75px);
+  background: none;
+  border: none;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: transform 0.2s ease, filter 0.2s ease;
+  z-index: 3;
+}
+
+.frame-svg-button:hover {
+  transform: scale(1.05);
+  filter: brightness(1.1);
+}
+
+.frame-svg-button:active {
+  transform: scale(0.95);
+}
+
+/* Position buttons at frame corners */
+#btn-start {
+  bottom: 10%;
+  left: 8%;
+}
+
+#btn-reset {
+  bottom: 10%;
+  right: 8%;
+}
+
+.frame-svg-button svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  background: none !important;
+}
+
+/* Remove white backgrounds from SVGs */
+.frame-svg-button svg rect[fill="#ffffff"],
+.frame-svg-button svg rect[fill="white"] {
+  fill: none !important;
+}
+
+/* ===== Set Reminder Button ===== */
+#btn-set-reminder {
+  position: absolute;
+  bottom: 40px;
+  left: 20px;
+  background: none;
+  border: none;
+  color: var(--ui-tint-primary, #dff6ff);
+  font-size: clamp(14px, 2.5vw, 18px);
+  cursor: pointer;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+  z-index: 150;
+  transition: color 0.2s ease;
+}
+
+#btn-set-reminder:hover {
+  color: var(--ui-tint-secondary, #b7f0c6);
+}
+
+/* ===== Debug Controls (temporary) ===== */
+#debug-controls {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  gap: 10px;
+  z-index: 200;
+}
+
+#debug-controls button {
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.5);
+  color: var(--ui-tint-primary, #dff6ff);
+  border: 1px solid var(--ui-tint-primary, #dff6ff);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
 }
 
 /* Hourglass flip animation */
@@ -502,6 +715,12 @@ body {
 /* Brown leaves variant */
 .particle.leaves-brown {
   background-color: #8b4513; /* Saddle Brown */
+}
+
+/* Snowflake particles */
+.particle.snowflakes {
+  background-color: #ffffff;
+  box-shadow: 0 0 3px rgba(255,255,255,0.6);
 }
 
 /* Enhanced drift animation for realistic movement */
@@ -1417,42 +1636,7 @@ body {
   line-height: 1.4;
 }
 
-/* ===== M) Timer Controls Styling ===== */
-#timer-controls {
-  display: flex;
-  gap: 10px;
-  justify-content: center;
-  margin-top: 20px;
-  z-index: 1001; /* Above frame and display */
-  position: relative;
-}
-
-#timer-controls button {
-  padding: 12px 20px;
-  background: var(--ui-tint-primary, #dff6ff);
-  color: #000;
-  border: none;
-  border-radius: 8px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 14px;
-}
-
-#timer-controls button:hover {
-  background: var(--ui-tint-secondary, #b7f0c6);
-  transform: translateY(-1px);
-}
-
-#timer-controls button:active {
-  transform: translateY(0);
-}
-
-#timer-controls button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
-}
+/* Old timer controls CSS removed - using new layout system */
 
 #btn-pause {
   display: none; /* Initially hidden */
