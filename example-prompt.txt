@@ -1,0 +1,15 @@
+Example prompt:
+
+[PASTE THE STUDYFLOW_CONTEXT_SUMMARY.md CONTENT HERE]
+
+---
+
+I want to change the mouse cursor color in my StudyFlow application. Currently, I think there might be some cursor enhancement features, but I want to make the cursor more visible and colorful. 
+
+Specifically, I want to:
+1. Change the cursor to a bright green color (#00FF00) when hovering over interactive elements
+2. Add a subtle glow effect around the cursor 
+3. Make sure the cursor color adapts to the current seasonal theme
+4. Ensure the changes work across all pages (index.html, settings.html, calendar.html)
+
+Please implement these changes and show me the results immediately using the development server so I can see how it looks.
