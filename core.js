@@ -38,7 +38,13 @@ const STATE = {
   
   // Task modal state
   taskModalOpen: false,
-  currentTaskDate: null
+  currentTaskDate: null,
+  
+  // Developer mode toggle state
+  developerModeToggle: false,
+  
+  // Rain lockout auto-hide
+  rainLockoutTimeout: null
 };
 
 const ELEMENTS = {
@@ -120,10 +126,16 @@ function setupNavigation() {
 }
 
 /* ===== Rain Lockout Management ===== */
-function showRainLockout(status) {
+function showRainLockout(status, autoHide = true) {
   STATE.rainLockout = status;
 
   if (status) {
+    // Clear any existing timeout
+    if (STATE.rainLockoutTimeout) {
+      clearTimeout(STATE.rainLockoutTimeout);
+      STATE.rainLockoutTimeout = null;
+    }
+    
     // Use existing rain lockout element from HTML
     let lockoutElement = document.getElementById('rain-lockout');
     if (!lockoutElement) {
@@ -138,14 +150,32 @@ function showRainLockout(status) {
     document.body.classList.add("shock-cursor");
     
     console.log('🔒 Rain lockout activated');
-  } else {
-    // Hide lockout overlay
-    if (ELEMENTS.rainLockout) {
-      ELEMENTS.rainLockout.setAttribute("hidden", "true");
-    }
-    document.body.classList.remove("shock-cursor");
     
+    // Auto-hide after 5 seconds if requested
+    if (autoHide) {
+      STATE.rainLockoutTimeout = setTimeout(() => {
+        hideRainLockoutOverlay();
+      }, 5000);
+    }
+  } else {
+    hideRainLockoutOverlay();
     console.log('🔓 Rain lockout deactivated');
+  }
+}
+
+/**
+ * Hide the rain lockout overlay but keep the underlying restrictions
+ */
+function hideRainLockoutOverlay() {
+  if (ELEMENTS.rainLockout) {
+    ELEMENTS.rainLockout.setAttribute("hidden", "true");
+  }
+  document.body.classList.remove("shock-cursor");
+  
+  // Clear timeout if it exists
+  if (STATE.rainLockoutTimeout) {
+    clearTimeout(STATE.rainLockoutTimeout);
+    STATE.rainLockoutTimeout = null;
   }
 }
 
@@ -184,6 +214,9 @@ function loadSettings() {
     console.error("Failed to load settings, using defaults", err);
     STATE.userSettings = { ...DEFAULT_SETTINGS };
   }
+
+  // Sync developer mode toggle state
+  STATE.developerModeToggle = Boolean(STATE.userSettings.developer_mode_test_rain_no_lockout);
 
   // Populate the form fields if present
   const form = document.getElementById("settings-form");
@@ -241,6 +274,53 @@ function setupSettingsForm() {
 }
 
 /* ===== PERPETUAL CLOCK & TIME ZONE ===== */
+
+/**
+ * Setup developer mode toggle
+ */
+function setupDeveloperModeToggle() {
+  const toggleBtn = document.getElementById('dev-mode-toggle');
+  if (!toggleBtn) return;
+  
+  // Update button appearance based on state
+  function updateToggleButton() {
+    if (STATE.developerModeToggle) {
+      toggleBtn.style.background = 'rgba(255, 215, 0, 0.8)';
+      toggleBtn.style.color = '#000';
+      toggleBtn.textContent = 'DEV';
+    } else {
+      toggleBtn.style.background = 'rgba(255, 255, 255, 0.2)';
+      toggleBtn.style.color = '#fff';
+      toggleBtn.textContent = 'DEV';
+    }
+  }
+  
+  // Toggle developer mode
+  toggleBtn.addEventListener('click', () => {
+    STATE.developerModeToggle = !STATE.developerModeToggle;
+    
+    // Update user settings to reflect toggle state
+    if (!STATE.userSettings) {
+      STATE.userSettings = { ...DEFAULT_SETTINGS };
+    }
+    STATE.userSettings.developer_mode_test_rain_no_lockout = STATE.developerModeToggle;
+    
+    updateToggleButton();
+    saveSettings();
+    
+    console.log(`🔧 Developer mode: ${STATE.developerModeToggle ? 'ON' : 'OFF'}`);
+    
+    // If turning off dev mode during rain, re-apply lockout if on settings page
+    if (!STATE.developerModeToggle && STATE.isRainActive && STATE.currentPage === 'settings') {
+      showRainLockout(true);
+    }
+  });
+  
+  // Initialize button state
+  updateToggleButton();
+  
+  console.log('✅ Developer mode toggle setup complete');
+}
 
 /**
  * Start the perpetual clock that updates every second.
@@ -936,8 +1016,9 @@ function startRain() {
   // Add wet effect to all buttons
   addWetEffectToButtons();
   
-  // Show rain lockout if developer mode is disabled
-  if (!STATE.userSettings?.developer_mode_test_rain_no_lockout) {
+  // Only lock out when user is on Settings page (unless dev override disables it)
+  if (!STATE.userSettings?.developer_mode_test_rain_no_lockout &&
+      STATE.currentPage === 'settings') {
     showRainLockout(true);
   }
   
@@ -1015,6 +1096,9 @@ function endRain() {
   
   // Remove wet effect from buttons
   removeWetEffectFromButtons();
+  
+  // Cleanup rain particles
+  cleanupRainParticles();
   
   // Hide rain lockout
   showRainLockout(false);
@@ -1125,6 +1209,7 @@ function cleanupRainCycle() {
   }
   
   stopRainfallAudio();
+  cleanupRainParticles();
 }
 
 /**
@@ -1141,6 +1226,131 @@ window.debugRain = {
     });
   }
 };
+
+/* ===== RAIN PARTICLE SYSTEM ===== */
+
+/**
+ * Create animated rain particle system
+ */
+function createRainParticleSystem() {
+  const particleCount = 100; // Number of rain particles
+  const particlesLayer = document.getElementById('particles-layer');
+  
+  if (!particlesLayer) return;
+  
+  // Clear existing rain particles
+  particlesLayer.querySelectorAll('.rain-particle').forEach(p => p.remove());
+  
+  for (let i = 0; i < particleCount; i++) {
+    createRainParticle();
+  }
+  
+  console.log(`🌧️ Created ${particleCount} rain particles`);
+}
+
+/**
+ * Create a single rain particle
+ */
+function createRainParticle() {
+  const particle = document.createElement('div');
+  particle.className = 'rain-particle';
+  
+  // Random particle properties
+  const size = Math.random();
+  if (size < 0.3) {
+    particle.classList.add('light');
+  } else if (size > 0.7) {
+    particle.classList.add('heavy');
+  }
+  
+  // Random position and timing
+  const startX = Math.random() * window.innerWidth;
+  const animationDuration = 1 + Math.random() * 2; // 1-3 seconds
+  const animationDelay = Math.random() * 2; // 0-2 seconds delay
+  
+  particle.style.left = startX + 'px';
+  particle.style.animationDuration = animationDuration + 's';
+  particle.style.animationDelay = animationDelay + 's';
+  
+  // Add to DOM
+  document.body.appendChild(particle);
+  
+  // Remove particle after animation completes
+  const totalTime = (animationDuration + animationDelay) * 1000;
+  setTimeout(() => {
+    if (particle && particle.parentNode) {
+      particle.remove();
+      
+      // Create splash effect at bottom
+      createRainSplash(startX);
+      
+      // Create new particle if rain is still active
+      if (STATE.isRainActive) {
+        setTimeout(() => createRainParticle(), Math.random() * 1000);
+      }
+    }
+  }, totalTime);
+}
+
+/**
+ * Create rain splash effect when particle hits ground
+ * @param {number} x - X coordinate for splash
+ */
+function createRainSplash(x) {
+  const splash = document.createElement('div');
+  splash.className = 'rain-splash';
+  splash.style.left = x + 'px';
+  splash.style.bottom = '0px';
+  
+  document.body.appendChild(splash);
+  
+  // Remove splash after animation
+  setTimeout(() => {
+    if (splash && splash.parentNode) {
+      splash.remove();
+    }
+  }, 300);
+}
+
+/**
+ * Create rain overlay for screen wet effect
+ */
+function createRainOverlay() {
+  // Remove existing overlay
+  removeRainOverlay();
+  
+  const overlay = document.createElement('div');
+  overlay.id = 'rain-screen-overlay';
+  overlay.className = 'rain-overlay';
+  
+  document.body.appendChild(overlay);
+  
+  console.log('🌧️ Rain screen overlay created');
+}
+
+/**
+ * Remove rain overlay
+ */
+function removeRainOverlay() {
+  const existingOverlay = document.getElementById('rain-screen-overlay');
+  if (existingOverlay) {
+    existingOverlay.remove();
+  }
+}
+
+/**
+ * Cleanup rain particle system
+ */
+function cleanupRainParticles() {
+  // Remove all rain particles
+  document.querySelectorAll('.rain-particle').forEach(p => p.remove());
+  document.querySelectorAll('.rain-splash').forEach(s => s.remove());
+  
+  // Remove rain overlay
+  removeRainOverlay();
+  
+  console.log('🧹 Rain particles cleaned up');
+}
 
 /* ===== RAIN AESTHETICS ===== */
 
@@ -1190,6 +1400,58 @@ function createMultipleRipples(x, y) {
 }
 
 /**
+ * Check if an element should be blocked during rain mode
+ * @param {Element} element - The element to check
+ * @returns {boolean} True if element should be blocked
+ */
+function shouldBlockElement(element) {
+  if (!STATE.isRainActive || STATE.developerModeToggle) return false;
+  
+  // Allow timer controls even during rain
+  const allowedElements = [
+    '#btn-start', '#btn-pause', '#btn-reset', '#btn-mode',
+    '#countdown', '#time-mm', '#time-ss', '#session-indicator',
+    '#hourglass', '#timer-controls', '#timer-frame',
+    '#dev-mode-toggle' // Always allow dev mode toggle
+  ];
+  
+  // Check if element or its parent is in allowed list
+  for (const selector of allowedElements) {
+    if (element.matches && element.matches(selector)) return false;
+    if (element.closest && element.closest(selector)) return false;
+  }
+  
+  // On settings page, block most settings except timer-related ones
+  if (STATE.currentPage === 'settings') {
+    const settingsTimerControls = [
+      'input[name="work_minutes"]',
+      'input[name="short_break_minutes"]', 
+      'input[name="long_break_minutes"]',
+      'input[name="pomodoro_sessions"]',
+      'input[name="short_breaks_before_long"]'
+    ];
+    
+    for (const selector of settingsTimerControls) {
+      if (element.matches && element.matches(selector)) return false;
+      if (element.closest && element.closest(selector)) return false;
+    }
+    
+    // Block other settings elements
+    const blockedSelectors = [
+      'input', 'select', 'button:not(#dev-mode-toggle)', 
+      '.nav-item', 'fieldset:not(#settings-pomodoro)'
+    ];
+    
+    for (const selector of blockedSelectors) {
+      if (element.matches && element.matches(selector)) return true;
+      if (element.closest && element.closest(selector)) return true;
+    }
+  }
+  
+  return false;
+}
+
+/**
  * Setup global click listener for rain effects
  */
 function setupRainClickEffects() {
@@ -1198,16 +1460,16 @@ function setupRainClickEffects() {
     
     const x = event.clientX;
     const y = event.clientY;
+    const clickedElement = event.target;
     
-    // Check if click was on a disabled/locked element
-    const clickedElement = event.target.closest('.nav-item, .nav-icon, button, .timer-button');
-    
-    if (clickedElement && STATE.rainLockout) {
-      // Clicked on disabled element during rain lockout
+    // Check if element should be blocked
+    if (shouldBlockElement(clickedElement)) {
       event.preventDefault();
       event.stopPropagation();
       
+      // Show shock animation and re-show lockout message
       triggerShockAnimation(clickedElement, x, y);
+      showRainLockout(true, true); // Auto-hide after 5 seconds
       return false;
     }
     
@@ -2154,6 +2416,7 @@ window.onload = () => {
   setupNavHiding();
   loadSettings();
   setupSettingsForm();
+  setupDeveloperModeToggle();
   startPerpetualClock();
   setupTimerButtons();
   setupHourglassAnimation();

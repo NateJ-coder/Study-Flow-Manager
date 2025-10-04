@@ -21,28 +21,22 @@ body {
   position: fixed;
   inset: 0;
   overflow: hidden;
-  z-index: -3; /* behind everything */
+  z-index: 0; /* Behind app content but visible */
 }
 
 #bg-slideshow {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   background-size: cover;
   background-position: center;
-  z-index: -2;
+  z-index: 1;
 }
 
 #particles-layer {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   pointer-events: none; /* purely decorative */
-  z-index: -1;
+  z-index: 2;
 }
 
 /* ===== C) Navigation Buttons ===== */
@@ -76,6 +70,9 @@ body {
   width: 100%;
   height: 100%;
   display: block;
+  background: transparent; /* Allow background to show through */
+  position: relative;
+  z-index: 10; /* Above background layers */
 }
 
 .app-page.hidden {
@@ -90,6 +87,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  background: transparent; /* Allow background to show through */
+  z-index: 10; /* Above background layers */
 }
 
 #app section {
@@ -97,6 +96,9 @@ body {
   max-width: 800px;
   padding: 20px;
   text-align: center;
+  background: transparent; /* Allow background to show through */
+  position: relative;
+  z-index: 10; /* Above background layers */
 }
 
 #app section[hidden] {
@@ -241,7 +243,7 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8IS0tIFJhaW5kcm9wIHBhdHRlcm4gLS0+CiAgPGNpcmNsZSBjeD0iOCIgY3k9IjEyIiByPSIxLjUiIGZpbGw9InJnYmEoMTczLCAyMTYsIDIzMCwgMC43KSIvPgogIDxlbGxpcHNlIGN4PSIyNSIgY3k9IjYiIHJ4PSIyIiByeT0iMyIgZmlsbD0icmdiYSgxNzMsIDIxNiwgMjMwLCAwLjUpIi8+CiAgPGNpcmNsZSBjeD0iMzIiIGN5PSIxOCIgcj0iMSIgZmlsbD0icmdiYSgxNzMsIDIxNiwgMjMwLCAwLjgpIi8+CiAgPGVsbGlwc2UgY3g9IjE1IiBjeT0iMjgiIHJ4PSIxLjUiIHJ5PSIyLjUiIGZpbGw9InJnYmEoMTczLCAyMTYsIDIzMCwgMC42KSIvPgogIDxjaXJjbGUgY3g9IjMiIGN5PSIzNSIgcj0iMSIgZmlsbD0icmdiYSgxNzMsIDIxNiwgMjMwLCAwLjcpIi8+CiAgPGVsbGlwc2UgY3g9IjM1IiBjeT0iMzAiIHJ4PSIxIiByeT0iMS41IiBmaWxsPSJyZ2JhKDE3MywgMjE2LCAyMzAsIDAuNSkiLz4KICA8Y2lyY2xlIGN4PSIyMCIgY3k9IjE0IiByPSIwLjgiIGZpbGw9InJnYmEoMTczLCAyMTYsIDIzMCwgMC45KSIvPgogIDxlbGxpcHNlIGN4PSIxMCIgY3k9IjIyIiByeD0iMS4yIiByeT0iMiIgZmlsbD0icmdiYSgxNzMsIDIxNiwgMjMwLCAwLjYpIi8+Cjwvc3ZnPgo=') repeat;
+  background: url('assets/images/rain-drops-overlay.png') repeat;
   background-size: 40px 40px;
   opacity: 0;
   animation: rainDrops 0.5s ease-in-out forwards;
@@ -254,8 +256,11 @@ body {
     opacity: 0;
     transform: scale(0.8);
   }
+  50% {
+    opacity: 0.9;
+  }
   100% {
-    opacity: 1;
+    opacity: 0.7;
     transform: scale(1);
   }
 }
@@ -267,10 +272,10 @@ body {
 
 @keyframes rainDropsHover {
   0% {
-    opacity: 1;
+    opacity: 0.7;
   }
   50% {
-    opacity: 0.7;
+    opacity: 0.9;
   }
   100% {
     opacity: 1;
@@ -306,6 +311,100 @@ body {
   }
   100% {
     left: 100%;
+  }
+}
+
+/* ===== G2) Rain Particle System ===== */
+.rain-particle {
+  position: fixed;
+  width: 2px;
+  height: 15px;
+  background: linear-gradient(180deg, rgba(173, 216, 230, 0.8) 0%, rgba(135, 206, 235, 0.6) 50%, transparent 100%);
+  pointer-events: none;
+  z-index: 5;
+  opacity: 0.7;
+  animation: rainFall linear infinite;
+}
+
+.rain-particle.heavy {
+  width: 3px;
+  height: 20px;
+  opacity: 0.9;
+}
+
+.rain-particle.light {
+  width: 1px;
+  height: 10px;
+  opacity: 0.5;
+}
+
+@keyframes rainFall {
+  0% {
+    transform: translateY(-100px);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.7;
+  }
+  90% {
+    opacity: 0.7;
+  }
+  100% {
+    transform: translateY(100vh);
+    opacity: 0;
+  }
+}
+
+/* Rain splash effect when particles hit bottom */
+.rain-splash {
+  position: fixed;
+  width: 8px;
+  height: 2px;
+  background: rgba(173, 216, 230, 0.6);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 4;
+  animation: rainSplash 0.3s ease-out forwards;
+}
+
+@keyframes rainSplash {
+  0% {
+    transform: scale(0.5);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.5);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+/* Rain overlay for entire screen */
+.rain-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 3;
+  background: url('assets/images/rain-drops-overlay.png') repeat;
+  background-size: 100px 100px;
+  opacity: 0;
+  animation: rainOverlayFade 1s ease-in-out forwards;
+}
+
+@keyframes rainOverlayFade {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  100% {
+    opacity: 0.3;
+    transform: translateY(0);
   }
 }
 
@@ -1047,4 +1146,46 @@ body {
   border-radius: 10px;
   backdrop-filter: blur(10px);
   z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Developer mode toggle button styling */
+#dev-mode-toggle {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+#dev-mode-toggle:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
+}
+
+#dev-mode-toggle:active {
+  transform: scale(0.95);
+}
+
+/* Clock reminders button styling */
+#clock-reminders-toggle {
+  background: none;
+  border: none;
+  color: var(--timer-text-color, #ffffff);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+#clock-reminders-toggle:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
 }
