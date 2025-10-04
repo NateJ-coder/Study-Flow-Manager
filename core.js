@@ -25,6 +25,12 @@ const STATE = {
   // Rain cycle state (always starts false - only activated by manual toggle)
   isRainActive: false,
   rainAudio: null,
+  // Seasonal particle system state
+  seasonParticleInterval: null,
+  seasonParticleActive: false,
+  // Mouse/cursor audio and element
+  clickAudio: null,
+  customCursor: null,
   
   // Calendar state
   currentMonth: new Date().getMonth(),
@@ -388,6 +394,18 @@ function startPerpetualClock() {
         // You can add theme update logic here later
         // e.g., updateTheme();
       }
+      // Micro-animation for the sidebar clock icon (rotate subtly based on seconds)
+      try {
+        const secs = now.getSeconds();
+        const clockNavImg = document.querySelector('#nav-timer .nav-icon-img');
+        if (clockNavImg) {
+          // Map seconds to a subtle angle between -6deg and +6deg
+          const angle = (secs / 59) * 12 - 6;
+          clockNavImg.style.transform = `rotate(${angle}deg)`;
+        }
+      } catch (e) {
+        // ignore
+      }
       
     } catch (error) {
       // Fallback to local time if timezone fails
@@ -524,6 +542,10 @@ function setUITintColors(season, isNight, isRain) {
   root.style.setProperty('--ui-tint-secondary', colors.secondary);
   root.style.setProperty('--timer-text-color', colors.timerText);
   root.style.setProperty('--sand-color', colors.sand);
+  // approximate icon tint — store a CSS variable that can be used by CSS to filter/tint images
+  // Use the secondary color for icon accent
+  const iconTint = colors.secondary || colors.primary || '#ffffff';
+  root.style.setProperty('--nav-icon-tint', iconTint);
 }
 
 /**
@@ -584,9 +606,281 @@ function updateParticles(season, isNight, isRain) {
   
   // Update mouse trail effect
   document.body.setAttribute('data-mouse-trail', particleType);
+
+  // Start/stop season particle loop
+  startSeasonParticles(particleType, isRain);
+
+  // Ensure click audio is initialized
+  if (!STATE.clickAudio) {
+    try {
+      STATE.clickAudio = new Audio('assets/audio/click.mp3');
+      STATE.clickAudio.volume = 0.6;
+      STATE.clickAudio.preload = 'auto';
+    } catch (err) {
+      console.warn('Click audio failed to initialize:', err);
+    }
+  }
+
+  // Ensure custom cursor exists and apply seasonal tint
+  ensureCustomCursor();
+  applyCursorTintForParticleType(particleType);
   
   console.log(`✨ Particles updated: ${particleType}`);
 }
+
+/* ===== SEASONAL PARTICLES & MOUSE TRAIL ===== */
+
+function startSeasonParticles(particleType, isRainMode) {
+  // Stop any existing seasonal particle generation
+  stopSeasonParticles();
+
+  const container = document.getElementById('particles-layer');
+  if (!container) return;
+
+  // For rain mode we don't spawn leaves/snow here
+  if (isRainMode) {
+    STATE.seasonParticleActive = false;
+    return;
+  }
+
+  STATE.seasonParticleActive = true;
+
+  // Spawn an initial burst based on particle type
+  const burstCount = particleType.includes('leaves') ? 18 : (particleType === 'snowflakes' ? 30 : 0);
+  for (let i = 0; i < burstCount; i++) {
+    setTimeout(() => {
+      if (!STATE.seasonParticleActive) return;
+      if (particleType.includes('leaves')) createLeafParticle(particleType);
+      else if (particleType === 'snowflakes') createSnowParticle();
+    }, Math.random() * 1200);
+  }
+
+  // Continue spawning over time
+  STATE.seasonParticleInterval = setInterval(() => {
+    if (!STATE.seasonParticleActive) return;
+    if (particleType.includes('leaves')) createLeafParticle(particleType);
+    else if (particleType === 'snowflakes') createSnowParticle();
+  }, particleType === 'snowflakes' ? 400 : 700);
+}
+
+function stopSeasonParticles() {
+  STATE.seasonParticleActive = false;
+  if (STATE.seasonParticleInterval) {
+    clearInterval(STATE.seasonParticleInterval);
+    STATE.seasonParticleInterval = null;
+  }
+  // Remove existing seasonal particles
+  document.querySelectorAll('#particles-layer .season-particle').forEach(p => p.remove());
+}
+
+function createLeafParticle(particleType) {
+  const container = document.getElementById('particles-layer');
+  if (!container) return;
+
+  const leaf = document.createElement('div');
+  leaf.className = 'season-particle leaf';
+
+  // color classes: leaves-green or leaves-burnt_orange_brown
+  if (particleType.includes('green')) leaf.classList.add('leaf-green');
+  else leaf.classList.add('leaf-brown');
+
+  // random horizontal start position
+  const startX = Math.random() * window.innerWidth;
+  leaf.style.left = `${startX}px`;
+
+  // random size and rotation
+  const size = 10 + Math.random() * 22; // px
+  leaf.style.width = `${size}px`;
+  leaf.style.height = `${size * 0.6}px`;
+  leaf.style.transform = `rotate(${Math.random() * 360}deg)`;
+
+  // animation duration
+  const duration = 6 + Math.random() * 8; // 6-14s
+  leaf.style.animationDuration = `${duration}s`;
+
+  container.appendChild(leaf);
+
+  // Remove after animation
+  setTimeout(() => {
+    if (leaf && leaf.parentNode) leaf.remove();
+  }, duration * 1000 + 200);
+}
+
+function createSnowParticle() {
+  const container = document.getElementById('particles-layer');
+  if (!container) return;
+
+  const flake = document.createElement('div');
+  flake.className = 'season-particle snowflake';
+
+  const startX = Math.random() * window.innerWidth;
+  flake.style.left = `${startX}px`;
+
+  const size = 4 + Math.random() * 8;
+  flake.style.width = `${size}px`;
+  flake.style.height = `${size}px`;
+
+  const duration = 8 + Math.random() * 10; // 8-18s
+  flake.style.animationDuration = `${duration}s`;
+
+  container.appendChild(flake);
+
+  setTimeout(() => {
+    if (flake && flake.parentNode) flake.remove();
+  }, duration * 1000 + 200);
+}
+
+/* ===== MOUSE TRAIL & CUSTOM CURSOR ===== */
+function ensureCustomCursor() {
+  if (STATE.customCursor && document.body.contains(STATE.customCursor)) return;
+
+  // Wrapper for background tint + svg img inside
+  const wrapper = document.createElement('div');
+  wrapper.id = 'custom-cursor';
+  wrapper.setAttribute('aria-hidden', 'true');
+  wrapper.className = 'custom-cursor-wrapper';
+  wrapper.style.position = 'fixed';
+  wrapper.style.left = '0px';
+  wrapper.style.top = '0px';
+  wrapper.style.width = '40px';
+  wrapper.style.height = '40px';
+  wrapper.style.borderRadius = '50%';
+  wrapper.style.pointerEvents = 'none';
+  wrapper.style.zIndex = '10001';
+  wrapper.style.transform = 'translate(-50%, -50%)';
+  wrapper.style.display = 'flex';
+  wrapper.style.alignItems = 'center';
+  wrapper.style.justifyContent = 'center';
+  wrapper.style.transition = 'background-color 200ms linear, transform 80ms linear';
+
+  const img = document.createElement('img');
+  img.id = 'custom-cursor-img';
+  img.src = 'assets/images/cursor-default.svg';
+  img.alt = '';
+  img.style.width = '26px';
+  img.style.height = '26px';
+  img.style.pointerEvents = 'none';
+  img.style.transition = 'transform 140ms ease-out, filter 200ms linear';
+
+  wrapper.appendChild(img);
+  document.body.appendChild(wrapper);
+  STATE.customCursor = wrapper;
+
+  // Add a class to hide the native cursor while custom cursor is present
+  document.documentElement.classList.add('has-custom-cursor');
+
+  // Pointer move to update cursor and spawn trail particles
+  window.addEventListener('pointermove', (e) => {
+    if (!STATE.customCursor) return;
+    STATE.customCursor.style.left = `${e.clientX}px`;
+    STATE.customCursor.style.top = `${e.clientY}px`;
+
+    // spawn small trail particle
+    const trailType = document.body.getAttribute('data-mouse-trail') || '';
+    createTrailParticle(e.clientX, e.clientY, trailType);
+  }, { passive: true });
+
+  // Pointer down/up to animate click cursor
+  window.addEventListener('pointerdown', (e) => {
+    if (!STATE.customCursor) return;
+    const imgEl = document.getElementById('custom-cursor-img');
+    if (!imgEl) return;
+
+    // Switch to click SVG and animate down
+    imgEl.src = 'assets/images/cursor-click.svg';
+    imgEl.classList.add('cursor-press');
+
+    // small timeout to revert back (keep press state visually)
+    setTimeout(() => {
+      // revert image on pointerup; if pointerup already fired, this is harmless
+      if (imgEl) imgEl.classList.remove('cursor-press');
+    }, 220);
+  }, { passive: true });
+
+  window.addEventListener('pointerup', (e) => {
+    if (!STATE.customCursor) return;
+    const imgEl = document.getElementById('custom-cursor-img');
+    if (!imgEl) return;
+
+    // brief delay to allow click animation to show
+    setTimeout(() => {
+      imgEl.src = 'assets/images/cursor-default.svg';
+    }, 110);
+  }, { passive: true });
+}
+
+function applyCursorTintForParticleType(particleType) {
+  if (!STATE.customCursor) return;
+  const wrapper = STATE.customCursor;
+  const imgEl = document.getElementById('custom-cursor-img');
+
+  // Season tinting sets the wrapper background and image filter for contrast
+  if (particleType.includes('green')) {
+    wrapper.style.backgroundColor = 'rgba(124,207,107,0.18)';
+    wrapper.style.boxShadow = '0 0 8px rgba(124,207,107,0.25)';
+    if (imgEl) imgEl.style.filter = 'brightness(1) saturate(1.05)';
+  } else if (particleType.includes('burnt') || particleType.includes('brown') || particleType.includes('orange')) {
+    wrapper.style.backgroundColor = 'rgba(196,106,43,0.18)';
+    wrapper.style.boxShadow = '0 0 8px rgba(196,106,43,0.22)';
+    if (imgEl) imgEl.style.filter = 'brightness(0.98) saturate(0.9)';
+  } else if (particleType === 'snowflakes') {
+    wrapper.style.backgroundColor = 'rgba(255,255,255,0.18)';
+    wrapper.style.boxShadow = '0 0 10px rgba(255,255,255,0.45)';
+    if (imgEl) imgEl.style.filter = 'brightness(1.2) contrast(1.05)';
+  } else {
+    // default
+    wrapper.style.backgroundColor = 'rgba(255,255,255,0.12)';
+    wrapper.style.boxShadow = 'none';
+    if (imgEl) imgEl.style.filter = 'none';
+  }
+}
+
+function createTrailParticle(x, y, trailType) {
+  const container = document.getElementById('particles-layer');
+  if (!container) return;
+
+  const p = document.createElement('div');
+  p.className = 'trail-particle';
+
+  if (trailType.includes('green')) p.classList.add('trail-leaf', 'leaf-green');
+  else if (trailType.includes('burnt') || trailType.includes('brown') || trailType.includes('orange')) p.classList.add('trail-leaf', 'leaf-brown');
+  else if (trailType === 'snowflakes') p.classList.add('trail-snow');
+  else p.classList.add('trail-dot');
+
+  p.style.left = `${x}px`;
+  p.style.top = `${y}px`;
+
+  // Randomize small size
+  const size = 6 + Math.random() * 8;
+  p.style.width = `${size}px`;
+  p.style.height = `${trailType === 'snowflakes' ? size : size * 0.6}px`;
+
+  container.appendChild(p);
+
+  // Remove after short life
+  setTimeout(() => { if (p && p.parentNode) p.remove(); }, 900 + Math.random() * 400);
+}
+
+/* ===== CLICK SFX FOR BUTTONS ===== */
+// Play click sound when interactive elements are clicked
+document.addEventListener('click', (e) => {
+  try {
+    const el = e.target;
+    const interactive = el.closest && el.closest('button, .nav-item, .timer-button, a, input[type="button"], input[type="submit"]');
+    if (!interactive) return;
+
+    // Do not play click when rain lockout prevents clicks
+    if (STATE.isRainActive && shouldBlockElement(interactive)) return;
+
+    if (STATE.clickAudio) {
+      // clone to allow overlapping rapid clicks
+      const audio = STATE.clickAudio.cloneNode();
+      audio.play().catch(() => {});
+    }
+  } catch (err) {
+    // swallow audio errors
+  }
+}, true);
 
 /**
  * Update calendar and clock aesthetic elements
@@ -2322,13 +2616,20 @@ function enterScreensaver() {
   
   STATE.screensaverActive = true;
   document.body.classList.add('screensaver-active');
-  
-  // Optional: Dim the interface further after longer inactivity
-  setTimeout(() => {
-    if (STATE.screensaverActive) {
-      document.body.style.filter = 'brightness(0.5)';
+
+  // Optional: slightly boost seasonal particle generation while idle to make background come alive
+  try {
+    const currentParticle = document.body.getAttribute('data-mouse-trail') || '';
+    // spawn a small burst for visual interest
+    for (let i = 0; i < 12; i++) {
+      setTimeout(() => {
+        if (currentParticle.includes('leaves')) createLeafParticle(currentParticle);
+        else if (currentParticle === 'snowflakes') createSnowParticle();
+      }, Math.random() * 2000);
     }
-  }, 30000); // Dim after 30 more seconds
+  } catch (e) {
+    // ignore if particle functions are unavailable
+  }
 }
 
 /**
@@ -2342,6 +2643,15 @@ function exitScreensaver() {
   STATE.screensaverActive = false;
   document.body.classList.remove('screensaver-active');
   document.body.style.filter = ''; // Remove any dimming
+  
+  // Pop nav icons so they feel alive when returning from screensaver
+  try {
+    const icons = document.querySelectorAll('.nav-icon-img');
+    icons.forEach(img => {
+      img.classList.add('pop');
+      setTimeout(() => img.classList.remove('pop'), 420);
+    });
+  } catch (e) {}
 }
 
 /**
@@ -2366,6 +2676,100 @@ window.onload = () => {
   } catch (e) {
     console.warn('Startup guard: could not clear rain lockout element', e);
   }
+
+  /**
+   * Fetch and inline the decorative frame SVG into #timer-frame so we can
+   * recolor internal elements and add simple animations (cat tail/head).
+   */
+  function injectFrameSVG() {
+    const frameContainer = document.getElementById('timer-frame');
+    if (!frameContainer) return;
+
+    fetch('assets/images/frame.svg').then(resp => {
+      if (!resp.ok) throw new Error('Could not fetch frame.svg');
+      return resp.text();
+    }).then(svgText => {
+      // Insert the SVG markup into the container
+      const wrapper = document.createElement('div');
+      wrapper.className = 'timer-frame-svg-wrapper';
+      wrapper.innerHTML = svgText;
+
+      // Ensure the SVG has a predictable wrapper class
+      const svgEl = wrapper.querySelector('svg');
+      if (svgEl) svgEl.classList.add('timer-frame-svg');
+
+      // Insert before the countdown so the SVG frames the content
+      frameContainer.insertBefore(wrapper, frameContainer.firstChild);
+
+      // Apply initial theme tints
+      applyFrameTheme(STATE.currentSeason, STATE.isNight, STATE.isRaining);
+
+      // Try to add simple animations if cat parts exist
+      tryAddCatAnimations(svgEl);
+
+      // Make a subtle ambient particle emitter inside the frame on idle
+      if (STATE.screensaverActive) {
+        spawnFrameParticles(STATE.currentSeason);
+      }
+    }).catch(err => {
+      console.warn('Could not inline frame.svg:', err);
+    });
+  }
+
+  function applyFrameTheme(season, isNight, isRain) {
+    const svg = document.querySelector('.timer-frame-svg');
+    if (!svg) return;
+
+    // Map a few example tints for the plant and accents
+    const palette = {
+      summer: { plant: '#7ccf6b', accent: '#ffd9b3' },
+      autumn: { plant: '#c46a2b', accent: '#ffd9b3' },
+      winter: { plant: '#ffffff', accent: '#dbe9ff' }
+    };
+
+    const colors = palette[season] || palette.summer;
+
+    // Find plant elements (heuristic: id/class contains 'plant' or 'leaf')
+    const plantEls = svg.querySelectorAll('[id*="plant"], [class*="plant"], [id*="leaf"], [class*="leaf"]');
+    plantEls.forEach(el => {
+      try { el.style.fill = colors.plant; } catch (e) {}
+    });
+
+    // Accent elements
+    const accentEls = svg.querySelectorAll('[id*="accent"], [class*="accent"], [id*="frame"], [class*="frame"]');
+    accentEls.forEach(el => {
+      try { el.style.fill = colors.accent; } catch (e) {}
+    });
+  }
+
+  function tryAddCatAnimations(svgEl) {
+    if (!svgEl) return;
+
+    // Heuristic selectors for tail and head
+    const tail = svgEl.querySelector('[id*="tail"], [class*="tail"]');
+    const head = svgEl.querySelector('[id*="head"], [class*="head"]');
+
+    if (tail) {
+      tail.classList.add('cat-tail');
+    }
+    if (head) {
+      head.classList.add('cat-head');
+    }
+  }
+
+  function spawnFrameParticles(season) {
+    const frame = document.querySelector('.timer-frame-svg-wrapper');
+    const container = document.getElementById('particles-layer');
+    if (!frame || !container) return;
+
+    // Create a few small seasonal particles constrained visually to the frame area
+    for (let i = 0; i < 18; i++) {
+      setTimeout(() => {
+        if (season === 'winter') createSnowParticle();
+        else createLeafParticle(season === 'autumn' ? 'leaves-burnt_orange_brown' : 'leaves-green');
+      }, Math.random() * 1200);
+    }
+  }
   setupNavigation();
   setupNavHiding();
   loadSettings();
@@ -2377,6 +2781,9 @@ window.onload = () => {
   setupScreensaver();
   setupRainClickEffects();
   initializeCalendar();
+
+  // Inject decorative SVG frame into timer-frame so it can be themed/animated
+  injectFrameSVG();
   
   // Apply initial theme (ensure rain is never automatically activated)
   let initialSeason = STATE.userSettings?.season || "summer";

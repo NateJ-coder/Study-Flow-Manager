@@ -16,6 +16,11 @@
     "css": "assets/CSS",
     "data": "data"
   },
+  "icons": {
+    "clock": "assets/images/clock-icon.svg",
+    "calendar": "assets/images/calendar-icon.svg",
+    "settings": "assets/images/settings-icon.svg"
+  },
   "backgrounds": {
     "seasons": {
       "summer": {

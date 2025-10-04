@@ -51,8 +51,12 @@
 
     <!-- ===== Side Navigation (contextual icons; auto-hide via CSS/JS later) ===== -->
     <nav id="sidebar" aria-label="Page navigation">
-      <a class="nav-item" href="calendar.html" aria-label="Open Calendar" title="Calendar" id="nav-calendar" data-target="calendar"></a>
-      <a class="nav-item" href="settings.html" aria-label="Open Settings" title="Settings" id="nav-settings" data-target="settings"></a>
+      <a class="nav-item" href="calendar.html" aria-label="Open Calendar" title="Calendar" id="nav-calendar" data-target="calendar">
+        <img class="nav-icon-img" src="assets/images/calendar-icon.svg" alt="Calendar" aria-hidden="true">
+      </a>
+      <a class="nav-item" href="settings.html" aria-label="Open Settings" title="Settings" id="nav-settings" data-target="settings">
+        <img class="nav-icon-img" src="assets/images/settings-icon.svg" alt="Settings" aria-hidden="true">
+      </a>
     </nav>
 
     <!-- ===== Rain Lockout Overlay (shown during rain) ===== -->
@@ -182,6 +186,7 @@
   <audio id="audio-rain" src="assets/audio/rainfall.mp3" preload="auto" loop></audio>
   <audio id="audio-splash" src="assets/audio/splash.mp3" preload="auto"></audio>
   <audio id="audio-drawing" src="assets/audio/drawing.mp3" preload="auto"></audio>
+  <audio id="audio-click" src="assets/audio/click.mp3" preload="auto"></audio>
 
     <!-- ===== Data sources (fetched later by JS) ===== -->
     <!-- studyflow_config.json will be fetched from: /data/studyflow_config.json -->

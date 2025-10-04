@@ -51,8 +51,12 @@
 
     <!-- ===== Side Navigation (contextual icons; auto-hide via CSS/JS later) ===== -->
     <nav id="sidebar" aria-label="Page navigation">
-      <a class="nav-item" href="index.html" aria-label="Open Timer" title="Timer" id="nav-timer"></a>
-      <a class="nav-item" href="calendar.html" aria-label="Open Calendar" title="Calendar" id="nav-calendar"></a>
+      <a class="nav-item" href="index.html" aria-label="Open Timer" title="Timer" id="nav-timer">
+        <img class="nav-icon-img" src="assets/images/clock-icon.svg" alt="Timer" aria-hidden="true">
+      </a>
+      <a class="nav-item" href="calendar.html" aria-label="Open Calendar" title="Calendar" id="nav-calendar">
+        <img class="nav-icon-img" src="assets/images/calendar-icon.svg" alt="Calendar" aria-hidden="true">
+      </a>
     </nav>
 
     <!-- ===== Rain Lockout Overlay (shown during rain) ===== -->
@@ -169,6 +173,7 @@
   <audio id="audio-rain" src="assets/audio/rainfall.mp3" preload="auto" loop></audio>
   <audio id="audio-splash" src="assets/audio/splash.mp3" preload="auto"></audio>
   <audio id="audio-drawing" src="assets/audio/drawing.mp3" preload="auto"></audio>
+  <audio id="audio-click" src="assets/audio/click.mp3" preload="auto"></audio>
 
     <script src="core.js"></script>
   </body>
