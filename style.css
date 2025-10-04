@@ -461,62 +461,94 @@ body {
   }
 }
 
-/* ===== SEASONAL PARTICLES (LEAVES & SNOW) ===== */
-.season-particle {
+/* ===== SEASONAL PARTICLES (EMOJI-BASED) ===== */
+
+/* Summer green falling leaves */
+.falling-leaf {
   position: fixed;
+  top: -50px;
+  font-size: 28px;
+  color: #66bb6a;
+  opacity: 0.8;
   pointer-events: none;
   z-index: 3;
-  opacity: 0.95;
-  will-change: transform, opacity, left, top;
+  animation: fallLeaf 10s linear infinite;
 }
 
-/* Leaves falling: gentle horizontal sway and rotate while descending */
-.season-particle.leaf {
-  background-image: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.15), transparent 30%);
-  border-radius: 4px;
-  transform-origin: center;
-  animation-name: leafFall, leafSway;
-  animation-timing-function: linear, ease-in-out;
-  animation-iteration-count: 1, infinite;
-  animation-fill-mode: forwards;
+@keyframes fallLeaf {
+  0%   {transform: translateY(0) rotate(0deg);}
+  100% {transform: translateY(110vh) rotate(360deg);}
 }
 
-.leaf-green { background-color: #6fbf5e; }
-.leaf-brown { background-color: #b36a2a; }
-
-@keyframes leafFall {
-  0% { transform: translateY(-10vh) rotate(0deg); opacity: 0; }
-  10% { opacity: 1; }
-  100% { transform: translateY(110vh) rotate(360deg); opacity: 0.9; }
+/* Autumn leaves */
+.autumn-leaf {
+  position: fixed;
+  top: -60px;
+  font-size: 28px;
+  color: #e57373;
+  opacity: 0.9;
+  pointer-events: none;
+  z-index: 3;
+  animation: fallAutumn 8s ease-in infinite;
 }
 
-@keyframes leafSway {
-  0% { transform: translateX(0); }
-  50% { transform: translateX(40px); }
-  100% { transform: translateX(-30px); }
+@keyframes fallAutumn {
+  0%   {transform: translateY(0) rotate(0deg);}
+  100% {transform: translateY(110vh) rotate(720deg);}
 }
 
-/* Snowflakes: gentle glide with slight horizontal drift */
-.season-particle.snowflake {
-  background: radial-gradient(circle, #ffffff 0%, #e8f4ff 70%, transparent 100%);
+/* Winter snowflakes */
+.snowflake {
+  position: fixed;
+  top: -50px;
+  font-size: 20px;
+  color: #fff;
+  opacity: 0.8;
+  pointer-events: none;
+  z-index: 3;
+  animation: fallSnow 12s linear infinite;
+}
+
+@keyframes fallSnow {
+  0%   {transform: translateY(0) translateX(0);}
+  100% {transform: translateY(110vh) translateX(50px);}
+}
+
+/* Fireflies for night time */
+.firefly {
+  position: fixed;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  opacity: 0.95;
-  animation-name: snowFall, snowDrift;
-  animation-timing-function: linear, ease-in-out;
-  animation-iteration-count: 1, infinite;
-  animation-fill-mode: forwards;
+  background: radial-gradient(circle, #ffe066 0%, #ffea8a 40%, transparent 70%);
+  box-shadow: 0 0 8px #ffe066, 0 0 20px #ffd633;
+  opacity: 0.8;
+  pointer-events: none;
+  z-index: 3;
+  animation: drift 10s ease-in-out infinite, blink 2s ease-in-out infinite alternate;
 }
 
-@keyframes snowFall {
-  0% { transform: translateY(-5vh); opacity: 0.6; }
-  50% { opacity: 0.9; }
-  100% { transform: translateY(110vh); opacity: 0; }
+@keyframes drift {
+  0% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(30px, -40px);
+  }
+  50% {
+    transform: translate(-20px, 60px);
+  }
+  75% {
+    transform: translate(40px, 20px);
+  }
+  100% {
+    transform: translate(0, 0);
+  }
 }
 
-@keyframes snowDrift {
-  0% { transform: translateX(0); }
-  50% { transform: translateX(30px); }
-  100% { transform: translateX(-20px); }
+@keyframes blink {
+  0%, 100% { opacity: 0.2; box-shadow: 0 0 4px #fff, 0 0 10px #ff0; }
+  50%      { opacity: 1; box-shadow: 0 0 12px #fff77a, 0 0 25px #ffe066; }
 }
 
 /* ===== MOUSE TRAIL PARTICLES ===== */

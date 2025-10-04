@@ -614,7 +614,7 @@ function updateParticles(season, isNight, isRain) {
   if (!STATE.clickAudio) {
     try {
       STATE.clickAudio = new Audio('assets/audio/click.mp3');
-      STATE.clickAudio.volume = 0.6;
+      STATE.clickAudio.volume = 0.2;
       STATE.clickAudio.preload = 'auto';
     } catch (err) {
       console.warn('Click audio failed to initialize:', err);
@@ -645,22 +645,16 @@ function startSeasonParticles(particleType, isRainMode) {
 
   STATE.seasonParticleActive = true;
 
-  // Spawn an initial burst based on particle type
-  const burstCount = particleType.includes('leaves') ? 18 : (particleType === 'snowflakes' ? 30 : 0);
-  for (let i = 0; i < burstCount; i++) {
-    setTimeout(() => {
-      if (!STATE.seasonParticleActive) return;
-      if (particleType.includes('leaves')) createLeafParticle(particleType);
-      else if (particleType === 'snowflakes') createSnowParticle();
-    }, Math.random() * 1200);
+  // Create initial batch of particles based on type
+  if (particleType === 'snowflakes') {
+    createSnowParticles();
+  } else if (particleType.includes('leaves-green') || particleType === 'leaves-green') {
+    createSummerLeafParticles();
+  } else if (particleType.includes('leaves') && (particleType.includes('brown') || particleType.includes('burnt') || particleType.includes('orange'))) {
+    createAutumnLeafParticles();
+  } else if (particleType === 'fireflies') {
+    createFireflyParticles();
   }
-
-  // Continue spawning over time
-  STATE.seasonParticleInterval = setInterval(() => {
-    if (!STATE.seasonParticleActive) return;
-    if (particleType.includes('leaves')) createLeafParticle(particleType);
-    else if (particleType === 'snowflakes') createSnowParticle();
-  }, particleType === 'snowflakes' ? 400 : 700);
 }
 
 function stopSeasonParticles() {
@@ -670,64 +664,69 @@ function stopSeasonParticles() {
     STATE.seasonParticleInterval = null;
   }
   // Remove existing seasonal particles
-  document.querySelectorAll('#particles-layer .season-particle').forEach(p => p.remove());
+  document.querySelectorAll('.falling-leaf, .autumn-leaf, .snowflake, .firefly').forEach(p => p.remove());
 }
 
-function createLeafParticle(particleType) {
+function createSummerLeafParticles() {
   const container = document.getElementById('particles-layer');
   if (!container) return;
-
-  const leaf = document.createElement('div');
-  leaf.className = 'season-particle leaf';
-
-  // color classes: leaves-green or leaves-burnt_orange_brown
-  if (particleType.includes('green')) leaf.classList.add('leaf-green');
-  else leaf.classList.add('leaf-brown');
-
-  // random horizontal start position
-  const startX = Math.random() * window.innerWidth;
-  leaf.style.left = `${startX}px`;
-
-  // random size and rotation
-  const size = 10 + Math.random() * 22; // px
-  leaf.style.width = `${size}px`;
-  leaf.style.height = `${size * 0.6}px`;
-  leaf.style.transform = `rotate(${Math.random() * 360}deg)`;
-
-  // animation duration
-  const duration = 6 + Math.random() * 8; // 6-14s
-  leaf.style.animationDuration = `${duration}s`;
-
-  container.appendChild(leaf);
-
-  // Remove after animation
-  setTimeout(() => {
-    if (leaf && leaf.parentNode) leaf.remove();
-  }, duration * 1000 + 200);
+  
+  for (let i = 0; i < 15; i++) {
+    const leaf = document.createElement("div");
+    leaf.className = "falling-leaf";
+    leaf.textContent = "🍃";
+    leaf.style.left = Math.random() * 100 + "vw";
+    leaf.style.animationDelay = Math.random() * 10 + "s";
+    leaf.style.fontSize = 20 + Math.random() * 20 + "px";
+    container.appendChild(leaf);
+  }
 }
 
-function createSnowParticle() {
+function createAutumnLeafParticles() {
   const container = document.getElementById('particles-layer');
   if (!container) return;
+  
+  const colors = ["#e57373","#ffb74d","#ff8a65","#fdd835"];
+  for (let i = 0; i < 20; i++) {
+    const leaf = document.createElement("div");
+    leaf.className = "autumn-leaf";
+    leaf.textContent = "🍁";
+    leaf.style.left = Math.random() * 100 + "vw";
+    leaf.style.animationDelay = Math.random() * 8 + "s";
+    leaf.style.color = colors[Math.floor(Math.random()*colors.length)];
+    container.appendChild(leaf);
+  }
+}
 
-  const flake = document.createElement('div');
-  flake.className = 'season-particle snowflake';
+function createSnowParticles() {
+  const container = document.getElementById('particles-layer');
+  if (!container) return;
+  
+  for (let i = 0; i < 25; i++) {
+    const snow = document.createElement("div");
+    snow.className = "snowflake";
+    snow.textContent = "❄";
+    snow.style.left = Math.random() * 100 + "vw";
+    snow.style.animationDelay = Math.random() * 12 + "s";
+    snow.style.fontSize = 12 + Math.random() * 16 + "px";
+    container.appendChild(snow);
+  }
+}
 
-  const startX = Math.random() * window.innerWidth;
-  flake.style.left = `${startX}px`;
-
-  const size = 4 + Math.random() * 8;
-  flake.style.width = `${size}px`;
-  flake.style.height = `${size}px`;
-
-  const duration = 8 + Math.random() * 10; // 8-18s
-  flake.style.animationDuration = `${duration}s`;
-
-  container.appendChild(flake);
-
-  setTimeout(() => {
-    if (flake && flake.parentNode) flake.remove();
-  }, duration * 1000 + 200);
+function createFireflyParticles() {
+  const container = document.getElementById('particles-layer');
+  if (!container) return;
+  
+  for (let i = 0; i < 25; i++) {
+    const f = document.createElement("div");
+    f.className = "firefly";
+    f.style.left = Math.random() * 100 + "vw";
+    f.style.top = Math.random() * 100 + "vh";
+    f.style.animationDelay = Math.random() * 8 + "s";
+    f.style.animationDuration = 8 + Math.random() * 5 + "s";
+    f.style.width = f.style.height = 4 + Math.random() * 4 + "px";
+    container.appendChild(f);
+  }
 }
 
 /* ===== MOUSE TRAIL & CUSTOM CURSOR ===== */
@@ -875,6 +874,7 @@ document.addEventListener('click', (e) => {
     if (STATE.clickAudio) {
       // clone to allow overlapping rapid clicks
       const audio = STATE.clickAudio.cloneNode();
+      audio.volume = 0.2; // Lower volume
       audio.play().catch(() => {});
     }
   } catch (err) {
@@ -2777,7 +2777,6 @@ window.onload = () => {
   setupRainToggle();
   startPerpetualClock();
   setupTimerButtons();
-  setupHourglassAnimation();
   setupScreensaver();
   setupRainClickEffects();
   initializeCalendar();
