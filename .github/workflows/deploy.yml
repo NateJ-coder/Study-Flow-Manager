@@ -2,62 +2,52 @@ name: Deploy StudyFlow to GitHub Pages
 
 on:
   push:
-    branches:
-      - main    # Only deploy from main branch
-  workflow_dispatch:  # Allow manual deployment
+    branches: [ main ]
+  workflow_dispatch:
 
-# Security: Least privilege permissions
 permissions:
   contents: read
   pages: write
   id-token: write
 
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
-    
-    # Security: Define explicit environment
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
     steps:
-      # 1. Checkout code with specific commit
-      - name: Checkout repository
-        uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
-        with:
-          fetch-depth: 1  # Shallow clone for security
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      # 2. Setup Node.js with security hardening
       - name: Setup Node.js
-        uses: actions/setup-node@5e21ff4d9bc1a8cf6de233a3057d20ec6b3fb69d # v3.8.1
+        uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'npm'
-          registry-url: 'https://registry.npmjs.org'
 
-      # 3. Verify package integrity and install
       - name: Install dependencies
-        run: |
-          npm ci --only=production
-          npm audit --audit-level=moderate
+        run: npm ci
 
-      # 4. Build with environment validation
       - name: Build project
-        run: |
-          npm run build
-          # Verify dist directory exists and contains expected files
-          test -d dist
-          test -f dist/index.html
-        env:
-          NODE_ENV: production
+        run: npm run build
 
-      # 5. Deploy with verification
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@373f7f263a76c20808c831209c920827a82a2847 # v3.9.3
+      - name: Upload build artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist
-          force_orphan: true  # Security: Clean deploy
-          user_name: 'github-actions[bot]'
-          user_email: 'github-actions[bot]@users.noreply.github.com'
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

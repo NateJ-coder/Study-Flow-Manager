@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en" data-app="StudyFlow">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      script-src 'self';
+      style-src 'self' 'unsafe-inline';
+      img-src 'self' data: https:;
+      font-src 'self' data:;
+      media-src 'self' https:;
+      object-src 'none';
+      base-uri 'self';
+      frame-ancestors 'none';
+    ">
+    <title>StudyFlow</title>
+
+  <!-- CSS and JS files -->
+  <!-- Backgrounds live under assets/images; audio under assets/audio; JSON under /data. -->
+    <!-- JS will later fetch: data/studyflow_config.json -->
+    <script type="module" crossorigin src="/Study-Flow-Manager/assets/core-modern-CjGQUk3V.js"></script>
+    <link rel="stylesheet" crossorigin href="/Study-Flow-Manager/assets/core-modern-BNiYk79k.css">
+  </head>
+
+  <body data-page="timer" data-theme="summer" data-daynight="day" data-timezone="Africa/Johannesburg">
+    <noscript>
+      <p style="padding:1rem">StudyFlow requires JavaScript to run.</p>
+    </noscript>
+
+    <!-- ===== Global Background & Effects ===== -->
+    <div id="bg-root" aria-hidden="true">
+      <div id="bg-slideshow" role="img" aria-label="Scenery background"></div>
+      <div id="particles-layer" aria-hidden="true"></div>
+      <div id="ui-tint" aria-hidden="true"></div>
+    </div>
+
+    <!-- ===== Background Navigation Arrows ===== -->
+    <button class="bg-nav prev" aria-label="Previous background">‹</button>
+    <button class="bg-nav next" aria-label="Next background">›</button>
+
+    <!-- ===== Always-on Clock + Reminders Dropdown ===== -->
+    <header id="global-topbar" aria-label="Global clock and quick actions">
+      <div id="clock" aria-live="polite" aria-label="Current time">
+        <img src="assets/images/clock-icon.svg" alt="" aria-hidden="true">
+        <time id="clock-time">00:00</time>
+      </div>
+    </header>
+
+    <!-- ===== Side Navigation (contextual icons; auto-hide via CSS/JS later) ===== -->
+    <nav id="sidebar" aria-label="Page navigation">
+      <a class="nav-item" href="calendar.html" aria-label="Open Calendar" title="Calendar" id="nav-calendar" data-target="calendar">
+        <img class="nav-icon-img" src="assets/images/calendar-icon.svg" alt="Calendar" aria-hidden="true">
+      </a>
+      <a class="nav-item" href="settings.html" aria-label="Open Settings" title="Settings" id="nav-settings" data-target="settings">
+        <img class="nav-icon-img" src="assets/images/settings-icon.svg" alt="Settings" aria-hidden="true">
+      </a>
+    </nav>
+
+    <!-- ===== Rain Lockout Overlay (shown during rain) ===== -->
+    <aside id="rain-lockout" role="dialog" aria-modal="true" aria-labelledby="rain-title" hidden>
+      <div class="lockout-card">
+        <h2 id="rain-title">It’s raining!</h2>
+        <p>Don’t touch the electronics—you will get shocked!</p>
+        <p class="lockout-instruction">Use the Rain toggle in Settings to stop the rain.</p>
+      </div>
+    </aside>
+
+    <!-- ===== Main App View (Timer) ===== -->
+    <main id="app" aria-live="polite">
+
+      <!-- === TIMER PAGE === -->
+      <section id="page-timer" role="region" aria-label="Pomodoro Timer" data-view="timer">
+        <!-- Page title - positioned top left -->
+        <div id="app-title" class="animate-text">
+          <span>S</span><span>t</span><span>u</span><span>d</span><span>y</span><span>F</span><span>l</span><span>o</span><span>w</span>
+        </div>
+
+        <!-- Rest Mode Timer (bottom of screen) -->
+        <div id="rest-mode-timer" class="timer-mode">
+          <div id="hourglass-icon">⏳</div>
+          <div id="rest-timer-display">
+            <div id="rest-session-indicator">
+              session <span id="rest-session-current">2</span> of <span id="rest-session-total">4</span>
+            </div>
+            <div id="rest-countdown">
+              <span id="rest-time-mm">05</span>:<span id="rest-time-ss">00</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Active Mode Timer (centered with frame) -->
+        <div id="active-mode-timer" class="timer-mode active">
+          <div class="frame-wrap">
+            <!-- 1) the glass "window" container -->
+            <div class="frame-window" aria-hidden="true">
+              <!-- Animated inline SVG scene -->
+              <svg id="studyframe" viewBox="0 0 900 560" xmlns="http://www.w3.org/2000/svg" data-season="leaves">
+                <style>
+                  /* Tail */
+                  #cat-tail{
+                    transform-box: fill-box;
+                    transform-origin: 18% 86%;
+                    animation: tailSwish 4.6s ease-in-out infinite alternate;
+                  }
+                  @keyframes tailSwish{
+                    from{ transform: rotate(-8deg) }
+                    to  { transform: rotate( 12deg) }
+                  }
+
+                  /* Steam — stagger three paths */
+                  #steam > path{
+                    opacity: 0;
+                    transform-box: fill-box;
+                    animation: steamRise 3.6s linear infinite;
+                  }
+                  #steam > path:nth-child(2){ animation-delay: .9s }
+                  #steam > path:nth-child(3){ animation-delay: 1.8s }
+
+                  @keyframes steamRise{
+                    0%   { opacity:0;   transform: translateY(8px)  scale(.9) }
+                    20%  { opacity:.7 }
+                    100% { opacity:0;   transform: translateY(-36px) scale(1.12) }
+                  }
+
+                  /* particle animation (you already have something similar) */
+                  .particle{
+                    animation: fall var(--dur,9s) linear infinite, sway 3.2s ease-in-out infinite;
+                    animation-delay: var(--delay,0s);
+                    transform-origin: center;
+                    color: #D2691E; /* leaf color */
+                  }
+                  .particle.snow-particle {
+                    color: #FFF; /* snow color */
+                  }
+                  
+                  @keyframes fall{from{transform:translateY(-70px)}to{transform:translateY(420px)}}
+                  @keyframes sway{0%,100%{translate:0 0;rotate:0}50%{translate:10px 0;rotate:8deg}}
+
+                  /* show/hide types per season */
+                  #studyframe[data-season="leaves"] .snow-particle{display:none}
+                  #studyframe[data-season="snow"]   .leaf-particle{display:none}
+
+                  /* Paused state */
+                  #studyframe.paused * { animation-play-state: paused !important; }
+                </style>
+
+                <defs>
+                  <filter id="steam-blur" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur in="SourceGraphic" stdDeviation="2"/>
+                  </filter>
+                </defs>
+
+                <!-- Background gradient -->
+                <rect width="900" height="560" fill="url(#sceneGradient)"/>
+                <defs>
+                  <linearGradient id="sceneGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" style="stop-color:#87CEEB;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#98FB98;stop-opacity:1" />
+                  </linearGradient>
+                </defs>
+
+                <!-- Hills/landscape -->
+                <path d="M0 400 Q200 350 400 380 T800 400 L900 400 L900 560 L0 560 Z" fill="#90EE90" opacity="0.8"/>
+                <path d="M100 420 Q300 380 500 410 T900 420 L900 560 L100 560 Z" fill="#98FB98" opacity="0.7"/>
+
+                <!-- Seasonal particles inside the window -->
+                <defs>
+                  <symbol id="leaf" viewBox="0 0 20 20">
+                    <path d="M10 1C3 3,1 10,8 12C9 16,15 19,18 12C19 7,16 2,10 1Z" fill="currentColor"/>
+                  </symbol>
+                  <symbol id="flake" viewBox="0 0 20 20">
+                    <g stroke="currentColor" stroke-width="1.2" stroke-linecap="round">
+                      <path d="M10 1V19"/><path d="M1 10H19"/><path d="M3 3L17 17"/><path d="M17 3L3 17"/>
+                    </g>
+                  </symbol>
+                </defs>
+
+                <g id="particles">
+                  <!-- switch via data-season on #studyframe -->
+                  <use href="#leaf"  class="particle leaf-particle" x="180" y="-40" style="--dur:9s;--delay:0s"/>
+                  <use href="#leaf"  class="particle leaf-particle" x="260" y="-60" style="--dur:7s;--delay:-2s"/>
+                  <use href="#leaf"  class="particle leaf-particle" x="340" y="-50" style="--dur:8s;--delay:-1s"/>
+                  <use href="#leaf"  class="particle leaf-particle" x="420" y="-70" style="--dur:6s;--delay:-3s"/>
+                  <use href="#leaf"  class="particle leaf-particle" x="500" y="-55" style="--dur:8.5s;--delay:-1.5s"/>
+                  <use href="#leaf"  class="particle leaf-particle" x="600" y="-45" style="--dur:7.5s;--delay:-2.5s"/>
+                  <use href="#flake" class="particle snow-particle" x="220" y="-65" style="--dur:8s;--delay:-1s"/>
+                  <use href="#flake" class="particle snow-particle" x="350" y="-50" style="--dur:9s;--delay:-2s"/>
+                  <use href="#flake" class="particle snow-particle" x="460" y="-80" style="--dur:7s;--delay:0s"/>
+                  <use href="#flake" class="particle snow-particle" x="580" y="-40" style="--dur:8.5s;--delay:-3s"/>
+                  <use href="#flake" class="particle snow-particle" x="700" y="-70" style="--dur:6.5s;--delay:-1.5s"/>
+                </g>
+
+                <!-- Table -->
+                <rect x="200" y="380" width="500" height="120" fill="#8B4513" opacity="0.9"/>
+                <rect x="180" y="490" width="540" height="20" fill="#654321" opacity="0.8"/>
+
+                <!-- Kettle -->
+                <ellipse cx="450" cy="420" rx="80" ry="60" fill="#C0C0C0"/>
+                <ellipse cx="450" cy="410" rx="70" ry="50" fill="#E5E5E5"/>
+                <rect x="530" y="400" width="40" height="8" rx="4" fill="#8B4513"/>
+                <circle cx="460" cy="380" r="6" fill="#FFD700"/>
+
+                <!-- Steam from kettle -->
+                <g id="steam" filter="url(#steam-blur)">
+                  <path d="M450 350 Q455 340 450 330 Q445 320 450 310" stroke="#F0F8FF" stroke-width="3" fill="none" opacity="0.6"/>
+                  <path d="M460 355 Q465 345 460 335 Q455 325 460 315" stroke="#F0F8FF" stroke-width="2" fill="none" opacity="0.5"/>
+                  <path d="M440 352 Q435 342 440 332 Q445 322 440 312" stroke="#F0F8FF" stroke-width="2" fill="none" opacity="0.4"/>
+                </g>
+
+                <!-- Cat body -->
+                <ellipse cx="350" cy="450" rx="60" ry="40" fill="#FFA500"/>
+                <circle cx="320" cy="430" r="35" fill="#FFA500"/>
+
+                <!-- Cat features -->
+                <circle cx="315" cy="425" r="3" fill="#000"/>
+                <circle cx="325" cy="425" r="3" fill="#000"/>
+                <path d="M320 435 L315 440 M320 435 L325 440" stroke="#000" stroke-width="2"/>
+                <path d="M305 415 L310 405 L315 415" fill="#FFA500"/>
+                <path d="M325 415 L330 405 L335 415" fill="#FFA500"/>
+
+                <!-- Cat tail (animated) -->
+                <g id="cat-tail">
+                  <path d="M410 460 Q430 440 420 420 Q415 400 425 380" stroke="#FFA500" stroke-width="15" fill="none" stroke-linecap="round"/>
+                </g>
+
+                <!-- Books -->
+                <rect x="550" y="400" width="15" height="60" fill="#FF6B6B"/>
+                <rect x="570" y="405" width="15" height="55" fill="#4ECDC4"/>
+                <rect x="590" y="395" width="15" height="65" fill="#45B7D1"/>
+
+
+              </svg>
+            </div>
+
+            <!-- 2) the ornate gold frame -->
+            <img class="frame-ornate" src="/Study-Flow-Manager/assets/frame-DxVlQ-fl.svg" alt="" />
+
+            <!-- 3) timer UI overlay -->
+            <div class="timer-ui">
+              <div class="session-label">
+                session <span id="active-session-current">1</span> of <span id="active-session-total">4</span>
+              </div>
+              <div class="countdown" id="active-countdown">
+                <span id="active-time-mm">25</span>:<span id="active-time-ss">00</span>
+              </div>
+            </div>
+            
+            <!-- 4) corner SVG buttons overlay -->
+            <div id="frame-buttons">
+              <button id="btn-start" type="button" class="frame-svg-button" aria-label="Start Pomodoro Timer" tabindex="0">
+                <span class="button-text">START</span>
+              </button>
+              <button id="btn-reset" type="button" class="frame-svg-button" aria-label="Reset Timer to 25 Minutes" tabindex="0">
+                <span class="button-text">RESET</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Set Reminder Button (bottom left) -->
+        <button id="btn-set-reminder" type="button" class="text-button">
+          Set Reminder
+        </button>
+
+        <!-- Season Test Button (temporary - hide for production) -->
+        <button id="btn-season" type="button" onclick="testSeasonSwitch()" aria-label="Test seasons" class="dev-only" style="position: absolute; top: 60px; right: 20px; background: rgba(0,0,0,0.5); color: var(--ui-tint-primary); border: 1px solid var(--ui-tint-primary); border-radius: 4px; padding: 8px 12px; cursor: pointer; font-size: 12px; z-index: 200;">🌻</button>
+      </section>
+
+    </main>
+
+    <!-- ===== Audio ===== -->
+  <audio id="audio-rain" src="assets/audio/rainfall.mp3" preload="auto" loop></audio>
+  <audio id="audio-splash" src="assets/audio/splash.mp3" preload="auto"></audio>
+  <audio id="audio-drawing" src="assets/audio/drawing.mp3" preload="auto"></audio>
+  <audio id="audio-click" src="assets/audio/click.mp3" preload="auto"></audio>
+
+    <!-- ===== Data sources (fetched later by JS) ===== -->
+    <!-- studyflow_config.json will be fetched from: /data/studyflow_config.json -->
+
+    <!-- Firebase init will be added later in JS using your provided config -->
+    <script src="js/core.js"></script>
+  </body>
+</html>

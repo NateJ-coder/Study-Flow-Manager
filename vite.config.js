@@ -2,8 +2,9 @@ import { defineConfig } from 'vite';
 import { resolve } from 'path';
 
 export default defineConfig({
+  base: '/Study-Flow-Manager/',    // GitHub Pages base path
   root: '.',                      // project root (where index.html lives)
-  publicDir: 'data',              // serve JSON/config files for fetch()
+  publicDir: 'assets',            // serve assets, data, and images
   server: {
     port: 5173,
     open: true,                   // auto-open browser
@@ -14,7 +15,14 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
-    sourcemap: true
+    sourcemap: true,
+    rollupOptions: {
+      input: {
+        main: 'index.html',
+        calendar: 'calendar.html',
+        settings: 'settings.html'
+      }
+    }
   },
   resolve: {
     alias: {

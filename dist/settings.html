@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en" data-app="StudyFlow">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      script-src 'self';
+      style-src 'self' 'unsafe-inline';
+      img-src 'self' data: https:;
+      font-src 'self' data:;
+      media-src 'self' https:;
+      connect-src 'self';
+      object-src 'none';
+      base-uri 'self';
+      frame-ancestors 'none';
+    ">
+    <title>StudyFlow — Settings</title>
+
+  <!-- CSS and JS files -->
+  <!-- Backgrounds live under assets/images; audio under assets/audio; JSON under /data. -->
+    <!-- JS will later fetch: data/studyflow_config.json -->
+    <script type="module" crossorigin src="/Study-Flow-Manager/assets/core-modern-CjGQUk3V.js"></script>
+    <link rel="stylesheet" crossorigin href="/Study-Flow-Manager/assets/core-modern-BNiYk79k.css">
+  </head>
+
+  <body data-page="settings" data-theme="summer" data-daynight="day" data-timezone="Africa/Johannesburg">
+    <noscript>
+      <p style="padding:1rem">StudyFlow requires JavaScript to run.</p>
+    </noscript>
+
+    <!-- ===== Global Background & Effects ===== -->
+    <div id="bg-root" aria-hidden="true">
+      <div id="bg-slideshow" role="img" aria-label="Scenery background"></div>
+      <div id="particles-layer" aria-hidden="true"></div>
+      <div id="ui-tint" aria-hidden="true"></div>
+    </div>
+
+    <!-- ===== Always-on Clock + Reminders Dropdown ===== -->
+    <header id="global-topbar" aria-label="Global clock and quick actions">
+      <div id="clock" aria-live="polite" aria-label="Current time">
+        <time id="clock-time">00:00</time>
+      </div>
+    </header>
+
+    <!-- ===== Side Navigation (contextual icons; auto-hide via CSS/JS later) ===== -->
+    <nav id="sidebar" aria-label="Page navigation">
+      <a class="nav-item" href="index.html" aria-label="Open Timer" title="Timer" id="nav-timer">
+        <img class="nav-icon-img" src="assets/images/clock-icon.svg" alt="Timer" aria-hidden="true">
+      </a>
+      <a class="nav-item" href="calendar.html" aria-label="Open Calendar" title="Calendar" id="nav-calendar">
+        <img class="nav-icon-img" src="assets/images/calendar-icon.svg" alt="Calendar" aria-hidden="true">
+      </a>
+    </nav>
+
+    <!-- ===== Rain Lockout Overlay (shown during rain) ===== -->
+    <aside id="rain-lockout" role="dialog" aria-modal="true" aria-labelledby="rain-title" hidden>
+      <div class="lockout-card">
+        <h2 id="rain-title">It’s raining!</h2>
+        <p>Don’t touch the electronics—you will get shocked!</p>
+        <p class="lockout-instruction">Use the Rain toggle in Settings to stop the rain.</p>
+      </div>
+    </aside>
+
+    <!-- ===== SETTINGS PAGE ===== -->
+    <main id="app" aria-live="polite">
+      <section id="page-settings" role="region" aria-label="Settings" data-view="settings">
+        <header class="page-title">
+          <h1>Settings</h1>
+        </header>
+
+        <form id="settings-form" autocomplete="off">
+          <fieldset id="settings-calendar">
+            <legend>Calendar</legend>
+            <label>
+              Cross color
+              <input id="cross-color" name="calendar_cross_color" type="color" value="#ff4d4d" />
+            </label>
+          </fieldset>
+
+          <fieldset id="settings-appearance">
+            <legend>Appearance</legend>
+            <label>
+              Background brightness
+              <input id="bg-brightness" name="background_brightness" type="range" min="0" max="100" value="100" />
+            </label>
+            <label>
+              Frame opacity
+              <input id="frame-opacity" name="frame_opacity" type="range" min="0" max="100" value="100" />
+            </label>
+          </fieldset>
+
+          <fieldset id="settings-theme">
+            <legend>Theme &amp; Time</legend>
+
+            <label>
+              Season
+              <select id="season" name="season">
+                <option value="summer">Summer</option>
+                <option value="autumn">Autumn</option>
+                <option value="winter">Winter</option>
+              </select>
+            </label>
+
+            <label>
+              Timezone
+              <select id="timezone" name="timezone">
+                <option value="Africa/Johannesburg">Africa/Johannesburg</option>
+              </select>
+            </label>
+
+            <label>
+              Background slideshow
+              <input id="slideshow-enabled" name="slideshow_enabled" type="checkbox" checked />
+            </label>
+
+            <label>
+              Slideshow interval (seconds)
+              <input id="slideshow-interval" name="slideshow_interval_seconds" type="number" min="5" step="5" value="30" />
+            </label>
+          </fieldset>
+
+          <fieldset id="settings-pomodoro">
+            <legend>Pomodoro</legend>
+
+            <label>
+              Sessions
+              <input id="pomodoro-sessions" name="pomodoro_sessions" type="number" min="1" value="4" />
+            </label>
+
+            <label>
+              Work (minutes)
+              <input id="work-minutes" name="work_minutes" type="number" min="1" value="25" />
+            </label>
+
+            <label>
+              Short break (minutes)
+              <input id="short-break-minutes" name="short_break_minutes" type="number" min="1" value="5" />
+            </label>
+
+            <label>
+              Long break (minutes)
+              <input id="long-break-minutes" name="long_break_minutes" type="number" min="1" value="20" />
+            </label>
+
+            <label>
+              Short breaks before long
+              <input id="short-breaks-before-long" name="short_breaks_before_long" type="number" min="1" value="3" />
+            </label>
+          </fieldset>
+
+          <fieldset id="settings-weather">
+            <legend>Weather &amp; Rain</legend>
+
+            <button id="rain-toggle" type="button">Start Rain</button>
+          </fieldset>
+
+          <menu>
+            <button id="settings-save" type="submit">Save</button>
+            <button id="settings-cancel" type="reset">Reset</button>
+          </menu>
+        </form>
+      </section>
+    </main>
+
+    <!-- ===== Audio (preloaded, controlled later by JS) ===== -->
+  <audio id="audio-rain" src="assets/audio/rainfall.mp3" preload="auto" loop></audio>
+  <audio id="audio-splash" src="assets/audio/splash.mp3" preload="auto"></audio>
+  <audio id="audio-drawing" src="assets/audio/drawing.mp3" preload="auto"></audio>
+  <audio id="audio-click" src="assets/audio/click.mp3" preload="auto"></audio>
+
+    <script src="js/core.js"></script>
+  </body>
+</html>

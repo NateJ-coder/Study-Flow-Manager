@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en" data-app="StudyFlow">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      script-src 'self';
+      style-src 'self' 'unsafe-inline';
+      img-src 'self' data: https:;
+      font-src 'self' data:;
+      media-src 'self' https:;
+      connect-src 'self';
+      object-src 'none';
+      base-uri 'self';
+      frame-ancestors 'none';
+    ">
+    <title>StudyFlow — Calendar</title>
+
+  <!-- CSS and JS files -->
+  <!-- Backgrounds live under assets/images; audio under assets/audio; JSON under /data. -->
+    <!-- JS will later fetch: data/studyflow_config.json -->
+    <script type="module" crossorigin src="/Study-Flow-Manager/assets/core-modern-CjGQUk3V.js"></script>
+    <link rel="stylesheet" crossorigin href="/Study-Flow-Manager/assets/core-modern-BNiYk79k.css">
+  </head>
+
+  <body data-page="calendar" data-theme="summer" data-daynight="day" data-timezone="Africa/Johannesburg">
+    <noscript>
+      <p style="padding:1rem">StudyFlow requires JavaScript to run.</p>
+    </noscript>
+
+    <!-- ===== Global Background & Effects ===== -->
+    <div id="bg-root" aria-hidden="true">
+      <div id="bg-slideshow" role="img" aria-label="Scenery background"></div>
+      <div id="particles-layer" aria-hidden="true"></div>
+      <div id="ui-tint" aria-hidden="true"></div>
+    </div>
+
+    <!-- ===== Always-on Clock + Reminders Dropdown ===== -->
+    <header id="global-topbar" aria-label="Global clock and quick actions">
+      <div id="clock" aria-live="polite" aria-label="Current time">
+        <time id="clock-time">00:00</time>
+      </div>
+    </header>
+
+    <!-- ===== Side Navigation (contextual icons; auto-hide via CSS/JS later) ===== -->
+    <nav id="sidebar" aria-label="Page navigation">
+      <a class="nav-item" href="index.html" aria-label="Open Timer" title="Timer" id="nav-timer">
+        <img class="nav-icon-img" src="assets/images/clock-icon.svg" alt="Timer" aria-hidden="true">
+      </a>
+      <a class="nav-item" href="settings.html" aria-label="Open Settings" title="Settings" id="nav-settings">
+        <img class="nav-icon-img" src="assets/images/settings-icon.svg" alt="Settings" aria-hidden="true">
+      </a>
+    </nav>
+
+    <!-- ===== Rain Lockout Overlay (shown during rain) ===== -->
+    <aside id="rain-lockout" role="dialog" aria-modal="true" aria-labelledby="rain-title" hidden>
+      <div class="lockout-card">
+        <h2 id="rain-title">It’s raining!</h2>
+        <p>Don’t touch the electronics—you will get shocked!</p>
+        <p class="lockout-instruction">Use the Rain toggle in Settings to stop the rain.</p>
+      </div>
+    </aside>
+
+    <!-- ===== CALENDAR PAGE ===== -->
+    <main id="app" aria-live="polite">
+      <section id="page-calendar" role="region" aria-label="Calendar" data-view="calendar">
+        <header class="page-title">
+          <h1>Calendar</h1>
+        </header>
+
+        <div id="calendar-header" role="group" aria-label="Month navigation">
+          <button id="cal-prev" aria-label="Previous month">&larr;</button>
+          <h2 id="cal-title" aria-live="polite">Month YYYY</h2>
+          <button id="cal-next" aria-label="Next month">&rarr;</button>
+        </div>
+
+        <div id="calendar-weekdays" aria-hidden="true">
+          <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+        </div>
+
+        <div id="calendar-grid" role="grid" aria-label="Month grid"></div>
+
+        <dialog id="calendar-task-dialog" aria-label="Tasks for selected day">
+          <form method="dialog" id="task-form" autocomplete="off">
+            <header>
+              <h3 id="task-date-label">Tasks — 2025-01-01</h3>
+            </header>
+
+            <div id="task-list" role="list"></div>
+
+            <div class="task-new">
+              <label>
+                <input id="new-task-input" name="task_text" type="text" placeholder="New task" />
+              </label>
+              <button id="task-add" type="button">Add</button>
+            </div>
+
+            <menu>
+              <button id="task-move-incomplete" value="move">Move incomplete to next day</button>
+              <button id="task-close" value="cancel">Close</button>
+            </menu>
+
+            <p id="encouragement" aria-live="polite" hidden></p>
+          </form>
+        </dialog>
+      </section>
+    </main>
+
+    <!-- ===== Audio (preloaded, controlled later by JS) ===== -->
+  <audio id="audio-rain" src="assets/audio/rainfall.mp3" preload="auto" loop></audio>
+  <audio id="audio-splash" src="assets/audio/splash.mp3" preload="auto"></audio>
+  <audio id="audio-drawing" src="assets/audio/drawing.mp3" preload="auto"></audio>
+  <audio id="audio-click" src="assets/audio/click.mp3" preload="auto"></audio>
+
+    <script src="js/core.js"></script>
+  </body>
+</html>
