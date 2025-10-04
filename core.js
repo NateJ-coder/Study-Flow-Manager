@@ -210,6 +210,19 @@ function loadSettings() {
     STATE.userSettings = { ...DEFAULT_SETTINGS };
   }
 
+  // Sanitize legacy rain-related settings that could force lockout
+  if (STATE.userSettings.developer_mode_test_rain_no_lockout !== undefined) {
+    console.log('🔧 Clearing legacy developer_mode_test_rain_no_lockout setting');
+    delete STATE.userSettings.developer_mode_test_rain_no_lockout;
+  }
+  // If stored season is 'rain', reset to 'summer' to avoid accidental activation
+  if (STATE.userSettings.season === 'rain') {
+    console.log("🔧 Stored season was 'rain' — resetting to 'summer'");
+    STATE.userSettings.season = 'summer';
+    saveSettings();
+  }
+
+
   // Populate the form fields if present
   const form = document.getElementById("settings-form");
   if (form) {
@@ -2311,6 +2324,15 @@ function cleanupScreensaver() {
 /* ===== Init on Page Load ===== */
 window.onload = () => {
   MapsTo();
+  // Force-clear any lingering rain state at startup to avoid accidental lockouts
+  try {
+    STATE.isRainActive = false;
+    STATE.rainLockout = false;
+    const el = document.getElementById('rain-lockout');
+    if (el) el.setAttribute('hidden', 'true');
+  } catch (e) {
+    console.warn('Startup guard: could not clear rain lockout element', e);
+  }
   setupNavigation();
   setupNavHiding();
   loadSettings();
@@ -2335,7 +2357,15 @@ window.onload = () => {
   
   // Initialize timer display
   resetTimer();
-  
+
+  // Debug: report rain-related initialization states
+  try {
+    const lockoutEl = document.getElementById('rain-lockout');
+    console.log('🧭 Init debug - STATE.isRainActive:', STATE.isRainActive, 'STATE.rainLockout:', STATE.rainLockout, 'rain-lockout element present:', !!lockoutEl, 'hidden attribute:', lockoutEl ? lockoutEl.hasAttribute('hidden') : 'n/a');
+  } catch (err) {
+    console.warn('Init debug: could not access rain-lockout element', err);
+  }
+
   console.log('🎯 StudyFlow initialization complete');
 };
 

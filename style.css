@@ -598,6 +598,14 @@ body {
   justify-content: center;
 }
 
+/* Honor the hidden attribute explicitly to avoid accidental display */
+#rain-lockout[hidden] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
 .lockout-card {
   background: rgba(255, 215, 0, 0.9);
   color: #000;

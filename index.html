@@ -1,16 +1,7 @@
 <!doctype html>
 <html lang="en" data-app="StudyFlow">
-  <head>    <    <aside id="rain-lockout" role="dialog" aria-modal="true" aria-labelledby="rain-title" hidden>
-      <div class="lockout-card">
-        <h2 id="rain-title">It's raining!</h2>
-        <p>Don't touch the electronics—you will get shocked!</p>
-        <p>Use the rain toggle button to stop the rain</p>
-      </div>id="rain-lockout" role="dialog" aria-modal="true" aria-labelledby="rain-title" hidden>
-      <div class="lockout-card">
-        <h2 id="rain-title">It's raining!</h2>
-        <p>Don't touch the electronics—you will get shocked!</p>
-        <p>Use the rain toggle button to stop the rain</p>
-      </div>meta charset="utf-8" />
+  <head>
+    <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>StudyFlow</title>
 
@@ -71,12 +62,12 @@
       <!-- When on non-timer pages, replace items so only the other two show. Controlled by JS later. -->
     </nav>
 
-    <!-- ===== Rain Lockout Overlay (shown during rain unless dev override) ===== -->
+    <!-- ===== Rain Lockout Overlay (shown during rain) ===== -->
     <aside id="rain-lockout" role="dialog" aria-modal="true" aria-labelledby="rain-title" hidden>
       <div class="lockout-card">
         <h2 id="rain-title">It’s raining!</h2>
         <p>Don’t touch the electronics—you will get shocked!</p>
-        <p id="rain-countdown" aria-live="polite">45:00</p>
+        <p class="lockout-instruction">Use the Rain toggle in Settings to stop the rain.</p>
       </div>
       <!-- Shock effect & cursor aura will be added via CSS/JS during lockout -->
     </aside>
