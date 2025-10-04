@@ -815,15 +815,10 @@ function startSeasonalParticles() {
   }
 }
 
-// Function to load and apply seasonal theming to SVG buttons
 function loadSVGButtons() {
-  const buttons = STATE.config?.ui_elements?.buttons || {
-    start: 'assets/images/start-button.svg',
-    reset: 'assets/images/reset-button.svg'
-  };
-  
-  loadSVGButton('btn-start', buttons.start);
-  loadSVGButton('btn-reset', buttons.reset);
+  // Load your desired assets directly
+  loadSVGButton('btn-start', 'assets/images/start-button.svg');
+  loadSVGButton('btn-reset', 'assets/images/reset-button.svg');
 }
 
 // Function to toggle between rest and active timer modes
@@ -857,29 +852,34 @@ function setupModeToggling() {
   }
 }
 
-// Function to load individual SVG button with theming
-async function loadSVGButton(buttonId, svgFileName) {
-  const button = document.getElementById(buttonId);
-  if (!button) return;
+// Utilities to load external SVGs and strip white backgrounds
+async function loadSVGButton(btnId, src) {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
 
   try {
-    const response = await fetch(svgFileName);
-    if (!response.ok) {
-      console.log(`SVG button ${svgFileName} not found, keeping text button`);
-      return;
+    const res = await fetch(src);
+    let svgText = await res.text();
+
+    // Remove <rect ... fill="white/#fff"> backgrounds
+    svgText = svgText
+      // remove white rects
+      .replace(/<rect[^>]*fill\s*=\s*["'](?:#fff|#ffffff|white|rgb\(255,\s*255,\s*255\))["'][^>]*>\s*<\/rect>/gi, '')
+      // neutralize any other explicit white fills
+      .replace(/fill\s*=\s*["'](?:#fff|#ffffff|white|rgb\(255,\s*255,\s*255\))["']/gi, 'fill="none"')
+      // make responsive
+      .replace(/\s(width|height)="[^"]*"/gi, '');
+
+    btn.innerHTML = svgText;
+    console.log(`✅ Loaded SVG button: ${btnId}`);
+  } catch (error) {
+    console.warn(`Failed to load SVG for ${btnId}:`, error);
+    // Fallback to text if SVG fails to load
+    if (btnId === 'btn-start') {
+      btn.textContent = 'Start';
+    } else if (btnId === 'btn-reset') {
+      btn.textContent = 'Reset';
     }
-    
-    const svgText = await response.text();
-    
-    // Parse and theme the SVG
-    const themedSVG = applySVGTheming(svgText);
-    
-    // Insert the SVG into the button
-    button.innerHTML = themedSVG;
-    
-    console.log(`✅ Loaded SVG button: ${buttonId}`);
-  } catch (err) {
-    console.log(`Error loading SVG button ${buttonId}:`, err.message);
   }
 }
 
@@ -3490,6 +3490,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Page-specific init
   const page = document.body.dataset.page;
+
+  if (page === 'timer') {
+    loadSVGButtons();        // load SVG artwork into corner buttons
+    setupTimerButtons();     // hook up click handlers for start/reset
+    updateTimerDisplay();    // initialize timer display
+    updateTimerButtons();    // set initial button states
+  }
 
   if (page === 'settings') {
     setupSettingsForm();     // wire up the form submit handler

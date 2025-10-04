@@ -289,12 +289,13 @@ body {
 
 /* New frame layout system */
 .frame-wrap {
-  --win-top: 15%;   /* tweak these 3 until the SVG sits perfectly */
-  --win-left: 28%;
-  --win-width: 44%;
+  --win-top: 14%;   /* tweak these until the SVG sits perfectly */
+  --win-width: 46%;
 
   position: relative;
-  width: min(90vw, 980px);
+  width: min(80vw, 78vh);
+  max-width: 680px;
+  max-height: 480px;
   margin: 0 auto;
   aspect-ratio: 16/10; /* overall box – adjust if your frame is taller/shorter */
 }
@@ -313,7 +314,7 @@ body {
 .frame-window {
   position: absolute;
   top: var(--win-top);
-  left: var(--win-left);
+  left: calc(50% - var(--win-width)/2); /* centers horizontally */
   width: var(--win-width);
   /* lock the scene to its native ratio (our inline SVG uses 900 x 560) */
   aspect-ratio: 900 / 560;
@@ -389,12 +390,10 @@ body {
 }
 
 /* ===== Frame SVG Buttons ===== */
+/* Buttons now anchor to the window */
 #frame-buttons {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;           /* fill the .frame-window */
   pointer-events: none;
 }
 
@@ -402,58 +401,28 @@ body {
   position: absolute;
   width: clamp(70px, 9vw, 110px);
   height: clamp(70px, 9vw, 110px);
-  background: rgba(255, 255, 255, 0.1);
-  border: 2px solid var(--ui-tint-primary, #dff6ff);
-  border-radius: 50%;
-  cursor: pointer;
+  background: none;   /* optional: no glass ring */
+  border: 0;
   pointer-events: auto;
-  transition: all 0.3s ease;
-  z-index: 20;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+/* tweak these to taste; now relative to the window */
+#btn-start { bottom: 8%; left: 6%; }
+#btn-reset { bottom: 8%; right: 6%; }
+
+.frame-svg-button svg {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 .frame-svg-button:hover {
   transform: scale(1.1);
-  background: var(--ui-tint-primary, #dff6ff);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
-}
-
-.frame-svg-button:active {
-  transform: scale(0.95);
-}
-
-/* Position buttons at frame corners */
-#btn-start {
-  bottom: 10%;
-  left: 8%;
-}
-
-#btn-reset {
-  bottom: 10%;
-  right: 8%;
-}
-
-.frame-svg-button svg {
-  width: 60%;
-  height: 60%;
-  display: block;
-  background: none !important;
-  fill: var(--ui-tint-primary, #dff6ff);
-  transition: fill 0.3s ease;
-}
-
-.frame-svg-button:hover svg {
-  fill: var(--bg-primary, #1a1a2e);
-}
-
-/* Remove white backgrounds from SVGs */
-.frame-svg-button svg rect[fill="#ffffff"],
-.frame-svg-button svg rect[fill="white"] {
-  fill: none !important;
 }
 
 /* ===== Set Reminder Button ===== */
