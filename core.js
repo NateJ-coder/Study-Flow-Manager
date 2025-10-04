@@ -294,29 +294,49 @@ function saveSettings() {
 }
 
 /* ===== EVENT: Handle Settings Form Submit ===== */
+
+/**
+ * Safely coerce a value to a number, returning fallback for invalid values
+ */
+function coerceNumber(val, fallback) {
+  const n = Number(val);
+  return Number.isFinite(n) ? n : fallback;
+}
+
 function setupSettingsForm() {
   const form = document.getElementById("settings-form");
   if (!form) return;
 
+  // Live preview: update only visuals as user changes the cross color
+  const colorInput = form.querySelector('[name="calendar_cross_color"]');
+  if (colorInput) {
+    colorInput.addEventListener('input', () => {
+      // Preview on today's cell if present
+      document.querySelectorAll('.calendar-day.completed .cross-line-1, .calendar-day.completed .cross-line-2')
+        .forEach(line => line.setAttribute('stroke', colorInput.value));
+    });
+  }
+
   form.addEventListener("submit", e => {
     e.preventDefault();
 
-    // Update STATE.userSettings from form inputs
     Object.keys(DEFAULT_SETTINGS).forEach(key => {
       const input = form.querySelector(`[name="${key}"]`);
-      if (input) {
-        if (input.type === "checkbox") {
-          STATE.userSettings[key] = input.checked;
-        } else if (input.type === "number" || input.type === "range") {
-          STATE.userSettings[key] = Number(input.value);
-        } else {
-          STATE.userSettings[key] = input.value;
-        }
+      if (!input) return;
+
+      if (input.type === "checkbox") {
+        STATE.userSettings[key] = input.checked;
+      } else if (input.type === "number" || input.type === "range") {
+        // safer number parsing
+        STATE.userSettings[key] = coerceNumber(input.value, DEFAULT_SETTINGS[key]);
+      } else {
+        STATE.userSettings[key] = input.value;
       }
     });
 
-    // Save to localStorage
     saveSettings();
+    // Optional: toast/feedback
+    console.log('✅ Settings saved');
   });
 }
 
@@ -2122,11 +2142,107 @@ function playShockSound() {
 /* ===== CALENDAR GENERATION & INTERACTIVITY ===== */
 
 /**
+ * Wire up calendar header navigation buttons
+ */
+function wireCalendarHeader() {
+  const prevBtn = document.getElementById('cal-prev');
+  const nextBtn = document.getElementById('cal-next');
+  if (!prevBtn || !nextBtn) return;
+
+  prevBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    const m = STATE.currentMonth - 1;
+    const y = m < 0 ? STATE.currentYear - 1 : STATE.currentYear;
+    const month = (m + 12) % 12;
+    renderCalendar(month, y);
+  });
+
+  nextBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    const m = STATE.currentMonth + 1;
+    const y = m > 11 ? STATE.currentYear + 1 : STATE.currentYear;
+    const month = m % 12;
+    renderCalendar(month, y);
+  });
+}
+
+/**
+ * Update calendar header title
+ */
+function updateCalendarHeader(month, year) {
+  const title = document.getElementById('cal-title');
+  if (!title) return;
+  const name = new Intl.DateTimeFormat('en', { month: 'long' }).format(new Date(year, month, 1));
+  title.textContent = `${name} ${year}`;
+}
+
+/**
+ * Add cross mark to a day cell
+ */
+function addCrossMarkToDay(dayCell) {
+  // Remove any prior cross
+  const existing = dayCell.querySelector('.cross-mark');
+  if (existing) existing.remove();
+
+  const color = STATE.userSettings?.calendar_cross_color || '#ff4d4d';
+
+  const wrapper = document.createElement('div');
+  wrapper.className = 'cross-mark';
+  wrapper.innerHTML = `
+    <svg class="cross-svg" viewBox="0 0 24 24" aria-hidden="true">
+      <line class="cross-line-1" x1="3" y1="3" x2="21" y2="21" stroke="${color}" stroke-width="3" stroke-linecap="round"/>
+      <line class="cross-line-2" x1="21" y1="3" x2="3" y2="21" stroke="${color}" stroke-width="3" stroke-linecap="round"/>
+    </svg>
+  `;
+  dayCell.appendChild(wrapper);
+}
+
+/**
+ * Mark a day as completed
+ */
+function markDayAsCompleted(dayCell, dateKey) {
+  STATE.completedDays.add(dateKey);
+  dayCell.classList.add('completed', 'drawing-animation');
+  addCrossMarkToDay(dayCell);
+  // Optional: audio fx
+  try { document.getElementById('audio-drawing')?.play().catch(()=>{});} catch(e){}
+}
+
+/**
+ * Unmark a day as completed
+ */
+function unmarkDayAsCompleted(dayCell, dateKey) {
+  STATE.completedDays.delete(dateKey);
+  dayCell.classList.remove('completed', 'drawing-animation');
+  dayCell.querySelector('.cross-mark')?.remove();
+}
+
+/**
+ * Add task indicator to day cell
+ */
+function addTaskIndicatorToDay(dayCell, count) {
+  let badge = dayCell.querySelector('.task-indicator');
+  if (!badge) {
+    badge = document.createElement('div');
+    badge.className = 'task-indicator';
+    dayCell.appendChild(badge);
+  }
+  badge.textContent = count;
+  badge.setAttribute('aria-label', `${count} task${count === 1 ? '' : 's'}`);
+}
+
+/**
  * Render calendar for specified month and year
  * @param {number} month - Month (0-11)
  * @param {number} year - Full year (e.g. 2025)
  */
 function renderCalendar(month, year) {
+  // Update STATE to track current month/year
+  STATE.currentMonth = month;
+  STATE.currentYear = year;
+  
+  // Update header title
+  updateCalendarHeader(month, year);
   const container = document.getElementById('calendar-grid');
   if (!container) {
     console.warn('Calendar container not found');
@@ -3348,4 +3464,27 @@ function enhancePlaceholderFrame() {
 // Cleanup on page unload
 window.addEventListener('beforeunload', () => {
   cleanupScreensaver();
+});
+
+/* ===== PAGE BOOTSTRAP ===== */
+document.addEventListener('DOMContentLoaded', () => {
+  // Map elements and set up cross-page features (safe to call everywhere)
+  MapsTo();                  // map nav items to pages
+  setupNavigation();         // nav click behavior
+  loadSettings();            // load settings into STATE and hydrate any forms
+  startPerpetualClock();     // top bar clock
+
+  // Page-specific init
+  const page = document.body.dataset.page;
+
+  if (page === 'settings') {
+    setupSettingsForm();     // wire up the form submit handler
+    setupRainToggle();       // start/stop rain UI
+  }
+
+  if (page === 'calendar') {
+    wireCalendarHeader();    // prev/next + title
+    // initial render using STATE, falls back to today
+    renderCalendar(STATE.currentMonth, STATE.currentYear);
+  }
 });
