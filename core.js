@@ -22,7 +22,7 @@ const STATE = {
   hourglassFlipInterval: null,
   sandAnimationActive: false,
   
-  // Rain cycle state
+  // Rain cycle state (always starts false - only activated by manual toggle)
   isRainActive: false,
   rainAudio: null,
   
@@ -2323,8 +2323,14 @@ window.onload = () => {
   setupRainClickEffects();
   initializeCalendar();
   
-  // Apply initial theme
-  const initialSeason = STATE.userSettings?.season || "summer";
+  // Apply initial theme (ensure rain is never automatically activated)
+  let initialSeason = STATE.userSettings?.season || "summer";
+  // If someone had 'rain' as season, reset to summer since we now use manual toggle
+  if (initialSeason === 'rain') {
+    initialSeason = 'summer';
+    STATE.userSettings.season = 'summer';
+    saveSettings();
+  }
   applyTheme(initialSeason, false, false);
   
   // Initialize timer display
