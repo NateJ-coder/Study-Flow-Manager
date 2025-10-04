@@ -52,6 +52,24 @@ function MapsTo() {
   ELEMENTS.pages = document.querySelectorAll("main > section"); // all app pages
   ELEMENTS.sidebar = document.getElementById("sidebar");
   ELEMENTS.rainLockout = document.getElementById("rain-lockout");
+
+  // If nav items are anchors linking to other HTML pages, infer data-target
+  // so nav-hiding works consistently both for single-page and multi-page setups.
+  if (ELEMENTS.sidebar) {
+    ELEMENTS.sidebar.querySelectorAll('.nav-item').forEach(btn => {
+      if (!btn.dataset.target) {
+        const href = btn.getAttribute('href') || '';
+        if (href) {
+          const file = href.split('/').pop().split('#')[0].toLowerCase();
+          let inferred = '';
+          if (file === '' || file.includes('index')) inferred = 'timer';
+          else if (file.includes('calendar')) inferred = 'calendar';
+          else if (file.includes('settings')) inferred = 'settings';
+          if (inferred) btn.dataset.target = inferred;
+        }
+      }
+    });
+  }
 }
 
 /* ===== Utility: Hide nav items depending on active page ===== */
@@ -106,9 +124,24 @@ function navigateToPage(pageId) {
  */
 function setupNavigation() {
   if (!ELEMENTS.sidebar) return;
-  
   ELEMENTS.sidebar.querySelectorAll('.nav-item').forEach(btn => {
-    btn.addEventListener('click', () => {
+    const href = btn.getAttribute('href') || '';
+
+    // If this nav-item is an anchor to another HTML page, do not intercept click
+    // — let the browser navigate to that file. For in-page buttons (no href
+    // or href that is a fragment), intercept and run SPA navigation.
+    if (btn.tagName === 'A' && href && !href.startsWith('#') && !href.startsWith('javascript:')) {
+      // Keep inferred data-target for nav hiding, but don't add click listener.
+      return;
+    }
+
+    btn.addEventListener('click', (e) => {
+      // Prevent default if this would navigate away in-page
+      if (btn.tagName === 'A' && href && !href.startsWith('#')) {
+        // allow normal navigation
+        return;
+      }
+      e.preventDefault();
       const target = btn.dataset.target;
       if (target) {
         navigateToPage(target);

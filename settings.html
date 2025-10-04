@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>StudyFlow</title>
+    <title>StudyFlow — Settings</title>
 
   <!-- CSS and JS files -->
   <link rel="stylesheet" href="style.css">
@@ -11,7 +11,7 @@
     <!-- JS will later fetch: data/studyflow_config.json -->
   </head>
 
-  <body data-page="timer" data-theme="summer" data-daynight="day" data-timezone="Africa/Johannesburg">
+  <body data-page="settings" data-theme="summer" data-daynight="day" data-timezone="Africa/Johannesburg">
     <noscript>
       <p style="padding:1rem">StudyFlow requires JavaScript to run.</p>
     </noscript>
@@ -51,8 +51,8 @@
 
     <!-- ===== Side Navigation (contextual icons; auto-hide via CSS/JS later) ===== -->
     <nav id="sidebar" aria-label="Page navigation">
-      <a class="nav-item" href="calendar.html" aria-label="Open Calendar" title="Calendar" id="nav-calendar" data-target="calendar"></a>
-      <a class="nav-item" href="settings.html" aria-label="Open Settings" title="Settings" id="nav-settings" data-target="settings"></a>
+      <a class="nav-item" href="index.html" aria-label="Open Timer" title="Timer" id="nav-timer"></a>
+      <a class="nav-item" href="calendar.html" aria-label="Open Calendar" title="Calendar" id="nav-calendar"></a>
     </nav>
 
     <!-- ===== Rain Lockout Overlay (shown during rain) ===== -->
@@ -64,45 +64,34 @@
       </div>
     </aside>
 
-    <!-- ===== Main App View (Timer) ===== -->
+    <!-- ===== SETTINGS PAGE ===== -->
     <main id="app" aria-live="polite">
-
-      <!-- === TIMER PAGE === -->
-      <section id="page-timer" role="region" aria-label="Pomodoro Timer" data-view="timer">
+      <section id="page-settings" role="region" aria-label="Settings" data-view="settings">
         <header class="page-title">
-          <h1>StudyFlow</h1>
+          <h1>Settings</h1>
         </header>
 
-        <!-- Decorative frame around timer (SVG/CSS later) -->
-        <div id="timer-frame">
-          <div id="session-indicator" aria-live="polite">
-            <span id="session-current">1</span> of <span id="session-total">4</span>
-          </div>
+        <form id="settings-form" autocomplete="off">
+          <fieldset id="settings-calendar">
+            <legend>Calendar</legend>
+            <label>
+              Cross color
+              <input id="cross-color" name="calendar_cross_color" type="color" value="#ff4d4d" />
+            </label>
+          </fieldset>
 
-          <!-- Main countdown -->
-          <div id="countdown" aria-live="assertive">
-            <span id="time-mm">45</span>:<span id="time-ss">00</span>
-          </div>
-
-          <!-- Hourglass container (SVG/Canvas injected later) -->
-          <div id="hourglass" aria-label="Hourglass animation" aria-hidden="false"></div>
-
-          <!-- Timer controls -->
-          <div id="timer-controls" role="group" aria-label="Timer controls">
-            <button id="btn-start" type="button">Start</button>
-            <button id="btn-pause" type="button" disabled>Pause</button>
-            <button id="btn-reset" type="button">Reset</button>
-            <button id="btn-mode" type="button" data-mode="work" aria-label="Switch mode">Work</button>
-          </div>
-        </div>
-      </section>
-
-    </main>
+          <fieldset id="settings-appearance">
+            <legend>Appearance</legend>
+            <label>
+              Background brightness
+              <input id="bg-brightness" name="background_brightness" type="range" min="0" max="100" value="100" />
+            </label>
+            <label>
+              Frame opacity
               <input id="frame-opacity" name="frame_opacity" type="range" min="0" max="100" value="100" />
             </label>
           </fieldset>
 
-          <!-- Season & Time -->
           <fieldset id="settings-theme">
             <legend>Theme &amp; Time</legend>
 
@@ -118,7 +107,7 @@
             <label>
               Timezone
               <select id="timezone" name="timezone">
-                <!-- Options injected from JS, default Africa/Johannesburg -->
+                <option value="Africa/Johannesburg">Africa/Johannesburg</option>
               </select>
             </label>
 
@@ -133,7 +122,6 @@
             </label>
           </fieldset>
 
-          <!-- Pomodoro -->
           <fieldset id="settings-pomodoro">
             <legend>Pomodoro</legend>
 
@@ -158,12 +146,11 @@
             </label>
 
             <label>
-              Short breaks before long break
+              Short breaks before long
               <input id="short-breaks-before-long" name="short_breaks_before_long" type="number" min="1" value="3" />
             </label>
           </fieldset>
 
-          <!-- Weather & Rain -->
           <fieldset id="settings-weather">
             <legend>Weather &amp; Rain</legend>
 
@@ -183,10 +170,6 @@
   <audio id="audio-splash" src="assets/audio/splash.mp3" preload="auto"></audio>
   <audio id="audio-drawing" src="assets/audio/drawing.mp3" preload="auto"></audio>
 
-    <!-- ===== Data sources (fetched later by JS) ===== -->
-    <!-- studyflow_config.json will be fetched from: /data/studyflow_config.json -->
-
-    <!-- Firebase init will be added later in JS using your provided config -->
     <script src="core.js"></script>
   </body>
 </html>
