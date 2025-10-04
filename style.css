@@ -11,9 +11,11 @@ html,
 body {
   height: 100%;
   width: 100%;
+  min-height: 100vh;
   font-family: sans-serif;
   background: #000; /* fallback background */
-  overflow: hidden; /* Prevent scrollbars for full-screen layout */
+  /* Allow natural scrolling on laptop/desktop displays */
+  overflow: auto;
 }
 
 /* ===== B) Background Layers ===== */
@@ -45,8 +47,9 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.75rem;
-  height: 2.75rem;
+  /* laptop-friendly size */
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.15);
   border: 1px solid rgba(255, 255, 255, 0.25);
@@ -56,8 +59,9 @@ body {
 
 /* Nav SVG icon styling */
 .nav-icon-img {
-  width: 44px;
-  height: 44px;
+  /* slightly smaller inside the nav circle for balance on laptop screens */
+  width: 28px;
+  height: 28px;
   display: block;
   transition: transform 220ms cubic-bezier(.2,.9,.3,1), filter 220ms linear, opacity 180ms ease;
   will-change: transform;
@@ -99,7 +103,8 @@ body {
 /* ===== D) Page Visibility States ===== */
 .app-page {
   width: 100%;
-  height: 100%;
+  /* allow pages to size naturally; ensure at least full viewport height */
+  min-height: 100vh;
   display: block;
   background: transparent; /* Allow background to show through */
   position: relative;
@@ -114,7 +119,8 @@ body {
 #app {
   position: relative;
   width: 100%;
-  height: 100vh;
+  /* use min-height so the app can fit naturally on laptop displays and smaller screens */
+  min-height: 640px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -124,7 +130,8 @@ body {
 
 #app section {
   width: 100%;
-  max-width: 800px;
+  /* slightly narrower max-width for better readability on laptops */
+  max-width: 720px;
   padding: 20px;
   text-align: center;
   background: transparent; /* Allow background to show through */
@@ -137,7 +144,8 @@ body {
 }
 
 .page-title h1 {
-  font-size: 48px;
+  /* responsive title sizing for a range of laptop screens */
+  font-size: clamp(24px, 3.5vw, 48px);
   font-weight: bold;
   color: var(--timer-text-color, #ffffff);
   margin-bottom: 30px;
@@ -147,8 +155,9 @@ body {
 /* ===== E) Hourglass Animation ===== */
 #hourglass-container {
   position: relative;
-  width: 80px;
-  height: 120px;
+  /* responsive hourglass sizing suitable for laptop displays */
+  width: clamp(56px, 6vw, 80px);
+  height: clamp(80px, 9vw, 120px);
   margin: 0 auto;
 }
 
@@ -1283,7 +1292,7 @@ body {
 
 /* ===== N) Timer Display Styling ===== */
 #countdown {
-  font-size: 48px;
+  font-size: clamp(28px, 4.5vw, 48px);
   font-weight: bold;
   text-align: center;
   color: var(--timer-text-color, #ffffff);
