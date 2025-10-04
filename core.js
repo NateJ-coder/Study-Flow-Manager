@@ -24,10 +24,7 @@ const STATE = {
   
   // Rain cycle state
   isRainActive: false,
-  rainCycleTimeout: null,
-  rainEndTimeout: null,
   rainAudio: null,
-  rainStartTime: null,
   
   // Calendar state
   currentMonth: new Date().getMonth(),
@@ -39,9 +36,6 @@ const STATE = {
   // Task modal state
   taskModalOpen: false,
   currentTaskDate: null,
-  
-  // Developer mode toggle state
-  developerModeToggle: false,
   
   // Rain lockout auto-hide
   rainLockoutTimeout: null
@@ -167,6 +161,7 @@ function showRainLockout(status, autoHide = true) {
  * Hide the rain lockout overlay but keep the underlying restrictions
  */
 function hideRainLockoutOverlay() {
+  STATE.rainLockout = false;
   if (ELEMENTS.rainLockout) {
     ELEMENTS.rainLockout.setAttribute("hidden", "true");
   }
@@ -195,7 +190,7 @@ const DEFAULT_SETTINGS = {
   short_break_minutes: 5,
   long_break_minutes: 20,
   short_breaks_before_long: 3,
-  developer_mode_test_rain_no_lockout: false
+  rain_toggle_enabled: false
 };
 
 /**
@@ -214,9 +209,6 @@ function loadSettings() {
     console.error("Failed to load settings, using defaults", err);
     STATE.userSettings = { ...DEFAULT_SETTINGS };
   }
-
-  // Sync developer mode toggle state
-  STATE.developerModeToggle = Boolean(STATE.userSettings.developer_mode_test_rain_no_lockout);
 
   // Populate the form fields if present
   const form = document.getElementById("settings-form");
@@ -273,54 +265,35 @@ function setupSettingsForm() {
   });
 }
 
-/* ===== PERPETUAL CLOCK & TIME ZONE ===== */
-
 /**
- * Setup developer mode toggle
+ * Setup rain toggle button
  */
-function setupDeveloperModeToggle() {
-  const toggleBtn = document.getElementById('dev-mode-toggle');
-  if (!toggleBtn) return;
+function setupRainToggle() {
+  const rainToggle = document.getElementById('rain-toggle');
+  if (!rainToggle) return;
   
-  // Update button appearance based on state
-  function updateToggleButton() {
-    if (STATE.developerModeToggle) {
-      toggleBtn.style.background = 'rgba(255, 215, 0, 0.8)';
-      toggleBtn.style.color = '#000';
-      toggleBtn.textContent = 'DEV';
-    } else {
-      toggleBtn.style.background = 'rgba(255, 255, 255, 0.2)';
-      toggleBtn.style.color = '#fff';
-      toggleBtn.textContent = 'DEV';
-    }
+  // Update button text based on rain state
+  function updateRainToggleButton() {
+    rainToggle.textContent = STATE.isRainActive ? 'Stop Rain' : 'Start Rain';
+    rainToggle.style.background = STATE.isRainActive ? 
+      'rgba(255, 0, 0, 0.7)' : 'rgba(0, 150, 255, 0.7)';
   }
   
-  // Toggle developer mode
-  toggleBtn.addEventListener('click', () => {
-    STATE.developerModeToggle = !STATE.developerModeToggle;
-    
-    // Update user settings to reflect toggle state
-    if (!STATE.userSettings) {
-      STATE.userSettings = { ...DEFAULT_SETTINGS };
-    }
-    STATE.userSettings.developer_mode_test_rain_no_lockout = STATE.developerModeToggle;
-    
-    updateToggleButton();
-    saveSettings();
-    
-    console.log(`🔧 Developer mode: ${STATE.developerModeToggle ? 'ON' : 'OFF'}`);
-    
-    // If turning off dev mode during rain, re-apply lockout if on settings page
-    if (!STATE.developerModeToggle && STATE.isRainActive && STATE.currentPage === 'settings') {
-      showRainLockout(true);
-    }
+  // Handle rain toggle click
+  rainToggle.addEventListener('click', () => {
+    toggleRain();
+    updateRainToggleButton();
   });
   
   // Initialize button state
-  updateToggleButton();
+  updateRainToggleButton();
   
-  console.log('✅ Developer mode toggle setup complete');
+  console.log('✅ Rain toggle setup complete');
 }
+
+/* ===== PERPETUAL CLOCK & TIME ZONE ===== */
+
+
 
 /**
  * Start the perpetual clock that updates every second.
@@ -971,30 +944,18 @@ function setupHourglassAnimation() {
 /* ===== RAIN CYCLE MANAGER ===== */
 
 /**
- * Initialize the rain cycle system - starts automatic 2-hour cycles
+ * Toggle rain mode on/off manually
  */
-function startRainCycle() {
-  console.log('🌧️ Starting rain cycle manager - 2 hour intervals');
-  
-  // Schedule first rain cycle (2 hours = 7,200,000 ms)
-  const RAIN_INTERVAL = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
-  
-  function scheduleNextRain() {
-    STATE.rainCycleTimeout = setTimeout(() => {
-      startRain();
-      scheduleNextRain(); // Schedule the next cycle
-    }, RAIN_INTERVAL);
-    
-    const nextRainTime = new Date(Date.now() + RAIN_INTERVAL);
-    console.log(`⏰ Next rain scheduled for: ${nextRainTime.toLocaleTimeString()}`);
+function toggleRain() {
+  if (STATE.isRainActive) {
+    endRain();
+  } else {
+    startRain();
   }
-  
-  // Start the cycle
-  scheduleNextRain();
 }
 
 /**
- * Start rain mode - lasts for 45 minutes
+ * Start rain mode - manual toggle
  */
 function startRain() {
   if (STATE.isRainActive) {
@@ -1002,10 +963,9 @@ function startRain() {
     return;
   }
   
-  console.log('🌧️ Starting rain mode - 45 minutes duration');
+  console.log('🌧️ Starting rain mode');
   
   STATE.isRainActive = true;
-  STATE.rainStartTime = Date.now();
   
   // Apply rain theme
   applyTheme(STATE.currentSeason, STATE.isNight, true);
@@ -1016,57 +976,17 @@ function startRain() {
   // Add wet effect to all buttons
   addWetEffectToButtons();
   
-  // Only lock out when user is on Settings page (unless dev override disables it)
-  if (!STATE.userSettings?.developer_mode_test_rain_no_lockout &&
-      STATE.currentPage === 'settings') {
-    showRainLockout(true);
-  }
+  // Create rain particle system
+  createRainParticleSystem();
+  createRainOverlay();
   
-  // Schedule rain end (45 minutes = 2,700,000 ms)
-  const RAIN_DURATION = 45 * 60 * 1000; // 45 minutes in milliseconds
-  STATE.rainEndTimeout = setTimeout(() => {
-    endRain();
-  }, RAIN_DURATION);
+  // Show rain lockout (auto-hide after 5 seconds)
+  showRainLockout(true, true);
   
-  // Start rain countdown display
-  startRainCountdown(RAIN_DURATION);
-  
-  const rainEndTime = new Date(Date.now() + RAIN_DURATION);
-  console.log(`⏰ Rain will end at: ${rainEndTime.toLocaleTimeString()}`);
+  console.log('🌧️ Rain mode activated');
 }
 
-/**
- * Update rain countdown display
- * @param {number} duration - Total duration in milliseconds
- */
-function startRainCountdown(duration) {
-  const countdownElement = document.getElementById('rain-countdown');
-  if (!countdownElement) return;
-  
-  let remaining = Math.floor(duration / 1000); // Convert to seconds
-  
-  const updateCountdown = () => {
-    if (remaining <= 0) {
-      countdownElement.textContent = '00:00';
-      return;
-    }
-    
-    const minutes = Math.floor(remaining / 60);
-    const seconds = remaining % 60;
-    countdownElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-    
-    remaining--;
-  };
-  
-  // Update immediately, then every second
-  updateCountdown();
-  const countdownInterval = setInterval(() => {
-    updateCountdown();
-    if (remaining <= 0) {
-      clearInterval(countdownInterval);
-    }
-  }, 1000);
-}
+
 
 /**
  * End rain mode and return to seasonal theme
@@ -1080,13 +1000,6 @@ function endRain() {
   console.log('🌤️ Ending rain mode - returning to seasonal theme');
   
   STATE.isRainActive = false;
-  STATE.rainStartTime = null;
-  
-  // Clear rain end timeout if it exists
-  if (STATE.rainEndTimeout) {
-    clearTimeout(STATE.rainEndTimeout);
-    STATE.rainEndTimeout = null;
-  }
   
   // Return to seasonal theme
   applyTheme(STATE.currentSeason, STATE.isNight, false);
@@ -1099,9 +1012,12 @@ function endRain() {
   
   // Cleanup rain particles
   cleanupRainParticles();
+  removeRainOverlay();
   
   // Hide rain lockout
   showRainLockout(false);
+  
+  console.log('🌤️ Rain mode ended');
 }
 
 /**
@@ -1194,23 +1110,7 @@ function removeWetEffectFromButtons() {
   console.log(`🌤️ Removed wet effect from ${buttons.length} buttons`);
 }
 
-/**
- * Cleanup rain cycle on page unload
- */
-function cleanupRainCycle() {
-  if (STATE.rainCycleTimeout) {
-    clearTimeout(STATE.rainCycleTimeout);
-    STATE.rainCycleTimeout = null;
-  }
-  
-  if (STATE.rainEndTimeout) {
-    clearTimeout(STATE.rainEndTimeout);
-    STATE.rainEndTimeout = null;
-  }
-  
-  stopRainfallAudio();
-  cleanupRainParticles();
-}
+
 
 /**
  * Manual rain controls for testing (can be called from console)
@@ -1405,49 +1305,48 @@ function createMultipleRipples(x, y) {
  * @returns {boolean} True if element should be blocked
  */
 function shouldBlockElement(element) {
-  if (!STATE.isRainActive || STATE.developerModeToggle) return false;
+  // Only block during rain mode
+  if (!STATE.isRainActive) return false;
   
-  // Allow timer controls even during rain
-  const allowedElements = [
-    '#btn-start', '#btn-pause', '#btn-reset', '#btn-mode',
-    '#countdown', '#time-mm', '#time-ss', '#session-indicator',
-    '#hourglass', '#timer-controls', '#timer-frame',
-    '#dev-mode-toggle' // Always allow dev mode toggle
-  ];
-  
-  // Check if element or its parent is in allowed list
-  for (const selector of allowedElements) {
-    if (element.matches && element.matches(selector)) return false;
-    if (element.closest && element.closest(selector)) return false;
+  // Always allow timer controls to work
+  if (element.closest('#timer-controls')) {
+    return false;
   }
   
-  // On settings page, block most settings except timer-related ones
-  if (STATE.currentPage === 'settings') {
-    const settingsTimerControls = [
-      'input[name="work_minutes"]',
-      'input[name="short_break_minutes"]', 
-      'input[name="long_break_minutes"]',
-      'input[name="pomodoro_sessions"]',
-      'input[name="short_breaks_before_long"]'
-    ];
-    
-    for (const selector of settingsTimerControls) {
-      if (element.matches && element.matches(selector)) return false;
-      if (element.closest && element.closest(selector)) return false;
-    }
-    
-    // Block other settings elements
-    const blockedSelectors = [
-      'input', 'select', 'button:not(#dev-mode-toggle)', 
-      '.nav-item', 'fieldset:not(#settings-pomodoro)'
-    ];
-    
-    for (const selector of blockedSelectors) {
-      if (element.matches && element.matches(selector)) return true;
-      if (element.closest && element.closest(selector)) return true;
-    }
+  // Allow rain toggle button to work during rain
+  if (element.id === 'rain-toggle') {
+    return false;
   }
   
+  // Block settings page navigation and form elements (except rain toggle)
+  if (element.closest('#page-settings') || 
+      element.dataset?.target === 'settings' ||
+      element.id === 'nav-settings') {
+    return true;
+  }
+  
+  // Block settings form elements specifically (except rain toggle)
+  if (element.closest('#settings-form') && element.id !== 'rain-toggle') {
+    return true;
+  }
+  
+  // Block calendar navigation
+  if (element.dataset?.target === 'calendar' ||
+      element.id === 'nav-calendar') {
+    return true;
+  }
+  
+  // Allow navigation back to timer
+  if (element.dataset?.target === 'timer') {
+    return false;
+  }
+  
+  // Block calendar interactions
+  if (element.closest('#page-calendar')) {
+    return true;
+  }
+  
+  // Allow everything else (like timer controls)
   return false;
 }
 
@@ -2416,12 +2315,11 @@ window.onload = () => {
   setupNavHiding();
   loadSettings();
   setupSettingsForm();
-  setupDeveloperModeToggle();
+  setupRainToggle();
   startPerpetualClock();
   setupTimerButtons();
   setupHourglassAnimation();
   setupScreensaver();
-  startRainCycle();
   setupRainClickEffects();
   initializeCalendar();
   
@@ -2438,5 +2336,4 @@ window.onload = () => {
 // Cleanup on page unload
 window.addEventListener('beforeunload', () => {
   cleanupScreensaver();
-  cleanupRainCycle();
 });

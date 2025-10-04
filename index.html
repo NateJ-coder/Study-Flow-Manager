@@ -1,7 +1,11 @@
 <!doctype html>
 <html lang="en" data-app="StudyFlow">
-  <head>
-    <meta charset="utf-8" />
+  <head>    <aside id="rain-lockout" role="dialog" aria-modal="true" aria-labelledby="rain-title" hidden>
+      <div class="lockout-card">
+        <h2 id="rain-title">It's raining!</h2>
+        <p>Don't touch the electronics—you will get shocked!</p>
+        <p>Use the rain toggle button to stop the rain</p>
+      </div>meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>StudyFlow</title>
 
@@ -32,7 +36,6 @@
     <header id="global-topbar" aria-label="Global clock and quick actions">
       <div id="clock" aria-live="polite" aria-label="Current time">
         <time id="clock-time">00:00</time>
-        <button id="dev-mode-toggle" title="Developer Mode" aria-label="Toggle Developer Mode">DEV</button>
         <button id="clock-reminders-toggle" aria-haspopup="true" aria-controls="reminders-panel" aria-expanded="false" title="Reminders">📅</button>
       </div>
 
@@ -252,10 +255,7 @@
           <fieldset id="settings-weather">
             <legend>Weather &amp; Rain</legend>
 
-            <label>
-              <input id="devmode-test-rain" name="developer_mode_test_rain_no_lockout" type="checkbox" />
-              Test rain (no lockout)
-            </label>
+            <button id="rain-toggle" type="button">Start Rain</button>
           </fieldset>
 
           <menu>

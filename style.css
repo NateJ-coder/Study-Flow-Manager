@@ -1189,3 +1189,26 @@ body {
   background: rgba(255, 255, 255, 0.2);
   transform: scale(1.1);
 }
+
+/* Rain toggle button styling */
+#rain-toggle {
+  background: rgba(0, 150, 255, 0.7);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin: 10px 0;
+  font-size: 14px;
+}
+
+#rain-toggle:hover {
+  background: rgba(0, 120, 200, 0.8);
+  transform: scale(1.05);
+}
+
+#rain-toggle:active {
+  transform: scale(0.95);
+}
