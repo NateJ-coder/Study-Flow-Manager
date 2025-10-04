@@ -740,7 +740,7 @@ function switchMode() {
  */
 function playCompletionSound() {
   try {
-    const audio = new Audio('assets/audios/splash.mp3');
+  const audio = new Audio('assets/audio/splash.mp3');
     audio.volume = 0.7;
     audio.play().catch(err => {
       console.warn('Could not play completion sound:', err);
@@ -1041,7 +1041,7 @@ function startRainfallAudio() {
     // Stop any existing rain audio
     stopRainfallAudio();
     
-    STATE.rainAudio = new Audio('assets/audios/rainfall.mp3');
+  STATE.rainAudio = new Audio('assets/audio/rainfall.mp3');
     STATE.rainAudio.loop = true;
     STATE.rainAudio.volume = 0.6;
     
@@ -1463,7 +1463,7 @@ function triggerShockAnimation(element, x, y) {
  */
 function playShockSound() {
   try {
-    const audio = new Audio('assets/audios/shock.mp3');
+  const audio = new Audio('assets/audio/shock.mp3');
     audio.volume = 0.4;
     audio.play().catch(err => {
       console.warn('Could not play shock sound:', err);
@@ -2076,7 +2076,7 @@ function updateCalendarTaskIndicators() {
  */
 function playDrawingAudio() {
   try {
-    const audio = new Audio('assets/audios/drawing.mp3');
+  const audio = new Audio('assets/audio/drawing.mp3');
     audio.volume = 0.5;
     audio.play().catch(err => {
       console.warn('Could not play drawing audio:', err);
