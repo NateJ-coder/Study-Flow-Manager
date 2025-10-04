@@ -87,7 +87,7 @@
       },
       "timer_text_color": "#d8eef7",
       "particles": "rain",
-  "audio": "assets/audio/rainfall.mp3"
+      "audio": "assets/audio/rainfall.mp3"
     }
   },
   "slideshow": {
@@ -131,7 +131,6 @@
         "winter": "#222222"
       }
     },
-
     "inactivity": {
       "shrink_ui_after_seconds": 120,
       "show_only_remaining_time": true
@@ -163,7 +162,7 @@
   "calendar": {
     "draw_cross_on_right_click": {
       "enabled": true,
-  "sound": "assets/audio/drawing.mp3",
+      "sound": "assets/audio/drawing.mp3",
       "color_default": "#ff4d4d"
     },
     "left_click_task_popup": {

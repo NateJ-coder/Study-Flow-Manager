@@ -6,6 +6,9 @@ const STATE = {
   currentSeason: "summer",  // current season theme
   isRaining: false,         // rain mode status
   
+  // Config data loaded from studyflow_config.json
+  config: null,             // loaded configuration
+  
   // Timer state
   timerMode: 'work',        // 'work', 'short-break', 'long-break'
   timeRemaining: 25 * 60,   // seconds remaining
@@ -482,61 +485,38 @@ function setUITintColors(season, isNight, isRain) {
   
   // Rain mode overrides everything
   if (isRain) {
-    root.style.setProperty('--ui-tint-primary', '#9fc5e8');
-    root.style.setProperty('--ui-tint-secondary', '#dbe9ff');
-    root.style.setProperty('--timer-text-color', '#d8eef7');
+    const rainConfig = STATE.config?.backgrounds?.rain;
+    const tints = rainConfig?.ui_tint || ['#9fc5e8', '#dbe9ff'];
+    const textColor = rainConfig?.timer_text_color || '#d8eef7';
+    
+    root.style.setProperty('--ui-tint-primary', tints[0]);
+    root.style.setProperty('--ui-tint-secondary', tints[1]);
+    root.style.setProperty('--timer-text-color', textColor);
     root.style.setProperty('--sand-color', '#4aa3df');
     return;
   }
   
-  // Season-based tinting
-  const themeColors = {
-    summer: {
-      day: {
-        primary: '#dff6ff',
-        secondary: '#b7f0c6',
-        timerText: '#ffffff',
-        sand: '#f7f7f7'
-      },
-      night: {
-        primary: '#9fc5e8',
-        secondary: '#7bb3d9', 
-        timerText: '#ffffff',
-        sand: '#f7f7f7'
-      }
-    },
-    autumn: {
-      day: {
-        primary: '#ffd9b3',
-        secondary: '#c88a44',
-        timerText: '#ffffff',
-        sand: '#f7f7f7'
-      },
-      night: {
-        primary: '#cc9966',
-        secondary: '#995522',
-        timerText: '#ffffff', 
-        sand: '#f7f7f7'
-      }
-    },
-    winter: {
-      day: {
-        primary: '#dbe9ff',
-        secondary: '#bed3f7',
-        timerText: '#000000',
-        sand: '#222222'
-      },
-      night: {
-        primary: '#b3d1ff',
-        secondary: '#7fb3d9',
-        timerText: '#ffffff',
-        sand: '#f7f7f7'
-      }
-    }
-  };
+  // Season-based tinting from config
+  const seasonConfig = STATE.config?.backgrounds?.seasons?.[season];
+  let colors = {};
   
-  const timeMode = isNight ? 'night' : 'day';
-  const colors = themeColors[season]?.[timeMode] || themeColors.summer.day;
+  if (seasonConfig) {
+    const tints = seasonConfig.ui_tint || ['#dff6ff', '#b7f0c6'];
+    colors = {
+      primary: tints[0],
+      secondary: tints[1],
+      timerText: seasonConfig.timer_text_color || '#ffffff',
+      sand: '#f7f7f7' // Default sand color
+    };
+  } else {
+    // Fallback colors
+    colors = {
+      primary: '#dff6ff',
+      secondary: '#b7f0c6', 
+      timerText: '#ffffff',
+      sand: '#f7f7f7'
+    };
+  }
   
   root.style.setProperty('--ui-tint-primary', colors.primary);
   root.style.setProperty('--ui-tint-secondary', colors.secondary);
@@ -555,17 +535,26 @@ function updateBackground(season, isNight, isRain) {
   const backgroundElement = document.getElementById('bg-slideshow');
   if (!backgroundElement) return;
   
+  const basePath = STATE.config?.paths?.images?.backgrounds || 'assets/images';
   let imagePath;
   
   if (isRain) {
-    // Rain backgrounds (1-9)
-    const rainNum = Math.floor(Math.random() * 9) + 1;
-    imagePath = `assets/images/rain-bg-${rainNum}.png`;
+    // Rain backgrounds using config
+    const rainConfig = STATE.config?.backgrounds?.rain;
+    const rainCount = rainConfig?.count || 9;
+    const rainNum = Math.floor(Math.random() * rainCount) + 1;
+    const pattern = rainConfig?.pattern || 'rain-bg-1.png';
+    imagePath = `${basePath}/${pattern.replace('1.png', `${rainNum}.png`)}`;
   } else {
-    // Season + time backgrounds (1-8)
+    // Season + time backgrounds using config
+    const seasonConfig = STATE.config?.backgrounds?.seasons?.[season];
     const timeMode = isNight ? 'night' : 'day';
-    const imageNum = Math.floor(Math.random() * 8) + 1;
-    imagePath = `assets/images/${season}-${timeMode}-${imageNum}.png`;
+    const patternKey = timeMode === 'night' ? 'night_pattern' : 'day_pattern';
+    const count = seasonConfig?.count_per_cycle || 8;
+    const imageNum = Math.floor(Math.random() * count) + 1;
+    
+    const pattern = seasonConfig?.[patternKey] || `${season}-${timeMode}-1.png`;
+    imagePath = `${basePath}/${pattern.replace('1.png', `${imageNum}.png`)}`;
   }
   
   // Apply background with fade effect
@@ -613,7 +602,7 @@ function updateParticles(season, isNight, isRain) {
   // Ensure click audio is initialized
   if (!STATE.clickAudio) {
     try {
-      STATE.clickAudio = new Audio('assets/audio/click.mp3');
+      STATE.clickAudio = new Audio(getAudioPath('click'));
       STATE.clickAudio.volume = 0.2;
       STATE.clickAudio.preload = 'auto';
     } catch (err) {
@@ -794,8 +783,13 @@ function startSeasonalParticles() {
 
 // Function to load and apply seasonal theming to SVG buttons
 function loadSVGButtons() {
-  loadSVGButton('btn-start', 'assets/images/start-button.svg');
-  loadSVGButton('btn-reset', 'assets/images/reset-button.svg');
+  const buttons = STATE.config?.ui_elements?.buttons || {
+    start: 'assets/images/start-button.svg',
+    reset: 'assets/images/reset-button.svg'
+  };
+  
+  loadSVGButton('btn-start', buttons.start);
+  loadSVGButton('btn-reset', buttons.reset);
 }
 
 // Function to toggle between rest and active timer modes
@@ -1385,7 +1379,7 @@ function switchMode() {
  */
 function playCompletionSound() {
   try {
-  const audio = new Audio('assets/audio/splash.mp3');
+  const audio = new Audio(getAudioPath('work_done'));
     audio.volume = 0.7;
     audio.play().catch(err => {
       console.warn('Could not play completion sound:', err);
@@ -1686,7 +1680,7 @@ function startRainfallAudio() {
     // Stop any existing rain audio
     stopRainfallAudio();
     
-  STATE.rainAudio = new Audio('assets/audio/rainfall.mp3');
+  STATE.rainAudio = new Audio(getAudioPath('rainfall'));
     STATE.rainAudio.loop = true;
     STATE.rainAudio.volume = 0.6;
     
@@ -2721,7 +2715,7 @@ function updateCalendarTaskIndicators() {
  */
 function playDrawingAudio() {
   try {
-  const audio = new Audio('assets/audio/drawing.mp3');
+  const audio = new Audio(getAudioPath('drawing'));
     audio.volume = 0.5;
     audio.play().catch(err => {
       console.warn('Could not play drawing audio:', err);
@@ -2982,8 +2976,60 @@ function cleanupScreensaver() {
   }
 }
 
+/**
+ * Load configuration from studyflow_config.json
+ */
+async function loadConfig() {
+  try {
+    const response = await fetch('data/studyflow_config.json');
+    if (!response.ok) {
+      throw new Error(`Failed to load config: ${response.statusText}`);
+    }
+    STATE.config = await response.json();
+    console.log('✅ Config loaded successfully:', STATE.config);
+    return STATE.config;
+  } catch (error) {
+    console.error('❌ Failed to load config:', error);
+    // Fallback config with essential paths
+    STATE.config = {
+      ui_elements: {
+        frame: { svg_path: 'assets/images/frame.svg' },
+        buttons: {
+          start: 'assets/images/start-button.svg',
+          reset: 'assets/images/reset-button.svg',
+          pause: 'assets/images/pause-button.svg'
+        }
+      },
+      paths: {
+        images: { backgrounds: 'assets/images' },
+        audio: 'assets/audio'
+      },
+      timer: {
+        sounds: {
+          click: 'assets/audio/click.mp3',
+          work_done: 'assets/audio/splash.mp3',
+          break_done: 'assets/audio/splash.mp3',
+          drawing: 'assets/audio/drawing.mp3',
+          rainfall: 'assets/audio/rainfall.mp3'
+        }
+      }
+    };
+    return STATE.config;
+  }
+}
+
+/**
+ * Helper function to get audio path from config
+ */
+function getAudioPath(soundName) {
+  return STATE.config?.timer?.sounds?.[soundName] || `assets/audio/${soundName}.mp3`;
+}
+
 /* ===== Init on Page Load ===== */
-window.onload = () => {
+window.onload = async () => {
+  // Load configuration first
+  await loadConfig();
+  
   MapsTo();
   // Force-clear any lingering rain state at startup to avoid accidental lockouts
   try {
@@ -3003,8 +3049,9 @@ window.onload = () => {
     const frameContainer = document.getElementById('timer-frame');
     if (!frameContainer) return;
 
-    fetch('assets/images/frame.svg').then(resp => {
-      if (!resp.ok) throw new Error('Could not fetch frame.svg');
+    const framePath = STATE.config?.ui_elements?.frame?.svg_path || 'assets/images/frame.svg';
+    fetch(framePath).then(resp => {
+      if (!resp.ok) throw new Error(`Could not fetch frame.svg from ${framePath}`);
       return resp.text();
     }).then(svgText => {
       // Insert the SVG markup into the container

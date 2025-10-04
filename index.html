@@ -60,30 +60,48 @@
         </div>
 
         <!-- Rest Mode Timer (bottom of screen) -->
-        <div id="rest-mode-timer" class="timer-mode active">
+        <div id="rest-mode-timer" class="timer-mode">
           <div id="hourglass-icon">⏳</div>
           <div id="rest-timer-display">
             <div id="rest-session-indicator">
               session <span id="rest-session-current">2</span> of <span id="rest-session-total">4</span>
             </div>
             <div id="rest-countdown">
-              <span id="rest-time-mm">40</span>:<span id="rest-time-ss">56</span>
+              <span id="rest-time-mm">05</span>:<span id="rest-time-ss">00</span>
             </div>
           </div>
         </div>
 
         <!-- Active Mode Timer (centered with frame) -->
-        <div id="active-mode-timer" class="timer-mode">
+        <div id="active-mode-timer" class="timer-mode active">
           <!-- Decorative Frame -->
           <div id="timer-frame-container">
             <svg id="timer-svg" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
-              <!-- Placeholder frame - will be replaced by actual frame.svg -->
+              <!-- Decorative frame with corner elements -->
+              <defs>
+                <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                  <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                  <feMerge> 
+                    <feMergeNode in="coloredBlur"/>
+                    <feMergeNode in="SourceGraphic"/> 
+                  </feMerge>
+                </filter>
+              </defs>
+              <!-- Main frame -->
               <rect x="20" y="20" width="360" height="260" 
                     fill="none" 
                     stroke="var(--ui-tint-primary, #dff6ff)" 
                     stroke-width="3" 
-                    rx="15" 
-                    opacity="0.8"/>
+                    rx="20" 
+                    opacity="0.8"
+                    filter="url(#glow)"/>
+              <!-- Corner decorations -->
+              <circle cx="35" cy="35" r="8" fill="var(--ui-tint-primary, #dff6ff)" opacity="0.6"/>
+              <circle cx="365" cy="35" r="8" fill="var(--ui-tint-primary, #dff6ff)" opacity="0.6"/>
+              <circle cx="35" cy="265" r="8" fill="var(--ui-tint-primary, #dff6ff)" opacity="0.6"/>
+              <circle cx="365" cy="265" r="8" fill="var(--ui-tint-primary, #dff6ff)" opacity="0.6"/>
+              <!-- Center ornament -->
+              <path d="M200 30 L210 40 L200 50 L190 40 Z" fill="var(--ui-tint-primary, #dff6ff)" opacity="0.5"/>
             </svg>
           </div>
           
@@ -93,7 +111,7 @@
               session <span id="active-session-current">1</span> of <span id="active-session-total">4</span>
             </div>
             <div id="active-countdown">
-              <span id="active-time-mm">45</span>:<span id="active-time-ss">00</span>
+              <span id="active-time-mm">25</span>:<span id="active-time-ss">00</span>
             </div>
           </div>
           
