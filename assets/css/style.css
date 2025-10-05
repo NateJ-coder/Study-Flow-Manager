@@ -2241,3 +2241,326 @@ select:focus {
   }
 }
 
+/* ===== ENHANCED SETTINGS PAGE STYLING ===== */
+
+.settings-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  position: relative;
+  z-index: 10;
+}
+
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.settings-section {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  padding: 24px;
+  transition: all 0.3s ease;
+}
+
+.settings-section:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.settings-section legend {
+  color: var(--ui-tint-primary, #dff6ff);
+  font-weight: 600;
+  font-size: 18px;
+  padding: 0 12px;
+  margin-bottom: 16px;
+}
+
+.setting-group {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.setting-label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.label-text {
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.wooden-input, .wooden-select {
+  padding: 12px 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 16px;
+  transition: all 0.3s ease;
+}
+
+.wooden-input:focus, .wooden-select:focus {
+  outline: none;
+  border-color: var(--ui-tint-primary, #dff6ff);
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 0 3px rgba(223, 246, 255, 0.2);
+}
+
+.range-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.wooden-slider {
+  flex: 1;
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.wooden-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, var(--svg-wood-primary), var(--svg-wood-secondary));
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(184, 106, 45, 0.3);
+}
+
+.range-value {
+  min-width: 50px;
+  text-align: right;
+  color: var(--ui-tint-primary, #dff6ff);
+  font-weight: 600;
+}
+
+.checkbox-group {
+  padding: 12px 0;
+}
+
+.setting-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.wooden-checkbox {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+}
+
+.wooden-checkbox:checked {
+  background: linear-gradient(145deg, var(--svg-wood-primary), var(--svg-wood-secondary));
+  border-color: var(--svg-wood-primary);
+}
+
+.checkbox-label {
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
+}
+
+.number-input {
+  max-width: 120px;
+}
+
+.color-input {
+  width: 60px;
+  height: 40px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.rain-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.rain-description {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  font-style: italic;
+}
+
+.settings-actions {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  padding: 20px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  margin-top: 20px;
+}
+
+.page-subtitle {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 16px;
+  margin-top: 8px;
+  text-align: center;
+}
+
+/* Enhanced calendar popup styling */
+.popup-arrow {
+  position: absolute;
+  width: 0;
+  height: 0;
+  border: 8px solid transparent;
+  z-index: -1;
+}
+
+.task-popup[data-popup-position="top"] .popup-arrow {
+  bottom: -16px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-top-color: rgba(255, 255, 255, 0.15);
+}
+
+.task-popup[data-popup-position="bottom"] .popup-arrow {
+  top: -16px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-bottom-color: rgba(255, 255, 255, 0.15);
+}
+
+.task-popup[data-popup-position="left"] .popup-arrow {
+  right: -16px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-left-color: rgba(255, 255, 255, 0.15);
+}
+
+.task-popup[data-popup-position="right"] .popup-arrow {
+  left: -16px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-right-color: rgba(255, 255, 255, 0.15);
+}
+
+.popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  margin-bottom: 20px;
+}
+
+.popup-body {
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.section-divider {
+  padding: 16px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.section-divider:last-child {
+  border-bottom: none;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  color: var(--ui-tint-primary, #dff6ff);
+  font-weight: 600;
+}
+
+.reminder-inputs-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.reminder-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-start;
+}
+
+.reminder-list-container {
+  min-height: 40px;
+}
+
+.no-reminders-message {
+  color: rgba(255, 255, 255, 0.6);
+  font-style: italic;
+  text-align: center;
+  padding: 20px;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.input-label {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.task-list-container {
+  min-height: 60px;
+}
+
+.encouragement-message {
+  background: rgba(46, 204, 113, 0.2);
+  border: 1px solid rgba(46, 204, 113, 0.3);
+  color: #2ecc71;
+  padding: 12px;
+  border-radius: 8px;
+  text-align: center;
+  font-weight: 500;
+}
+
+/* Responsive settings */
+@media (max-width: 768px) {
+  .settings-container {
+    padding: 20px 16px;
+  }
+  
+  .reminder-inputs-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .settings-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .range-container {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  
+  .range-value {
+    text-align: center;
+  }
+}
+

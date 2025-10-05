@@ -41,6 +41,11 @@
     <button class="bg-nav prev" aria-label="Previous background">‹</button>
     <button class="bg-nav next" aria-label="Next background">›</button>
 
+    <!-- ===== StudyFlow Title ===== -->
+    <div id="app-title" class="animate-text">
+      <span>S</span><span>t</span><span>u</span><span>d</span><span>y</span><span>F</span><span>l</span><span>o</span><span>w</span>
+    </div>
+
     <!-- ===== Always-on Clock + Reminders Dropdown ===== -->
     <header id="global-topbar" aria-label="Global clock and quick actions">
       <div id="clock" aria-live="polite" aria-label="Current time">
@@ -67,11 +72,6 @@
       </div>
     </aside>
 
-    <!-- ===== StudyFlow Title ===== -->
-    <div id="app-title" class="animate-text">
-      <span>S</span><span>t</span><span>u</span><span>d</span><span>y</span><span>F</span><span>l</span><span>o</span><span>w</span>
-    </div>
-
     <!-- ===== CALENDAR PAGE ===== -->
     <main id="app" aria-live="polite">
       <section id="page-calendar" role="region" aria-label="Calendar" data-view="calendar">
@@ -91,41 +91,78 @@
 
         <div id="calendar-grid" role="grid" aria-label="Month grid"></div>
 
-        <!-- Task popup - positioned next to clicked day -->
-        <div id="calendar-task-popup" class="task-popup hidden" aria-label="Tasks for selected day">
+        <!-- Enhanced Task popup with smart positioning and full reminder functionality -->
+        <div id="calendar-task-popup" class="task-popup hidden" aria-label="Tasks for selected day" data-popup-position="auto">
+          <div class="popup-arrow"></div>
           <form id="task-form" autocomplete="off">
-            <header>
+            <header class="popup-header">
               <h3 id="task-date-label">Tasks — 2025-01-01</h3>
-              <button type="button" id="task-close" class="close-btn" aria-label="Close">&times;</button>
+              <button type="button" id="task-close" class="close-btn wooden-btn btn-close" aria-label="Close">&times;</button>
             </header>
 
-            <div id="task-list" role="list"></div>
+            <div class="popup-body">
+              <div id="task-list" role="list" class="task-list-container"></div>
 
-            <div class="task-new">
-              <label>
-                <input id="new-task-input" name="task_text" type="text" placeholder="New task" />
-              </label>
-              <button id="task-add" type="button">Add Task</button>
-            </div>
-
-            <!-- Reminder Section -->
-            <div class="reminder-section">
-              <h4>Set Reminder</h4>
-              <div class="reminder-new">
-                <div class="reminder-inputs">
-                  <input id="new-reminder-text" type="text" placeholder="Reminder message" />
-                  <input id="new-reminder-time" type="time" />
-                </div>
-                <button id="reminder-add" type="button">Add Reminder</button>
+              <div class="task-new section-divider">
+                <label class="input-group">
+                  <span class="input-label">New Task:</span>
+                  <input id="new-task-input" name="task_text" type="text" placeholder="Enter task description" class="wooden-input" />
+                </label>
+                <button id="task-add" type="button" class="wooden-btn btn-add-task">Add Task</button>
               </div>
-              <div id="reminder-list" class="reminder-list"></div>
-            </div>
 
-            <div class="task-actions">
-              <button id="task-move-incomplete" type="button">Move incomplete to next day</button>
-            </div>
+              <!-- Enhanced Reminder Section with full functionality -->
+              <div class="reminder-section section-divider">
+                <h4 class="section-title">
+                  <span class="reminder-icon">🔔</span>
+                  Set Reminder
+                </h4>
+                
+                <div class="reminder-new">
+                  <div class="reminder-inputs-grid">
+                    <div class="input-group">
+                      <label for="new-reminder-text" class="input-label">Reminder:</label>
+                      <input id="new-reminder-text" type="text" placeholder="What to remember?" class="wooden-input reminder-text-input" />
+                    </div>
+                    <div class="input-group">
+                      <label for="new-reminder-time" class="input-label">Time:</label>
+                      <input id="new-reminder-time" type="time" class="wooden-input reminder-time-input" />
+                    </div>
+                    <div class="input-group">
+                      <label for="new-reminder-date" class="input-label">Date:</label>
+                      <input id="new-reminder-date" type="date" class="wooden-input reminder-date-input" />
+                    </div>
+                  </div>
+                  
+                  <div class="reminder-actions">
+                    <button id="reminder-add" type="button" class="wooden-btn btn-set-reminder">
+                      <span class="btn-icon">⏰</span>
+                      Add Reminder
+                    </button>
+                    <button id="reminder-clear-all" type="button" class="wooden-btn btn-clear-reminders">
+                      Clear All
+                    </button>
+                  </div>
+                </div>
+                
+                <div id="reminder-list" class="reminder-list-container">
+                  <div class="no-reminders-message">No reminders set for this day</div>
+                </div>
+              </div>
 
-            <p id="encouragement" aria-live="polite" hidden></p>
+              <div class="task-actions section-divider">
+                <button id="task-move-incomplete" type="button" class="wooden-btn btn-move-tasks">
+                  <span class="btn-icon">📅</span>
+                  Move incomplete to next day
+                </button>
+                <button id="task-clear-completed" type="button" class="wooden-btn btn-clear-tasks">
+                  <span class="btn-icon">✨</span>
+                  Clear completed tasks
+                </button>
+              </div>
+
+              <p id="encouragement" class="encouragement-message" aria-live="polite" hidden></p>
+            </div>
           </form>
         </div>
       </section>
