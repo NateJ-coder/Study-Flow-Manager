@@ -699,7 +699,7 @@ function createSummerLeafParticles() {
   const container = document.getElementById('particles-layer');
   if (!container) return;
   
-  for (let i = 0; i < 15; i++) {
+  for (let i = 0; i < 8; i++) {
     const leaf = document.createElement("div");
     leaf.className = "particle leaves-green";
     // No emoji - pure CSS styling
@@ -722,7 +722,7 @@ function createAutumnLeafParticles() {
   const container = document.getElementById('particles-layer');
   if (!container) return;
   
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < 10; i++) {
     const leaf = document.createElement("div");
     leaf.className = "particle leaves-burnt_orange_brown";
     // No emoji - pure CSS styling
@@ -745,7 +745,7 @@ function createSnowParticles() {
   const container = document.getElementById('particles-layer');
   if (!container) return;
   
-  for (let i = 0; i < 25; i++) {
+  for (let i = 0; i < 12; i++) {
     const snow = document.createElement("div");
     snow.className = "particle snowflakes";
     // No emoji - pure CSS styling with white particles
@@ -3118,7 +3118,7 @@ function cleanupScreensaver() {
  */
 async function loadConfig() {
   try {
-    const response = await fetch('assets/js/studyflow_config.json');
+    const response = await fetch('data/studyflow_config.json');
     if (!response.ok) {
       throw new Error(`Failed to load config: ${response.statusText}`);
     }

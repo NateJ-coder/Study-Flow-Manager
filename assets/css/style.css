@@ -718,6 +718,9 @@ body {
   border-radius: 50%; /* Make them circular for soft particle look */
   opacity: 0.8;
   box-shadow: 0 0 2px rgba(0, 0, 0, 0.2);
+  /* Hardware acceleration for smoother animations */
+  will-change: transform, opacity;
+  transform: translateZ(0); /* Force hardware acceleration */
 }
 
 /* Summer Leaves (fresh green) */
@@ -741,7 +744,7 @@ body {
   box-shadow: 0 0 3px rgba(255,255,255,0.6);
 }
 
-/* Enhanced drift animation for realistic movement */
+/* Enhanced drift animation for realistic movement - Performance optimized */
 @keyframes fall-with-drift {
   0% {
     /* Apply the random rotation and scale set by JS */
@@ -752,20 +755,11 @@ body {
     opacity: 0.9;
   }
   
-  50% {
-    /* Halfway through: incorporate half drift and more rotation */
-    transform: 
-      translate3d(calc(var(--particle-drift, 0px) / 2), 50vh, 0) 
-      rotateZ(calc(var(--initial-rotate, 0deg) + 180deg)) 
-      scale(var(--particle-scale, 1));
-    opacity: 0.7;
-  }
-  
   100% {
-    /* Full drift and rotation as it falls off-screen */
+    /* Simplified animation - direct to end state for better performance */
     transform: 
       translate3d(var(--particle-drift, 0px), 100vh, 0) 
-      rotateZ(calc(var(--initial-rotate, 0deg) + 360deg)) 
+      rotateZ(calc(var(--initial-rotate, 0deg) + 180deg)) 
       scale(var(--particle-scale, 1));
     opacity: 0;
   }
@@ -944,12 +938,12 @@ body {
 
 /* CSS guardrails - native cursor fallbacks only when custom cursor is NOT active */
 html:not(.has-custom-cursor) body {
-  cursor: url("../images/cursor-default.svg") 2 2, auto;
+  cursor: url("assets/images/cursor-default.svg") 2 2, auto;
 }
 html:not(.has-custom-cursor) button:hover,
 html:not(.has-custom-cursor) a:hover,
 html:not(.has-custom-cursor) .frame-svg-button:hover {
-  cursor: url("../images/cursor-click.svg") 16 8, pointer;
+  cursor: url("assets/images/cursor-click.svg") 16 8, pointer;
 }
 
 /* Custom cursor container */
@@ -1944,11 +1938,11 @@ body.dev-mode .dev-only {
 
 /* ===== Enhanced Cursor Visibility ===== */
 html, body {
-  cursor: url("../images/cursor-default.svg") 2 2, auto;
+  cursor: url("assets/images/cursor-default.svg") 2 2, auto;
 }
 
 button:hover, a:hover, .frame-svg-button:hover {
-  cursor: url("../images/cursor-click.svg") 16 8, pointer;
+  cursor: url("assets/images/cursor-click.svg") 16 8, pointer;
 }
 
 /* Cursor contrast enhancement */
