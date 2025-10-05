@@ -1276,9 +1276,17 @@ function updateCalendarClockAesthetic(season, isNight, isRain) {
  * Start or resume the timer
  */
 function startTimer() {
-  if (STATE.timerInterval) return; // Already running
+  if (STATE.timerInterval) {
+    console.log('⚠️ Timer already running, ignoring start request');
+    return; // Already running
+  }
   
   console.log(`▶️ Starting ${STATE.timerMode} timer: ${STATE.timeRemaining} seconds`);
+  console.log('📊 Current STATE:', { 
+    timerMode: STATE.timerMode, 
+    timeRemaining: STATE.timeRemaining, 
+    isTimerRunning: STATE.isTimerRunning 
+  });
   
   STATE.isTimerRunning = true;
   
@@ -1329,6 +1337,11 @@ function pauseTimer() {
  */
 function resetTimer() {
   console.log(`🔄 Resetting timer`);
+  console.log('📊 Current STATE before reset:', { 
+    timerMode: STATE.timerMode, 
+    timeRemaining: STATE.timeRemaining, 
+    isTimerRunning: STATE.isTimerRunning 
+  });
   
   // Stop any running timer
   if (STATE.timerInterval) {
@@ -1564,31 +1577,58 @@ function showWorkStartPrompt() {
  * Setup timer button event listeners
  */
 function setupTimerButtons() {
+  console.log('🔧 Setting up timer buttons...');
+  
   // Look for both old and new button IDs for compatibility
   const startBtn = document.getElementById('wooden-start-btn') || document.getElementById('btn-start');
   const pauseBtn = document.getElementById('btn-pause');
   const resetBtn = document.getElementById('wooden-reset-btn') || document.getElementById('btn-reset');
   
+  console.log('🔍 Button elements found:', {
+    startBtn: startBtn ? startBtn.id : 'not found',
+    pauseBtn: pauseBtn ? pauseBtn.id : 'not found', 
+    resetBtn: resetBtn ? resetBtn.id : 'not found'
+  });
+  
   if (startBtn) {
-    startBtn.addEventListener('click', () => {
+    console.log('➕ Adding click listener to start button:', startBtn.id);
+    startBtn.addEventListener('click', (e) => {
+      console.log('🔘 Start button clicked! Current state:', STATE.isTimerRunning);
+      e.preventDefault();
+      e.stopPropagation();
+      
       if (STATE.isTimerRunning) {
+        console.log('⏸️ Pausing timer...');
         pauseTimer();
       } else {
+        console.log('▶️ Starting timer...');
         startTimer();
       }
     });
+  } else {
+    console.warn('❌ Start button not found!');
   }
   
   if (pauseBtn) {
-    pauseBtn.addEventListener('click', () => {
+    console.log('➕ Adding click listener to pause button');
+    pauseBtn.addEventListener('click', (e) => {
+      console.log('⏸️ Pause button clicked');
+      e.preventDefault();
+      e.stopPropagation();
       pauseTimer();
     });
   }
   
   if (resetBtn) {
-    resetBtn.addEventListener('click', () => {
+    console.log('➕ Adding click listener to reset button:', resetBtn.id);
+    resetBtn.addEventListener('click', (e) => {
+      console.log('🔄 Reset button clicked');
+      e.preventDefault();
+      e.stopPropagation();
       resetTimer();
     });
+  } else {
+    console.warn('❌ Reset button not found!');
   }
   
   console.log('✅ Timer buttons setup complete');
