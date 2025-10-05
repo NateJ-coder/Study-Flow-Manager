@@ -3118,7 +3118,7 @@ function cleanupScreensaver() {
  */
 async function loadConfig() {
   try {
-    const response = await fetch('data/studyflow_config.json');
+    const response = await fetch('assets/js/studyflow_config.json');
     if (!response.ok) {
       throw new Error(`Failed to load config: ${response.statusText}`);
     }

@@ -944,12 +944,12 @@ body {
 
 /* CSS guardrails - native cursor fallbacks only when custom cursor is NOT active */
 html:not(.has-custom-cursor) body {
-  cursor: url("assets/images/cursor-default.svg") 2 2, auto;
+  cursor: url("../images/cursor-default.svg") 2 2, auto;
 }
 html:not(.has-custom-cursor) button:hover,
 html:not(.has-custom-cursor) a:hover,
 html:not(.has-custom-cursor) .frame-svg-button:hover {
-  cursor: url("assets/images/cursor-click.svg") 16 8, pointer;
+  cursor: url("../images/cursor-click.svg") 16 8, pointer;
 }
 
 /* Custom cursor container */
@@ -1944,11 +1944,11 @@ body.dev-mode .dev-only {
 
 /* ===== Enhanced Cursor Visibility ===== */
 html, body {
-  cursor: url("assets/images/cursor-default.svg") 2 2, auto;
+  cursor: url("../images/cursor-default.svg") 2 2, auto;
 }
 
 button:hover, a:hover, .frame-svg-button:hover {
-  cursor: url("assets/images/cursor-click.svg") 16 8, pointer;
+  cursor: url("../images/cursor-click.svg") 16 8, pointer;
 }
 
 /* Cursor contrast enhancement */
