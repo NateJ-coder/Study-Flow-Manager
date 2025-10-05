@@ -1434,15 +1434,36 @@ function playCompletionSound() {
  * Update timer display
  */
 function updateTimerDisplay() {
+  const minutes = Math.floor(STATE.timeRemaining / 60);
+  const seconds = STATE.timeRemaining % 60;
+  const minutesStr = minutes.toString().padStart(2, '0');
+  const secondsStr = seconds.toString().padStart(2, '0');
+  
+  // Update active timer display (main timer)
+  const activeMinutesElement = document.getElementById('active-time-mm');
+  const activeSecondsElement = document.getElementById('active-time-ss');
+  
+  if (activeMinutesElement && activeSecondsElement) {
+    activeMinutesElement.textContent = minutesStr;
+    activeSecondsElement.textContent = secondsStr;
+  }
+  
+  // Update rest timer display  
+  const restMinutesElement = document.getElementById('rest-time-mm');
+  const restSecondsElement = document.getElementById('rest-time-ss');
+  
+  if (restMinutesElement && restSecondsElement) {
+    restMinutesElement.textContent = minutesStr;
+    restSecondsElement.textContent = secondsStr;
+  }
+  
+  // Fallback: Update legacy timer display if it exists
   const minutesElement = document.getElementById('time-mm');
   const secondsElement = document.getElementById('time-ss');
   
   if (minutesElement && secondsElement) {
-    const minutes = Math.floor(STATE.timeRemaining / 60);
-    const seconds = STATE.timeRemaining % 60;
-    
-    minutesElement.textContent = minutes.toString().padStart(2, '0');
-    secondsElement.textContent = seconds.toString().padStart(2, '0');
+    minutesElement.textContent = minutesStr;
+    secondsElement.textContent = secondsStr;
   }
   
   // Update mode indicator (btn-mode shows current mode)
@@ -1457,7 +1478,25 @@ function updateTimerDisplay() {
     modeBtn.dataset.mode = STATE.timerMode;
   }
   
-  // Update session indicator
+  // Update active session indicators
+  const activeSessionCurrentElement = document.getElementById('active-session-current');
+  const activeSessionTotalElement = document.getElementById('active-session-total');
+  if (activeSessionCurrentElement && activeSessionTotalElement) {
+    activeSessionCurrentElement.textContent = STATE.sessionCount + 1;
+    const totalSessions = STATE.userSettings?.pomodoro_sessions || 4;
+    activeSessionTotalElement.textContent = totalSessions;
+  }
+  
+  // Update rest session indicators 
+  const restSessionCurrentElement = document.getElementById('rest-session-current');
+  const restSessionTotalElement = document.getElementById('rest-session-total');
+  if (restSessionCurrentElement && restSessionTotalElement) {
+    restSessionCurrentElement.textContent = STATE.sessionCount + 1;
+    const totalSessions = STATE.userSettings?.pomodoro_sessions || 4;
+    restSessionTotalElement.textContent = totalSessions;
+  }
+  
+  // Fallback: Update legacy session indicators
   const sessionCurrentElement = document.getElementById('session-current');
   const sessionTotalElement = document.getElementById('session-total');
   if (sessionCurrentElement && sessionTotalElement) {
@@ -1471,21 +1510,31 @@ function updateTimerDisplay() {
  * Update timer button states
  */
 function updateTimerButtons() {
-  const startBtn = document.getElementById('btn-start');
+  const startBtn = document.getElementById('wooden-start-btn') || document.getElementById('btn-start');
   const pauseBtn = document.getElementById('btn-pause');
-  const resetBtn = document.getElementById('btn-reset');
+  const resetBtn = document.getElementById('wooden-reset-btn') || document.getElementById('btn-reset');
   
-  if (startBtn && pauseBtn) {
+  // For wooden buttons, we use a single START button that toggles between START and PAUSE
+  if (startBtn) {
     if (STATE.isTimerRunning) {
-      // Show pause button, hide start button
+      startBtn.textContent = 'PAUSE';
+      startBtn.setAttribute('aria-label', 'Pause Pomodoro Timer');
+    } else {
+      startBtn.textContent = 'START';
+      startBtn.setAttribute('aria-label', 'Start Pomodoro Timer');
+    }
+    startBtn.disabled = false;
+  }
+  
+  // Handle traditional separate pause button if it exists
+  if (pauseBtn) {
+    if (STATE.isTimerRunning) {
       startBtn.style.display = 'none';
       pauseBtn.style.display = 'inline-block';
       pauseBtn.disabled = false;
     } else {
-      // Show start button, hide pause button
       startBtn.style.display = 'inline-block';
       pauseBtn.style.display = 'none';
-      startBtn.disabled = false;
     }
   }
   
@@ -1502,7 +1551,7 @@ function showWorkStartPrompt() {
   console.log('💼 Ready to start work session - click Start when ready!');
   
   // Optional: Add visual indication
-  const startBtn = document.getElementById('btn-start');
+  const startBtn = document.getElementById('wooden-start-btn') || document.getElementById('btn-start');
   if (startBtn) {
     startBtn.classList.add('pulse-animation');
     setTimeout(() => {
@@ -1515,13 +1564,18 @@ function showWorkStartPrompt() {
  * Setup timer button event listeners
  */
 function setupTimerButtons() {
-  const startBtn = document.getElementById('btn-start');
+  // Look for both old and new button IDs for compatibility
+  const startBtn = document.getElementById('wooden-start-btn') || document.getElementById('btn-start');
   const pauseBtn = document.getElementById('btn-pause');
-  const resetBtn = document.getElementById('btn-reset');
+  const resetBtn = document.getElementById('wooden-reset-btn') || document.getElementById('btn-reset');
   
   if (startBtn) {
     startBtn.addEventListener('click', () => {
-      startTimer();
+      if (STATE.isTimerRunning) {
+        pauseTimer();
+      } else {
+        startTimer();
+      }
     });
   }
   
