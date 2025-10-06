@@ -2,24 +2,24 @@
 
 const CACHE_NAME = 'studyflow-v1';
 const STATIC_ASSETS = [
-  '/',
-  '/welcome.html',
-  '/index.html',
-  '/calendar.html',
-  '/settings.html',
-  '/assets/css/core.css',
-  '/assets/css/timer.css',
-  '/assets/css/calendar.css',
-  '/assets/css/settings.css',
-  '/assets/js/core.js',
-  '/assets/js/timer.js',
-  '/assets/js/calendar.js',
-  '/assets/js/settings.js',
-  '/assets/js/particles.js',
-  '/assets/images/frame.svg',
-  '/assets/images/clock-icon.svg',
-  '/assets/images/calendar-icon.svg',
-  '/assets/images/settings-icon.svg'
+  './',
+  './welcome.html',
+  './index.html',
+  './calendar.html',
+  './settings.html',
+  './assets/css/core.css',
+  './assets/css/timer.css',
+  './assets/css/calendar.css',
+  './assets/css/settings.css',
+  './assets/js/core.js',
+  './assets/js/timer.js',
+  './assets/js/calendar.js',
+  './assets/js/settings.js',
+  './assets/js/particles.js',
+  './assets/images/frame.svg',
+  './assets/images/clock-icon.svg',
+  './assets/images/calendar-icon.svg',
+  './assets/images/settings-icon.svg'
 ];
 
 // Install event - cache static assets
@@ -70,7 +70,7 @@ self.addEventListener('fetch', (event) => {
       .catch(() => {
         // Offline fallback for HTML pages
         if (event.request.destination === 'document') {
-          return caches.match('/index.html');
+          return caches.match('./index.html');
         }
       })
   );
