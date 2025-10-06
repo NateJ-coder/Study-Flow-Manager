@@ -147,15 +147,7 @@
   <link rel="preload" as="image" href="assets/images/summer-day-6.png">
   
   <!-- Modulepreload for critical modules -->
-  <link rel="modulepreload" href="assets/js/timer-module.js">
-  <link rel="modulepreload" href="assets/js/animation-frame.js">
   <link rel="modulepreload" href="assets/js/settings.js">
-  <link rel="modulepreload" href="assets/js/svg-utils.js">
-
-  <!-- CSS and JS files -->
-  <link rel="stylesheet" href="assets/css/style.css">
-  <link rel="stylesheet" href="assets/css/wooden-buttons.css">
-  <link rel="stylesheet" href="assets/css/calendar-page.css">
   <!-- Backgrounds live under assets/images; audio under assets/audio; JSON under /data. -->
     <!-- JS will later fetch: data/studyflow_config.json -->
   </head>
@@ -179,7 +171,10 @@
     <!-- ===== Always-on Clock + Reminders Dropdown ===== -->
     <header id="global-topbar" aria-label="Global clock and quick actions">
       <div id="clock" aria-live="polite" aria-label="Current time">
-        <img src="assets/images/clock-icon.svg" alt="" aria-hidden="true">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M12 6v6l4 2"/>
+        </svg>
         <time id="clock-time">00:00</time>
       </div>
     </header>
@@ -187,10 +182,18 @@
     <!-- ===== Side Navigation (contextual icons; auto-hide via CSS/JS later) ===== -->
     <nav id="sidebar" aria-label="Page navigation">
       <a class="nav-item" href="calendar.html" aria-label="Open Calendar" title="Calendar" id="nav-calendar" data-target="calendar">
-        <img class="nav-icon-img" src="assets/images/calendar-icon.svg" alt="Calendar" aria-hidden="true">
+        <svg class="nav-icon-img" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+          <line x1="16" y1="2" x2="16" y2="6"/>
+          <line x1="8" y1="2" x2="8" y2="6"/>
+          <line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
       </a>
       <a class="nav-item" href="settings.html" aria-label="Open Settings" title="Settings" id="nav-settings" data-target="settings">
-        <img class="nav-icon-img" src="assets/images/settings-icon.svg" alt="Settings" aria-hidden="true">
+        <svg class="nav-icon-img" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
       </a>
     </nav>
 
@@ -234,16 +237,7 @@
               <!-- Animated inline SVG scene -->
               <svg id="studyframe" viewBox="0 0 900 560" xmlns="http://www.w3.org/2000/svg" data-season="leaves">
                 <style>
-                  /* Tail */
-                  #cat-tail{
-                    transform-box: fill-box;
-                    transform-origin: 18% 86%;
-                    animation: tailSwish 4.6s ease-in-out infinite alternate;
-                  }
-                  @keyframes tailSwish{
-                    from{ transform: rotate(-8deg) }
-                    to  { transform: rotate( 12deg) }
-                  }
+
 
                   /* Steam — stagger three paths */
                   #steam > path{
@@ -345,21 +339,7 @@
                   <path d="M440 352 Q435 342 440 332 Q445 322 440 312" stroke="#F0F8FF" stroke-width="2" fill="none" opacity="0.4"/>
                 </g>
 
-                <!-- Cat body -->
-                <ellipse cx="350" cy="450" rx="60" ry="40" fill="#FFA500"/>
-                <circle cx="320" cy="430" r="35" fill="#FFA500"/>
 
-                <!-- Cat features -->
-                <circle cx="315" cy="425" r="3" fill="#000"/>
-                <circle cx="325" cy="425" r="3" fill="#000"/>
-                <path d="M320 435 L315 440 M320 435 L325 440" stroke="#000" stroke-width="2"/>
-                <path d="M305 415 L310 405 L315 415" fill="#FFA500"/>
-                <path d="M325 415 L330 405 L335 415" fill="#FFA500"/>
-
-                <!-- Cat tail (animated) -->
-                <g id="cat-tail">
-                  <path d="M410 460 Q430 440 420 420 Q415 400 425 380" stroke="#FFA500" stroke-width="15" fill="none" stroke-linecap="round"/>
-                </g>
 
                 <!-- Books -->
                 <rect x="550" y="400" width="15" height="60" fill="#FF6B6B"/>
@@ -462,6 +442,6 @@
 
     <!-- Firebase init will be added later in JS using your provided config -->
     <script src="assets/js/core.js" defer></script>
-    <script type="module" src="assets/js/core-modern.js"></script>
+
   </body>
 </html>
