@@ -1349,17 +1349,20 @@ html:not(.has-custom-cursor) .wooden-btn:hover {
 }
 
 /* ===== J) Calendar Styles ===== */
-#calendar-grid {
+#calendar-grid,
+#calendar-grid .calendar-grid {
   width: 100%;
-  max-width: 560px;         /* was 400px, easier to read */
+  max-width: 420px;
   margin: 0 auto;
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 6px;                 /* give cells breathing room */
-  background: rgba(255, 255, 255, 0.1);
-  padding: 12px;
-  border-radius: 8px;
-  backdrop-filter: blur(10px);
+  gap: 2px;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 10px;
+  border-radius: 12px;
+  backdrop-filter: blur(15px);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
 .calendar-header {
@@ -1374,30 +1377,34 @@ html:not(.has-custom-cursor) .wooden-btn:hover {
 
 .calendar-day {
   position: relative;
-  aspect-ratio: 1;
+  width: 50px;
+  height: 50px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.9);
   border-radius: 6px;
   cursor: pointer;
-  border: 1px solid rgba(255,255,255,0.12);
-  transition: transform .18s ease, background .18s ease, border-color .18s ease;
-  font-size: 14px;
-  font-weight: 500;
-  color: #ffffff;
-  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  transition: all 0.2s ease;
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .calendar-day:hover {
-  background: rgba(255, 255, 255, 0.25);
-  transform: translateZ(0) scale(1.04);
-  border-color: var(--ui-tint-primary, #dff6ff);
+  background: rgba(255, 255, 255, 1);
+  transform: scale(1.05);
+  border-color: #4CAF50;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .calendar-day.today {
-  background: var(--ui-tint-primary, #dff6ff);
-  color: #000000;
+  background: linear-gradient(145deg, #FF9800, #FFC107);
+  color: #ffffff;
+  font-weight: 700;
+  border: 2px solid #FF6F00;
   font-weight: bold;
   box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
 }

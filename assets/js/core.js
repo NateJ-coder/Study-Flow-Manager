@@ -3598,8 +3598,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   if (page === 'calendar') {
-    wireCalendarHeader();    // prev/next + title
-    // initial render using STATE, falls back to today
-    renderCalendar(STATE.currentMonth, STATE.currentYear);
+    // ❌ Legacy calendar disabled - using modern calendar from core-modern.js
+    // wireCalendarHeader();    // prev/next + title
+    // renderCalendar(STATE.currentMonth, STATE.currentYear); // initial render using STATE, falls back to today
   }
 });

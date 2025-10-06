@@ -110,6 +110,7 @@ export function initializeCalendar() {
   setupEventListeners();
   updateCalendarTitle();
   setupReminderSystem();
+  setupKeyboardShortcuts();
   
   // Apply seasonal styling
   updateSeasonalStyles();
@@ -257,6 +258,36 @@ function setupEventListeners() {
   document.addEventListener('keydown', handleKeyboardShortcuts);
 }
 
+// Setup keyboard shortcuts help toggle
+function setupKeyboardShortcuts() {
+  const shortcutsToggle = document.getElementById('shortcuts-toggle');
+  const shortcutsHelp = document.getElementById('keyboard-shortcuts');
+  
+  if (shortcutsToggle && shortcutsHelp) {
+    shortcutsToggle.addEventListener('click', () => {
+      shortcutsHelp.classList.toggle('collapsed');
+    });
+    
+    // Auto-hide after 5 seconds when opened
+    let hideTimeout;
+    shortcutsToggle.addEventListener('click', () => {
+      clearTimeout(hideTimeout);
+      if (!shortcutsHelp.classList.contains('collapsed')) {
+        hideTimeout = setTimeout(() => {
+          shortcutsHelp.classList.add('collapsed');
+        }, 5000);
+      }
+    });
+    
+    // Close when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!shortcutsHelp.contains(e.target)) {
+        shortcutsHelp.classList.add('collapsed');
+      }
+    });
+  }
+}
+
 // Handle right-click to cross out days
 function handleRightClick(e) {
   e.preventDefault();
@@ -271,14 +302,38 @@ function handleRightClick(e) {
 
 // Handle keyboard shortcuts
 function handleKeyboardShortcuts(e) {
+  // Only handle shortcuts if not typing in an input
+  if (e.target.matches('input, textarea')) return;
+  
   // Press 'X' to cross out current day
-  if (e.key.toLowerCase() === 'x' && !e.target.matches('input, textarea')) {
+  if (e.key.toLowerCase() === 'x') {
     const today = new Date();
     const todayKey = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}`;
     const todayCell = document.querySelector(`[data-date="${todayKey}"]`);
     if (todayCell && !completedDays[todayKey]) {
       crossOutDay(todayKey, todayCell);
       showEncouragement("Quick completion! Today is done! ⚡");
+    }
+  }
+  
+  // Arrow keys for month navigation
+  if (e.key === 'ArrowLeft' && (e.ctrlKey || e.metaKey)) {
+    e.preventDefault();
+    document.getElementById('cal-prev')?.click();
+  }
+  
+  if (e.key === 'ArrowRight' && (e.ctrlKey || e.metaKey)) {
+    e.preventDefault();
+    document.getElementById('cal-next')?.click();
+  }
+  
+  // Press 'T' to open today's tasks
+  if (e.key.toLowerCase() === 't') {
+    const today = new Date();
+    const todayKey = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}`;
+    const todayCell = document.querySelector(`[data-date="${todayKey}"]`);
+    if (todayCell) {
+      openTaskDialog(todayKey, todayCell);
     }
   }
 }
@@ -455,10 +510,29 @@ function addTask() {
   renderTaskList(selectedDate, document.getElementById('task-list'));
   renderCalendar(); // Update calendar to show task indicators
   
+  // Add visual feedback for task addition
+  const dayCell = document.querySelector(`[data-date="${selectedDate}"]`);
+  if (dayCell) {
+    dayCell.classList.add('task-added-animation');
+    setTimeout(() => {
+      dayCell.classList.remove('task-added-animation');
+    }, 600);
+  }
+  
+  // Play click sound if available
+  const clickSound = document.getElementById('audio-click');
+  if (clickSound) {
+    clickSound.currentTime = 0;
+    clickSound.play().catch(() => {}); // Silent fail if audio can't play
+  }
+  
   // Clear inputs and keep focus
   input.value = '';
   if (timeInput) timeInput.value = '';
   input.focus();
+  
+  // Show encouraging message
+  showEncouragement("Task added! 📝 Keep building momentum!");
   
   console.log(`[calendar.js] Added task: "${taskText}" for ${selectedDate}`);
 }
@@ -655,6 +729,12 @@ function addReminder(dateKey, taskText, time, advanceMinutes) {
 function renderReminderControls(dateKey) {
   const reminderList = document.getElementById('reminder-list');
   if (!reminderList) return;
+  
+  // Auto-fill reminder date with selected date
+  const reminderDateInput = document.getElementById('new-reminder-date');
+  if (reminderDateInput) {
+    reminderDateInput.value = dateKey;
+  }
   
   // Clear existing reminders
   reminderList.innerHTML = '';

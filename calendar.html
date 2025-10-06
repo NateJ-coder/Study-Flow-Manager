@@ -91,6 +91,26 @@
 
         <div id="calendar-grid" role="grid" aria-label="Month grid"></div>
 
+        <!-- Keyboard Shortcuts Help -->
+        <div id="keyboard-shortcuts" class="shortcuts-help collapsed">
+          <button id="shortcuts-toggle" class="shortcuts-toggle" aria-label="Toggle keyboard shortcuts help">
+            <span class="shortcuts-icon">⌨️</span>
+            <span class="shortcuts-text">Shortcuts</span>
+          </button>
+          <div class="shortcuts-content">
+            <h4>Keyboard Shortcuts</h4>
+            <ul>
+              <li><kbd>X</kbd> - Mark today as complete</li>
+              <li><kbd>T</kbd> - Open today's tasks</li>
+              <li><kbd>Enter</kbd> - Add task/reminder</li>
+              <li><kbd>Esc</kbd> - Close popup</li>
+              <li><kbd>Ctrl</kbd>+<kbd>←</kbd><kbd>→</kbd> - Navigate months</li>
+              <li><kbd>Click</kbd> - Open day tasks</li>
+              <li><kbd>Right-click</kbd> - Mark day complete</li>
+            </ul>
+          </div>
+        </div>
+
         <!-- Enhanced Task popup with smart positioning and full reminder functionality -->
         <div id="calendar-task-popup" class="task-popup hidden" aria-label="Tasks for selected day" data-popup-position="auto">
           <div class="popup-arrow"></div>
