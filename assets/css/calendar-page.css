@@ -29,8 +29,8 @@
   color: white;
   font-size: 18px;
   font-weight: bold;
-  width: 50px;
-  height: 50px;
+  width: 52px;
+  height: 52px;
   cursor: pointer;
   transition: all 0.2s ease;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
@@ -158,12 +158,12 @@
   position: absolute;
   z-index: 1000;
   background: linear-gradient(145deg, 
-    rgba(25, 25, 25, 0.95) 0%,
-    rgba(45, 45, 45, 0.95) 100%);
+    rgba(25, 25, 25, 0.98) 0%,
+    rgba(45, 45, 45, 0.98) 100%);
   border: 2px solid rgba(255, 255, 255, 0.2);
   border-radius: 16px;
   padding: 0;
-  backdrop-filter: blur(20px);
+  backdrop-filter: blur(8px);
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
   width: 420px;
   max-width: 90vw;
@@ -558,7 +558,7 @@ menu button:hover {
 }
 
 .shortcuts-toggle {
-  background: linear-gradient(145deg, rgba(25, 25, 25, 0.9), rgba(45, 45, 45, 0.9));
+  background: linear-gradient(145deg, rgba(25, 25, 25, 0.95), rgba(45, 45, 45, 0.95));
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 25px;
   color: white;
@@ -568,7 +568,7 @@ menu button:hover {
   align-items: center;
   gap: 8px;
   font-size: 14px;
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(5px);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   transition: all 0.2s ease;
 }
@@ -582,12 +582,12 @@ menu button:hover {
   position: absolute;
   bottom: 100%;
   right: 0;
-  background: linear-gradient(145deg, rgba(25, 25, 25, 0.95), rgba(45, 45, 45, 0.95));
+  background: linear-gradient(145deg, rgba(25, 25, 25, 0.98), rgba(45, 45, 45, 0.98));
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 12px;
   padding: 16px;
   margin-bottom: 8px;
-  backdrop-filter: blur(20px);
+  backdrop-filter: blur(6px);
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
   white-space: nowrap;
   opacity: 0;

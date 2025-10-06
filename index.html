@@ -15,6 +15,16 @@
     ">
     <title>StudyFlow</title>
 
+  <!-- Preload critical LCP resources -->
+  <link rel="preload" as="image" href="assets/images/frame.svg" fetchpriority="high">
+  <link rel="preload" as="image" href="assets/images/summer-day-6.png">
+  
+  <!-- Modulepreload for critical modules -->
+  <link rel="modulepreload" href="assets/js/timer-module.js">
+  <link rel="modulepreload" href="assets/js/animation-frame.js">
+  <link rel="modulepreload" href="assets/js/settings.js">
+  <link rel="modulepreload" href="assets/js/svg-utils.js">
+
   <!-- CSS and JS files -->
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="stylesheet" href="assets/css/wooden-buttons.css">
@@ -234,7 +244,10 @@
             </div>
 
             <!-- 2) the ornate gold frame -->
-            <img class="frame-ornate" src="assets/images/frame.svg" alt="" />
+            <object id="timer-frame" type="image/svg+xml" data="assets/images/frame.svg" 
+                    width="1000" height="800" fetchpriority="high" aria-label="LoFi Frame">
+              <img class="frame-ornate" src="assets/images/frame.svg" alt="" fetchpriority="high" decoding="async" width="760" height="760" />
+            </object>
 
             <!-- 3) timer UI overlay -->
             <div class="timer-ui">
@@ -311,17 +324,17 @@
 
     </main>
 
-    <!-- ===== Audio ===== -->
-  <audio id="audio-rain" src="assets/audio/rainfall.mp3" preload="auto" loop></audio>
-  <audio id="audio-splash" src="assets/audio/splash.mp3" preload="auto"></audio>
-  <audio id="audio-drawing" src="assets/audio/drawing.mp3" preload="auto"></audio>
-  <audio id="audio-click" src="assets/audio/click.mp3" preload="auto"></audio>
+    <!-- ===== Audio (lazy loaded for performance) ===== -->
+  <audio id="audio-rain" src="assets/audio/rainfall.mp3" preload="none" loop></audio>
+  <audio id="audio-splash" src="assets/audio/splash.mp3" preload="none"></audio>
+  <audio id="audio-drawing" src="assets/audio/drawing.mp3" preload="none"></audio>
+  <audio id="audio-click" src="assets/audio/click.mp3" preload="metadata"></audio>
 
     <!-- ===== Data sources (fetched later by JS) ===== -->
         <!-- studyflow_config.json will be fetched from: /assets/js/studyflow_config.json -->
 
     <!-- Firebase init will be added later in JS using your provided config -->
-    <script src="assets/js/core.js"></script>
+    <script src="assets/js/core.js" defer></script>
     <script type="module" src="assets/js/core-modern.js"></script>
   </body>
 </html>

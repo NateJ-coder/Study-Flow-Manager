@@ -28,6 +28,9 @@ const STATE = {
   // Rain cycle state (always starts false - only activated by manual toggle)
   isRainActive: false,
   rainAudio: null,
+  
+  // Development mode for logging
+  devMode: false,
   // Seasonal particle system state
   seasonParticleInterval: null,
   seasonParticleActive: false,
@@ -789,6 +792,12 @@ function startSeasonalParticles() {
 
   if (STATE.seasonParticleActive) {
     STATE.seasonParticleInterval = setInterval(() => {
+      // Performance guards
+      if (document.hidden) return;
+      
+      const container = document.getElementById('particles-layer');
+      if (!container || container.children.length >= 300) return;
+      
       const season = STATE.currentSeason;
       let particleType = null;
       let spawnChance = 0; 
@@ -811,7 +820,7 @@ function startSeasonalParticles() {
         // Use the refined function for all seasonal particles
         createEnhancedParticle(particleType);
       }
-    }, 200); // Check every 200 milliseconds for smooth flow rate
+    }, 250); // Slightly slower interval for better performance
   }
 }
 
@@ -1099,15 +1108,20 @@ function ensureCustomCursor() {
   // Add a class to hide the native cursor while custom cursor is present
   document.documentElement.classList.add('has-custom-cursor');
 
-  // Pointer move to update cursor and spawn trail particles
+  // Pointer move to update cursor and spawn trail particles (throttled for performance)
+  let lastTrailTime = 0;
   window.addEventListener('pointermove', (e) => {
     if (!STATE.customCursor) return;
     STATE.customCursor.style.left = `${e.clientX}px`;
     STATE.customCursor.style.top = `${e.clientY}px`;
 
-    // spawn small trail particle
-    const trailType = document.body.getAttribute('data-mouse-trail') || '';
-    createTrailParticle(e.clientX, e.clientY, trailType);
+    // Throttle trail particle creation to ~30fps and pause when hidden
+    const now = Date.now();
+    if (now - lastTrailTime >= 32 && !document.hidden) {
+      const trailType = document.body.getAttribute('data-mouse-trail') || '';
+      createTrailParticle(e.clientX, e.clientY, trailType);
+      lastTrailTime = now;
+    }
   }, { passive: true });
 
   // Pointer down/up to animate click cursor
@@ -1165,9 +1179,16 @@ function applyCursorTintForParticleType(particleType) {
   }
 }
 
+// Trail particle management
+let trailParticleCount = 0;
+const MAX_TRAIL_PARTICLES = 200;
+
 function createTrailParticle(x, y, trailType) {
   const container = document.getElementById('particles-layer');
   if (!container) return;
+  
+  // Cap trail particles to prevent accumulation
+  if (trailParticleCount >= MAX_TRAIL_PARTICLES) return;
 
   const p = document.createElement('div');
   p.className = 'trail-particle';
@@ -1194,9 +1215,16 @@ function createTrailParticle(x, y, trailType) {
   p.style.opacity = (0.7 + Math.random() * 0.25).toString(); // 70% to 95%
 
   container.appendChild(p);
+  trailParticleCount++;
 
   // Remove after short life (slightly shorter than before for cleaner trail)
-  setTimeout(() => { if (p && p.parentNode) p.remove(); }, 800 + Math.random() * 200);
+  const lifetime = 800 + Math.random() * 200;
+  setTimeout(() => {
+    if (p && p.parentNode) {
+      p.remove();
+      trailParticleCount--;
+    }
+  }, lifetime);
 }
 
 /* ===== CLICK SFX FOR BUTTONS ===== */
@@ -1920,6 +1948,9 @@ window.debugRain = {
  * Create animated rain particle system
  */
 function createRainParticleSystem() {
+  // Pause when tab is hidden to improve performance
+  if (document.hidden) return;
+  
   const particleCount = 100; // Number of rain particles
   const particlesLayer = document.getElementById('particles-layer');
   
@@ -1928,11 +1959,17 @@ function createRainParticleSystem() {
   // Clear existing rain particles
   particlesLayer.querySelectorAll('.rain-particle').forEach(p => p.remove());
   
+  // Cap total particles to prevent accumulation
+  if (particlesLayer.children.length >= 300) return;
+  
   for (let i = 0; i < particleCount; i++) {
     createRainParticle();
   }
   
-  console.log(`🌧️ Created ${particleCount} rain particles`);
+  // Reduce console spam in production
+  if (STATE.devMode !== false) {
+    console.log(`🌧️ Created ${particleCount} rain particles`);
+  }
 }
 
 /**
@@ -3602,4 +3639,71 @@ document.addEventListener('DOMContentLoaded', () => {
     // wireCalendarHeader();    // prev/next + title
     // renderCalendar(STATE.currentMonth, STATE.currentYear); // initial render using STATE, falls back to today
   }
+  
+  // Initialize frame performance and theming
+  setupFramePerformanceMode();
+  syncFrameTheme();
 });
+
+// Frame theme synchronization functions
+function syncFrameTheme() {
+  const frameObject = document.getElementById('frame-object');
+  if (!frameObject) return;
+  
+  // Get current theme from body data attribute
+  const currentTheme = document.body.getAttribute('data-theme') || 'summer';
+  
+  // Set up initial sync
+  function updateFrameTheme() {
+    try {
+      const frameDoc = frameObject.contentDocument;
+      if (frameDoc && frameDoc.documentElement) {
+        frameDoc.documentElement.setAttribute('data-theme', currentTheme);
+      }
+    } catch (e) {
+      // Silently handle cross-origin or timing issues
+    }
+  }
+  
+  // Initial sync after load
+  frameObject.addEventListener('load', updateFrameTheme);
+  
+  // Watch for theme changes
+  const observer = new MutationObserver(() => {
+    const newTheme = document.body.getAttribute('data-theme') || 'summer';
+    if (newTheme !== currentTheme) {
+      updateFrameTheme();
+    }
+  });
+  
+  observer.observe(document.body, {
+    attributes: true,
+    attributeFilter: ['data-theme']
+  });
+  
+  // Try immediate sync in case already loaded
+  updateFrameTheme();
+}
+
+function setupFramePerformanceMode() {
+  const frameObject = document.getElementById('frame-object');
+  if (!frameObject) return;
+  
+  // Detect low-end devices
+  const isLowEnd = navigator.hardwareConcurrency <= 2 || 
+                   navigator.deviceMemory <= 2 ||
+                   /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  
+  if (isLowEnd) {
+    frameObject.addEventListener('load', () => {
+      try {
+        const frameDoc = frameObject.contentDocument;
+        if (frameDoc && frameDoc.documentElement) {
+          frameDoc.documentElement.setAttribute('data-performance', 'low');
+        }
+      } catch (e) {
+        // Silently handle cross-origin or timing issues
+      }
+    });
+  }
+}

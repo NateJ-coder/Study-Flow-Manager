@@ -3,7 +3,11 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <meta http-equiv="Content-Security-Policy" content="
+    <meta http-equi    <!-- ===== Audio (lazy loaded for performance) =====
+  <audio id="audio-rain" src="assets/audio/rainfall.mp3" preload="none" loop></audio>
+  <audio id="audio-splash" src="assets/audio/splash.mp3" preload="none"></audio>
+  <audio id="audio-drawing" src="assets/audio/drawing.mp3" preload="none"></audio>
+  <audio id="audio-click" src="assets/audio/click.mp3" preload="metadata"></audio>ntent-Security-Policy" content="
       default-src 'self';
       script-src 'self';
       style-src 'self' 'unsafe-inline';
@@ -16,6 +20,14 @@
       frame-ancestors 'none';
     ">
     <title>StudyFlow — Calendar</title>
+
+  <!-- Preload critical resources -->
+  <link rel="preload" as="image" href="assets/images/summer-day-6.png" fetchpriority="high">
+  
+  <!-- Modulepreload for calendar modules -->
+  <link rel="modulepreload" href="assets/js/calendar.js">
+  <link rel="modulepreload" href="assets/js/settings.js">
+  <link rel="modulepreload" href="assets/js/svg-utils.js">
 
   <!-- CSS and JS files -->
   <link rel="stylesheet" href="assets/css/style.css">
@@ -194,9 +206,9 @@
   <audio id="audio-drawing" src="assets/audio/drawing.mp3" preload="auto"></audio>
   <audio id="audio-click" src="assets/audio/click.mp3" preload="auto"></audio>
 
-    <script src="assets/js/splash.js"></script>
-    <script src="assets/js/drawing.js"></script>
-    <script src="assets/js/core.js"></script>
+    <script src="assets/js/splash.js" defer></script>
+    <script src="assets/js/drawing.js" defer></script>
+    <script src="assets/js/core.js" defer></script>
     <script type="module" src="assets/js/core-modern.js"></script>
   </body>
 </html>

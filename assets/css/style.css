@@ -1093,6 +1093,28 @@ html:not(.has-custom-cursor) .wooden-btn:hover {
   padding: 28px; /* inset the svg so it frames the content */
 }
 
+/* Frame container performance optimizations */
+#timer-frame {
+  position: absolute;
+  inset: 0;
+  z-index: 900;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  max-width: 1000px;
+  width: 100%;
+  aspect-ratio: 5 / 4; /* 1000×800 viewBox */
+}
+
+/* Prevent late layout changes inside the SVG */
+#timer-frame svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 760px;
+  max-height: 608px;
+}
+
 .timer-frame-svg { width: calc(100% - 56px); height: calc(100% - 56px); opacity: 0.98; max-width: 760px; max-height: 760px; }
 
 /* If the frame contains a cat tail or head parts, animate them subtly */
