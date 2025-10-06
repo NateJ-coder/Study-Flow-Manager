@@ -34,6 +34,7 @@ Thumbs.db
 
 # Local documentation (keep private)
 local-docs/
+summaries/
 
 # Temporary files
 *.tmp
