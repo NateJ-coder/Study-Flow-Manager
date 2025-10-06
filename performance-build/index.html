@@ -1,64 +1,114 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta name="theme-color" content="#0b0b0b" />
-  <meta name="description" content="StudyFlow Manager - Focus Timer" />
+<!doctype html><!doctype html>
 
-  <!-- Strong CSP -->
-  <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self';
-                 img-src 'self' data:;
-                 script-src 'self';
-                 style-src 'self' 'unsafe-inline';
-                 font-src 'self' data:;
-                 object-src 'none';
-                 base-uri 'self';
-                 form-action 'self'">
+<html lang="en"><html lang="en">
 
-  <!-- Preload hero (LCP) -->
-  <link rel="preload" as="image" href="assets/images/summer-day-6.png" fetchpriority="high">
-  
-  <!-- Load CSS with performance optimization -->
-  <link rel="preload" as="style" href="assets/css/core.css" onload="this.rel='stylesheet'">
-  <link rel="preload" as="style" href="assets/css/timer.css" onload="this.rel='stylesheet'">
-  <noscript>
-    <link rel="stylesheet" href="assets/css/core.css">
-    <link rel="stylesheet" href="assets/css/timer.css">
-  </noscript>
+<head><head>
 
-  <!-- Critical CSS inline -->
-  <style>
-    :root { color-scheme: dark light; }
-    body {
-      margin: 0;
-      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial, sans-serif;
-      background: var(--bg-color, #0f1419);
-      color: var(--text-color, #e7eaee);
-      min-height: 100dvh;
-      overflow-x: hidden;
-    }
-    
-    /* Frame container - exact 5:4 aspect ratio */
-    #timer-frame {
-      width: min(100%, 1000px);
-      aspect-ratio: 5 / 4;
-      display: grid;
-      place-items: center;
-      margin: auto;
+  <meta charset="utf-8" />  <meta charset="utf-8" />
+
+  <meta name="viewport" content="width=device-width,initial-scale=1" />  <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+  <meta name="theme-color" content="#0b0b0b" />  <meta name="theme-color" content="#0b0b0b" />
+
+  <meta name="description" content="StudyFlow Manager" />  <meta name="description" content="StudyFlow Manager" />
+
+
+
+  <!-- Strong CSP -->  <!-- Strong CSP -->
+
+  <meta http-equiv="Content-Security-Policy"  <meta http-equiv="Content-Security-Policy"
+
+        content="default-src 'self';        content="default-src 'self';
+
+                 img-src 'self' data:;                 img-src 'self' data:;
+
+                 script-src 'self';                 script-src 'self';
+
+                 style-src 'self' 'unsafe-inline';                 style-src 'self' 'unsafe-inline';
+
+                 font-src 'self' data:;                 font-src 'self' data:;
+
+                 object-src 'none';                 object-src 'none';
+
+                 base-uri 'self';                 base-uri 'self';
+
+                 form-action 'self'">                 form-action 'self'">
+
+
+
+  <!-- Preload critical resources -->  <!-- Preload critical resources -->
+
+  <link rel="preload" as="style" href="assets/css/core.css" onload="this.rel='stylesheet'">  <link rel="preload" as="style" href="assets/css/core.css" onload="this.rel='stylesheet'">
+
+  <noscript>  <noscript>
+
+    <link rel="stylesheet" href="assets/css/core.css">    <link rel="stylesheet" href="assets/css/core.css">
+
+  </noscript>  </noscript>
+
+
+
+  <!-- Critical CSS inline -->  <!-- Critical CSS inline -->
+
+  <style>  <style>
+
+    :root { color-scheme: dark light; }    :root { color-scheme: dark light; }
+
+    body {    body {
+
+      margin: 0;      margin: 0;
+
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial, sans-serif;      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial, sans-serif;
+
+      background: #0f1419;      background: var(--bg-color, #0f1419);
+
+      color: #e7eaee;      color: var(--text-color, #e7eaee);
+
+      min-height: 100dvh;      min-height: 100dvh;
+
+      display: flex;      overflow-x: hidden;
+
+      align-items: center;    }
+
+      justify-content: center;    
+
+    }    /* Frame container - exact 5:4 aspect ratio */
+
+    .blank-message {    #timer-frame {
+
+      text-align: center;      width: min(100%, 1000px);
+
+      font-size: 1.2rem;      aspect-ratio: 5 / 4;
+
+      opacity: 0.7;      display: grid;
+
+    }      place-items: center;
+
+  </style>      margin: auto;
+
       position: relative;
-    }
-    
-    /* Background container */
-    .background-container {
-      position: fixed;
-      top: 0;
+
+  <title>StudyFlow Manager</title>    }
+
+</head>    
+
+<body>    /* Background container */
+
+  <div class="blank-message">    .background-container {
+
+    StudyFlow Manager - Clean Slate      position: fixed;
+
+  </div>      top: 0;
+
       left: 0;
-      width: 100vw;
-      height: 100vh;
-      z-index: -2;
-      background-size: cover;
+
+  <!-- Performance optimized JS -->      width: 100vw;
+
+  <script src="assets/js/core.js" defer></script>      height: 100vh;
+
+</body>      z-index: -2;
+
+</html>      background-size: cover;
       background-position: center;
       background-repeat: no-repeat;
     }

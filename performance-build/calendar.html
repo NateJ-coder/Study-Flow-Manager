@@ -17,6 +17,49 @@
                  base-uri 'self';
                  form-action 'self'">
 
+  <link rel="preload" as="style" href="assets/css/core.css" onload="this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="assets/css/core.css"></noscript>
+
+  <style>
+    :root { color-scheme: dark light; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial, sans-serif;
+      background: #0f1419;
+      color: #e7eaee;
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .blank-message {
+      text-align: center;
+      font-size: 1.2rem;
+      opacity: 0.7;
+    }
+  </style>
+
+  <title>StudyFlow Calendar</title>
+</head>
+<body>
+  <div class="blank-message">
+    Calendar - Clean Slate
+  </div>
+  <script src="assets/js/core.js" defer></script>
+</body>
+</html>
+
+  <!-- Strong CSP -->
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self';
+                 img-src 'self' data:;
+                 script-src 'self';
+                 style-src 'self' 'unsafe-inline';
+                 font-src 'self' data:;
+                 object-src 'none';
+                 base-uri 'self';
+                 form-action 'self'">
+
   <!-- Preload assets -->
   <link rel="preload" as="image" href="assets/images/summer-day-6.png" fetchpriority="high">
   
