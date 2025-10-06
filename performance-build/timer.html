@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StudyFlow Timer</title>
+  
+  <!-- Performance Preloads -->
+  <link rel="preload" href="assets/images/autumn-day-8.png" as="image">
+  <link rel="preload" href="assets/css/timer.css" as="style" onload="this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="assets/css/timer.css"></noscript>
+  
+  <style>
+    :root {
+      --primary-bg: #0f1419;
+      --text-color: #e7eaee;
+      --accent-color: #64ffda;
+      --amber-300: #fcd34d;
+      --amber-500: #f59e0b;
+    }
+    
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--primary-bg);
+      color: var(--text-color);
+      margin: 0;
+      min-height: 100vh;
+      background-image: url('assets/images/autumn-day-8.png');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+    }
+    
+    .container {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(2px);
+      background: rgba(0, 0, 0, 0.4);
+    }
+    
+    .timer-card {
+      background: rgba(0, 0, 0, 0.7);
+      padding: 3rem;
+      border-radius: 20px;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(10px);
+      max-width: 500px;
+      width: 90%;
+    }
+    
+    .timer-display {
+      font-size: 4rem;
+      font-weight: 900;
+      color: var(--amber-300);
+      margin: 2rem 0;
+      font-family: 'Courier New', monospace;
+    }
+    
+    .btn {
+      padding: 12px 24px;
+      margin: 10px;
+      border: none;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+      display: inline-block;
+    }
+    
+    .btn-primary {
+      background: #10b981;
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background: #059669;
+      transform: scale(1.05);
+    }
+    
+    .btn-secondary {
+      background: #6366f1;
+      color: white;
+    }
+    
+    .btn-secondary:hover {
+      background: #4f46e5;
+      transform: scale(1.05);
+    }
+    
+    .btn-danger {
+      background: #ef4444;
+      color: white;
+    }
+    
+    .btn-danger:hover {
+      background: #dc2626;
+      transform: scale(1.05);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="timer-card">
+      <h1 style="color: var(--amber-300); margin-bottom: 1rem;">🍂 Pomodoro Timer</h1>
+      
+      <div class="timer-display" id="timer-display">25:00</div>
+      
+      <div class="controls">
+        <button class="btn btn-primary" onclick="startTimer()">Start</button>
+        <button class="btn btn-danger" onclick="pauseTimer()">Pause</button>
+        <button class="btn btn-secondary" onclick="resetTimer()">Reset</button>
+      </div>
+      
+      <div style="margin-top: 2rem;">
+        <a href="calendar.html" class="btn btn-secondary">📅 Calendar</a>
+        <a href="welcome.html" class="btn btn-danger">← Back to Welcome</a>
+      </div>
+      
+      <div style="margin-top: 1rem; opacity: 0.7; font-size: 0.9rem;">
+        <p>Focus: 25 min • Break: 5 min</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let timeLeft = 25 * 60; // 25 minutes in seconds
+    let timerInterval = null;
+    let isRunning = false;
+
+    function updateDisplay() {
+      const minutes = Math.floor(timeLeft / 60);
+      const seconds = timeLeft % 60;
+      document.getElementById('timer-display').textContent = 
+        `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+
+    function startTimer() {
+      if (!isRunning) {
+        isRunning = true;
+        timerInterval = setInterval(() => {
+          timeLeft--;
+          updateDisplay();
+          
+          if (timeLeft <= 0) {
+            pauseTimer();
+            alert('Time\'s up! Take a break! 🎉');
+            playSound();
+          }
+        }, 1000);
+      }
+    }
+
+    function pauseTimer() {
+      isRunning = false;
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+    }
+
+    function resetTimer() {
+      pauseTimer();
+      timeLeft = 25 * 60;
+      updateDisplay();
+    }
+
+    function playSound() {
+      try {
+        const audio = new Audio('assets/audio/splash.mp3');
+        audio.volume = 0.5;
+        audio.play().catch(() => console.log('Audio autoplay blocked'));
+      } catch (e) {
+        console.log('Audio unavailable');
+      }
+    }
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        if (isRunning) pauseTimer();
+        else startTimer();
+      }
+      if (e.code === 'KeyR') {
+        resetTimer();
+      }
+    });
+
+    // Initialize display
+    updateDisplay();
+    
+    console.log('StudyFlow Timer loaded! Press Space to start/pause, R to reset');
+  </script>
+</body>
+</html>

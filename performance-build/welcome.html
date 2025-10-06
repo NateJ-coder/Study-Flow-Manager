@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="StudyFlow Manager - Welcome">
+  
+  <!-- Performance-Critical Preloads -->
+  <link rel="preload" href="assets/images/autumn-day-8.png" as="image" fetchpriority="high">
+  <link rel="preload" href="assets/css/core.css" as="style" onload="this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="assets/css/core.css"></noscript>
+  
+  <!-- Tailwind CSS CDN for rapid styling -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Custom Tailwind Config -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            'inter': ['Inter', 'system-ui', 'sans-serif']
+          },
+          animation: {
+            'pulse-slow': 'pulse-slow 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'bounce-slow': 'bounce-slow 3s ease-in-out infinite'
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Critical CSS Inline -->
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+    
+    :root {
+      --primary-bg: #0f1419;
+      --text-color: #e7eaee;
+      --accent-color: #64ffda;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: var(--primary-bg);
+      color: var(--text-color);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    
+    /* Custom animations for lo-fi feel */
+    @keyframes pulse-slow {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+    
+    @keyframes bounce-slow {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-5%); }
+    }
+    
+    .animate-pulse-slow {
+      animation: pulse-slow 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    
+    .animate-bounce-slow {
+      animation: bounce-slow 3s ease-in-out infinite;
+    }
+    
+    /* Loading spinner */
+    .loading-spinner {
+      width: 64px;
+      height: 64px;
+      border: 4px solid rgba(251, 191, 36, 0.3);
+      border-top: 4px solid rgba(251, 191, 36, 0.8);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    /* Page transitions */
+    .page-container {
+      transition: all 0.5s ease-in-out;
+    }
+    
+    .page-hidden {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    
+    .page-visible {
+      opacity: 1;
+      transform: scale(1);
+    }
+  </style>
+  
+  <title>StudyFlow Manager - Welcome</title>
+</head>
+<body class="min-h-screen bg-gray-900 font-inter antialiased overflow-hidden">
+  <!-- Background Container -->
+  <div 
+    id="background-container"
+    class="fixed inset-0 bg-cover bg-center transition-opacity duration-1000 ease-in-out"
+    style="
+      background-image: url('assets/images/autumn-day-8.png');
+      filter: brightness(0.7) blur(1px);
+      z-index: 0;
+    "
+  ></div>
+  
+  <!-- Content Area -->
+  <div class="relative z-10 min-h-screen flex flex-col justify-center items-center">
+    <div 
+      id="content-container"
+      class="w-full max-w-4xl p-8 md:p-12 backdrop-blur-sm bg-black/40 rounded-3xl shadow-2xl page-container page-visible"
+      style="min-height: 70vh;"
+    >
+      <!-- Welcome Screen -->
+      <div id="welcome-screen" class="flex flex-col items-center justify-center h-full w-full p-6">
+        <header class="mb-10 text-center">
+          <h1 
+            class="text-6xl md:text-8xl font-black text-amber-300 animate-bounce-slow"
+            style="text-shadow: 4px 4px 8px rgba(0,0,0,0.3);"
+          >
+            StudyFlow
+          </h1>
+          <p class="text-xl md:text-2xl mt-4 font-semibold text-amber-500 opacity-90">
+            Lofi focus for high-tier productivity.
+          </p>
+        </header>
+
+        <main class="text-center">
+          <div id="loading-state" class="flex flex-col items-center">
+            <div class="loading-spinner mb-4"></div>
+            <p class="text-lg text-amber-300 font-medium">
+              Loading the perfect vibe...
+            </p>
+          </div>
+          
+          <button 
+            id="continue-button"
+            class="hidden bg-amber-600/70 text-white font-inter font-bold py-4 px-10 rounded-xl shadow-xl transition duration-200 hover:bg-amber-500/80 active:scale-[0.98] transform hover:scale-[1.02] cursor-pointer border-b-4 border-r-2 border-amber-800/80 text-lg md:text-xl"
+            onclick="continueToApp()"
+          >
+            Continue to Focus
+          </button>
+        </main>
+
+        <footer class="mt-12 opacity-70">
+          <p class="text-white text-sm">
+            <span class="inline-block animate-pulse-slow">🎧</span> Time to find your flow.
+          </p>
+        </footer>
+      </div>
+
+      <!-- Timer Page (Hidden initially) -->
+      <div id="timer-screen" class="hidden flex flex-col items-center justify-center h-full w-full p-6 text-white">
+        <h2 class="text-5xl font-bold text-amber-300 mb-8">
+          ⏰ Pomodoro Timer
+        </h2>
+        <div class="text-2xl mb-8">
+          Ready to focus! (Timer functionality coming soon)
+        </div>
+        <div class="flex space-x-4">
+          <button 
+            onclick="goToCalendar()"
+            class="px-6 py-3 bg-indigo-500 rounded-lg hover:bg-indigo-600 transition duration-200"
+          >
+            📅 Go to Calendar
+          </button>
+          <button 
+            onclick="goToWelcome()"
+            class="px-6 py-3 bg-red-500 rounded-lg hover:bg-red-600 transition duration-200"
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+
+      <!-- Calendar Page (Hidden initially) -->
+      <div id="calendar-screen" class="hidden flex flex-col items-center justify-center h-full w-full p-6 text-white">
+        <h2 class="text-5xl font-bold text-amber-300 mb-8">
+          📅 Flow Calendar
+        </h2>
+        <div class="text-2xl mb-8">
+          Visualize your focus blocks here.
+        </div>
+        <div class="flex space-x-4">
+          <button 
+            onclick="goToTimer()"
+            class="px-6 py-3 bg-green-500 rounded-lg hover:bg-green-600 transition duration-200"
+          >
+            ⏰ Go to Timer
+          </button>
+          <button 
+            onclick="goToWelcome()"
+            class="px-6 py-3 bg-red-500 rounded-lg hover:bg-red-600 transition duration-200"
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Debug Info -->
+    <div class="absolute bottom-4 right-4 text-xs text-white/50" id="debug-info">
+      Status: Loading assets...
+    </div>
+  </div>
+
+  <script>
+    // ============================================
+    // STUDYFLOW WELCOME PAGE APPLICATION
+    // ============================================
+
+    // Page States
+    const PAGE_STATE = {
+      WELCOME: 'welcome',
+      TIMER: 'timer',
+      CALENDAR: 'calendar'
+    };
+
+    // Theme Configuration (matches your existing structure)
+    const THEME_DATA = {
+      AUTUMN: {
+        name: 'Autumn Flow',
+        bg_day: 'assets/images/autumn-day-8.png',
+        bg_night: 'assets/images/autumn-night-1.png',
+        primary_color: 'text-amber-300',
+        secondary_color: 'text-amber-500',
+        button_bg: 'bg-amber-600/70',
+        button_hover: 'hover:bg-amber-500/80'
+      }
+    };
+
+    // Application State
+    let currentPage = PAGE_STATE.WELCOME;
+    let currentTheme = 'AUTUMN';
+    let isLoaded = false;
+    let isAuthReady = false;
+
+    // Asset URLs to preload (using your actual file paths)
+    const ASSET_URLS = [
+      'assets/images/autumn-day-1.png',
+      'assets/images/autumn-day-2.png',
+      'assets/images/autumn-day-3.png',
+      'assets/images/autumn-day-8.png',
+      'assets/images/autumn-night-1.png',
+      'assets/images/summer-day-1.png',
+      'assets/images/winter-day-1.png',
+      'assets/audio/click.mp3',
+      'assets/audio/splash.mp3'
+    ];
+
+    // ============================================
+    // UTILITY FUNCTIONS
+    // ============================================
+
+    // Preload images for performance
+    function preloadImages(urls) {
+      return Promise.all(urls.map(url => {
+        return new Promise((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => resolve(url);
+          img.onerror = () => {
+            console.warn(`Failed to load: ${url}`);
+            resolve(url); // Continue even if some images fail
+          };
+          img.src = url;
+        });
+      }));
+    }
+
+    // Update debug info
+    function updateDebugInfo(message) {
+      const debugElement = document.getElementById('debug-info');
+      if (debugElement) {
+        debugElement.textContent = message;
+      }
+    }
+
+    // ============================================
+    // PAGE NAVIGATION FUNCTIONS
+    // ============================================
+
+    function showPage(pageId) {
+      // Hide all pages
+      ['welcome-screen', 'timer-screen', 'calendar-screen'].forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+          element.classList.add('hidden');
+        }
+      });
+
+      // Show target page
+      const targetPage = document.getElementById(pageId);
+      if (targetPage) {
+        targetPage.classList.remove('hidden');
+      }
+
+      // Update current page state
+      currentPage = pageId.replace('-screen', '');
+    }
+
+    function continueToApp() {
+      if (isLoaded) {
+        playSound('click');
+        window.location.href = 'timer.html';
+      }
+    }
+
+    function goToTimer() {
+      playSound('click');
+      window.location.href = 'timer.html';
+    }
+
+    function goToCalendar() {
+      playSound('click');
+      window.location.href = 'calendar.html';
+    }
+
+    function goToWelcome() {
+      showPage('welcome-screen');
+      playSound('click');
+      updateDebugInfo('Status: Welcome page');
+    }
+
+    // ============================================
+    // AUDIO FUNCTIONS
+    // ============================================
+
+    function playSound(soundName) {
+      try {
+        const soundMap = {
+          'click': 'assets/audio/click.mp3',
+          'splash': 'assets/audio/splash.mp3'
+        };
+        
+        if (soundMap[soundName]) {
+          const audio = new Audio(soundMap[soundName]);
+          audio.volume = 0.3;
+          audio.play().catch(() => {
+            // Ignore audio play errors (autoplay restrictions)
+          });
+        }
+      } catch (error) {
+        console.warn('Audio playback failed:', error);
+      }
+    }
+
+    // ============================================
+    // INITIALIZATION
+    // ============================================
+
+    document.addEventListener('DOMContentLoaded', async function() {
+      updateDebugInfo('Status: Starting asset preload...');
+      
+      try {
+        // Start preloading assets
+        console.log('Starting asset preloading for', ASSET_URLS.length, 'files...');
+        
+        await preloadImages(ASSET_URLS);
+        
+        console.log('All assets preloaded successfully!');
+        updateDebugInfo('Status: Assets loaded, preparing app...');
+        
+        // Simulate auth ready (since we removed Firebase for now)
+        isAuthReady = true;
+        
+        // Keep loading state for smooth transition
+        setTimeout(() => {
+          isLoaded = true;
+          
+          // Hide loading state and show continue button
+          const loadingState = document.getElementById('loading-state');
+          const continueButton = document.getElementById('continue-button');
+          
+          if (loadingState) loadingState.classList.add('hidden');
+          if (continueButton) continueButton.classList.remove('hidden');
+          
+          updateDebugInfo('Status: Ready to continue!');
+          
+        }, 1500);
+        
+      } catch (error) {
+        console.error('Asset preloading failed:', error);
+        updateDebugInfo('Status: Load failed, but you can continue');
+        
+        // Allow continuation even if preload fails
+        setTimeout(() => {
+          isLoaded = true;
+          const loadingState = document.getElementById('loading-state');
+          const continueButton = document.getElementById('continue-button');
+          
+          if (loadingState) loadingState.classList.add('hidden');
+          if (continueButton) continueButton.classList.remove('hidden');
+          
+        }, 2500);
+      }
+    });
+
+    // Add keyboard navigation
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && isLoaded && currentPage === 'welcome') {
+        continueToApp();
+      }
+    });
+
+    console.log('StudyFlow Welcome Page initialized successfully!');
+  </script>
+</body>
+</html>
