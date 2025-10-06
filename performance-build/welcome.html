@@ -9,6 +9,7 @@
   <link rel="preload" href="assets/images/autumn-day-8.png" as="image" fetchpriority="high">
   <link rel="preload" href="assets/css/core.css" as="style" onload="this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="assets/css/core.css"></noscript>
+  <link rel="preload" href="assets/js/settings.js" as="script">
   
   <!-- No external CSS dependencies - all critical CSS is inline -->
   
@@ -380,17 +381,28 @@
     let isLoaded = false;
     let isAuthReady = false;
 
-    // Asset URLs to preload (using your actual file paths)
-    const ASSET_URLS = [
+    // PERFORMANCE OPTIMIZED: Only preload critical assets for LCP
+    const CRITICAL_ASSETS = [
+      'assets/images/autumn-day-8.png', // Featured welcome background
+      'assets/audio/click.mp3',
+      'assets/audio/splash.mp3'
+    ];
+    
+    // Background images for lazy loading (loaded by settings.js as needed)
+    const BACKGROUND_IMAGES = [
       'assets/images/autumn-day-1.png',
       'assets/images/autumn-day-2.png',
       'assets/images/autumn-day-3.png',
+      'assets/images/autumn-day-4.png',
+      'assets/images/autumn-day-5.png',
+      'assets/images/autumn-day-6.png',
+      'assets/images/autumn-day-7.png',
       'assets/images/autumn-day-8.png',
       'assets/images/autumn-night-1.png',
+      'assets/images/autumn-night-2.png',
+      'assets/images/autumn-night-3.png',
       'assets/images/summer-day-1.png',
-      'assets/images/winter-day-1.png',
-      'assets/audio/click.mp3',
-      'assets/audio/splash.mp3'
+      'assets/images/winter-day-1.png'
     ];
 
     // ============================================
@@ -494,21 +506,27 @@
     // ============================================
 
     document.addEventListener('DOMContentLoaded', async function() {
-      updateDebugInfo('Status: Starting asset preload...');
+      updateDebugInfo('Status: Loading critical assets for LCP...');
       
       try {
-        // Start preloading assets
-        console.log('Starting asset preloading for', ASSET_URLS.length, 'files...');
+        // PERFORMANCE OPTIMIZATION: Only preload critical assets for LCP
+        console.log('🚀 LCP Optimization: Preloading', CRITICAL_ASSETS.length, 'critical assets...');
         
-        await preloadImages(ASSET_URLS);
+        await preloadImages(CRITICAL_ASSETS);
         
-        console.log('All assets preloaded successfully!');
-        updateDebugInfo('Status: Assets loaded, preparing app...');
+        console.log('✅ Critical assets loaded! LCP optimized.');
+        updateDebugInfo('Status: Critical assets loaded, preparing app...');
         
         // Simulate auth ready (since we removed Firebase for now)
         isAuthReady = true;
         
-        // Keep loading state for smooth transition
+        // Initialize background manager for intelligent preloading
+        if (typeof BackgroundManager !== 'undefined') {
+          window.backgroundManager = new BackgroundManager();
+          window.backgroundManager.init();
+        }
+        
+        // Keep loading state for smooth transition (reduced for LCP)
         setTimeout(() => {
           isLoaded = true;
           
@@ -519,12 +537,17 @@
           if (loadingState) loadingState.classList.add('hidden');
           if (continueButton) continueButton.classList.remove('hidden');
           
-          updateDebugInfo('Status: Ready to continue!');
+          updateDebugInfo('Status: Ready to continue! Background images loading lazily...');
           
-        }, 1500);
+          // Start lazy loading additional backgrounds after user interaction is ready
+          setTimeout(() => {
+            lazyLoadAdditionalBackgrounds();
+          }, 2000);
+          
+        }, 800); // Reduced from 1500ms for faster LCP
         
       } catch (error) {
-        console.error('Asset preloading failed:', error);
+        console.error('Critical asset preloading failed:', error);
         updateDebugInfo('Status: Load failed, but you can continue');
         
         // Allow continuation even if preload fails
@@ -536,9 +559,40 @@
           if (loadingState) loadingState.classList.add('hidden');
           if (continueButton) continueButton.classList.remove('hidden');
           
-        }, 2500);
+        }, 1000); // Faster fallback
       }
     });
+
+    // ============================================
+    // LAZY LOADING FOR NON-CRITICAL BACKGROUNDS
+    // ============================================
+    
+    function lazyLoadAdditionalBackgrounds() {
+      console.log('🖼️ Starting lazy load of additional backgrounds...');
+      
+      // Load one background every 3 seconds to avoid network congestion
+      let index = 0;
+      const loadNext = () => {
+        if (index < BACKGROUND_IMAGES.length) {
+          const img = BACKGROUND_IMAGES[index];
+          if (img !== 'assets/images/autumn-day-8.png') { // Skip already loaded
+            preloadImages([img]).then(() => {
+              console.log(`📸 Lazy loaded: ${img.split('/').pop()}`);
+            }).catch(() => {
+              console.warn(`❌ Failed to lazy load: ${img}`);
+            });
+          }
+          index++;
+          setTimeout(loadNext, 3000); // 3 second delay between loads
+        } else {
+          console.log('✅ All background images loaded via lazy loading');
+          updateDebugInfo('Status: All assets ready! Enjoy StudyFlow.');
+        }
+      };
+      
+      // Start lazy loading after a short delay
+      setTimeout(loadNext, 1000);
+    }
 
     // Add keyboard navigation
     document.addEventListener('keydown', function(e) {
@@ -549,5 +603,8 @@
 
     console.log('StudyFlow Welcome Page initialized successfully!');
   </script>
+  
+  <!-- Background Management (Intelligent Preloading) -->
+  <script src="assets/js/settings.js" defer></script>
 </body>
 </html>

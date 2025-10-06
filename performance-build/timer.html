@@ -7,6 +7,10 @@
   
   <!-- Performance Preloads -->
   <link rel="preload" href="assets/images/autumn-day-8.png" as="image">
+  <link rel="preload" href="assets/css/timer.css" as="style" onload="this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="assets/css/timer.css"></noscript>
+  <link rel="preload" href="assets/js/timer.js" as="script">
+  <link rel="preload" href="assets/js/settings.js" as="script">
   
   <style>
     :root {
@@ -88,5 +92,9 @@
       <a href="welcome.html" class="btn">← Back to Welcome</a>
     </div>
   </div>
+  
+  <!-- Performance-Optimized Scripts -->
+  <script src="assets/js/settings.js" defer></script>
+  <script src="assets/js/timer.js" defer></script>
 </body>
 </html>
