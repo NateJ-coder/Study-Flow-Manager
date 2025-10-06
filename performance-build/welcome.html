@@ -10,29 +10,11 @@
   <link rel="preload" href="assets/css/core.css" as="style" onload="this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="assets/css/core.css"></noscript>
   
-  <!-- Tailwind CSS CDN for rapid styling -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  
-  <!-- Custom Tailwind Config -->
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            'inter': ['Inter', 'system-ui', 'sans-serif']
-          },
-          animation: {
-            'pulse-slow': 'pulse-slow 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-            'bounce-slow': 'bounce-slow 3s ease-in-out infinite'
-          }
-        }
-      }
-    }
-  </script>
+  <!-- No external CSS dependencies - all critical CSS is inline -->
   
   <!-- Critical CSS Inline -->
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+    /* Using system fonts for better performance */
     
     :root {
       --primary-bg: #0f1419;
@@ -47,7 +29,7 @@
     }
     
     body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
       background: var(--primary-bg);
       color: var(--text-color);
       min-height: 100vh;
@@ -61,7 +43,7 @@
     }
     
     @keyframes bounce-slow {
-      0%, 100% { transform: translateY(0); }
+      0%, 100% { transform: translateY(0); }  
       50% { transform: translateY(-5%); }
     }
     
@@ -73,7 +55,65 @@
       animation: bounce-slow 3s ease-in-out infinite;
     }
     
-    /* Loading spinner */
+    /* Critical utility classes */
+    .flex { display: flex; }
+    .flex-col { flex-direction: column; }
+    .items-center { align-items: center; }
+    .justify-center { justify-content: center; }
+    .text-center { text-align: center; }
+    .hidden { display: none !important; }
+    .mb-10 { margin-bottom: 2.5rem; }
+    .mt-4 { margin-top: 1rem; }
+    .mb-4 { margin-bottom: 1rem; }
+    .mt-12 { margin-top: 3rem; }
+    .p-6 { padding: 1.5rem; }
+    .py-4 { padding-top: 1rem; padding-bottom: 1rem; }
+    .px-10 { padding-left: 2.5rem; padding-right: 2.5rem; }
+    .rounded-xl { border-radius: 0.75rem; }
+    .font-black { font-weight: 900; }
+    .font-bold { font-weight: 700; }
+    .font-semibold { font-weight: 600; }
+    .font-medium { font-weight: 500; }
+    .text-6xl { font-size: 3.75rem; line-height: 1; }
+    .text-8xl { font-size: 6rem; line-height: 1; }
+    .text-xl { font-size: 1.25rem; line-height: 1.75rem; }
+    .text-2xl { font-size: 1.5rem; line-height: 2rem; }
+    .text-lg { font-size: 1.125rem; line-height: 1.75rem; }
+    .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+    .text-amber-300 { color: #fcd34d; }
+    .text-amber-500 { color: #f59e0b; }
+    .text-white { color: #ffffff; }
+    .bg-amber-600 { background-color: rgba(217, 119, 6, 0.7); }
+    .shadow-xl { box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
+    .transition { transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
+    .duration-200 { transition-duration: 200ms; }
+    .border-b-4 { border-bottom-width: 4px; }
+    .border-r-2 { border-right-width: 2px; }
+    .border-amber-800 { border-color: rgba(146, 64, 14, 0.8); }
+    .cursor-pointer { cursor: pointer; }
+    .opacity-90 { opacity: 0.9; }
+    .opacity-70 { opacity: 0.7; }
+    .inline-block { display: inline-block; }
+    .w-full { width: 100%; }
+    .h-full { height: 100%; }
+    .max-w-4xl { max-width: 56rem; }
+    .backdrop-blur-sm { backdrop-filter: blur(4px); }
+    .bg-black { background-color: rgba(0, 0, 0, 0.4); }
+    .rounded-3xl { border-radius: 1.5rem; }
+    .shadow-2xl { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); }
+    
+    /* Hover states */
+    .hover\:bg-amber-500:hover { background-color: rgba(245, 158, 11, 0.8); }
+    .active\:scale-\[0\.98\]:active { transform: scale(0.98); }
+    .hover\:scale-\[1\.02\]:hover { transform: scale(1.02); }
+    
+    /* Responsive */
+    @media (min-width: 768px) {
+      .md\:text-8xl { font-size: 6rem; line-height: 1; }
+      .md\:text-2xl { font-size: 1.5rem; line-height: 2rem; }
+      .md\:text-xl { font-size: 1.25rem; line-height: 1.75rem; }
+      .md\:p-12 { padding: 3rem; }
+    }    /* Loading spinner */
     .loading-spinner {
       width: 64px;
       height: 64px;
@@ -101,6 +141,97 @@
     .page-visible {
       opacity: 1;
       transform: scale(1);
+    }
+    
+    /* Critical utility classes to replace Tailwind */
+    .flex { display: flex; }
+    .flex-col { flex-direction: column; }
+    .items-center { align-items: center; }
+    .justify-center { justify-content: center; }
+    .text-center { text-align: center; }
+    .hidden { display: none !important; }
+    .mb-10 { margin-bottom: 2.5rem; }
+    .mt-4 { margin-top: 1rem; }
+    .mb-4 { margin-bottom: 1rem; }
+    .mt-12 { margin-top: 3rem; }
+    .p-6 { padding: 1.5rem; }
+    .p-8 { padding: 2rem; }
+    .py-4 { padding-top: 1rem; padding-bottom: 1rem; }
+    .px-10 { padding-left: 2.5rem; padding-right: 2.5rem; }
+    .rounded-xl { border-radius: 0.75rem; }
+    .rounded-3xl { border-radius: 1.5rem; }
+    .font-black { font-weight: 900; }
+    .font-bold { font-weight: 700; }
+    .font-semibold { font-weight: 600; }
+    .font-medium { font-weight: 500; }
+    .font-inter { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; }
+    .text-6xl { font-size: 3.75rem; line-height: 1; }
+    .text-8xl { font-size: 6rem; line-height: 1; }
+    .text-xl { font-size: 1.25rem; line-height: 1.75rem; }
+    .text-2xl { font-size: 1.5rem; line-height: 2rem; }
+    .text-lg { font-size: 1.125rem; line-height: 1.75rem; }
+    .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+    .text-xs { font-size: 0.75rem; line-height: 1rem; }
+    .text-5xl { font-size: 3rem; line-height: 1; }
+    .text-amber-300 { color: #fcd34d; }
+    .text-amber-500 { color: #f59e0b; }
+    .text-white { color: #ffffff; }
+    .text-indigo-500 { color: #6366f1; }
+    .text-green-500 { color: #10b981; }
+    .text-red-500 { color: #ef4444; }
+    .bg-amber-600 { background-color: rgba(217, 119, 6, 0.7); }
+    .bg-indigo-500 { background-color: #6366f1; }
+    .bg-green-500 { background-color: #10b981; }
+    .bg-red-500 { background-color: #ef4444; }
+    .shadow-xl { box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
+    .shadow-2xl { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); }
+    .transition { transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
+    .duration-200 { transition-duration: 200ms; }
+    .border-b-4 { border-bottom-width: 4px; }
+    .border-r-2 { border-right-width: 2px; }
+    .border-amber-800 { border-color: rgba(146, 64, 14, 0.8); }
+    .cursor-pointer { cursor: pointer; }
+    .opacity-90 { opacity: 0.9; }
+    .opacity-70 { opacity: 0.7; }
+    .inline-block { display: inline-block; }
+    .w-full { width: 100%; }
+    .h-full { height: 100%; }
+    .max-w-4xl { max-width: 56rem; }
+    .backdrop-blur-sm { backdrop-filter: blur(4px); }
+    .bg-black { background-color: rgba(0, 0, 0, 0.4); }
+    .space-x-4 > * + * { margin-left: 1rem; }
+    .mb-8 { margin-bottom: 2rem; }
+    .px-6 { padding-left: 1.5rem; padding-right: 1.5rem; }
+    .py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+    .rounded-lg { border-radius: 0.5rem; }
+    .absolute { position: absolute; }
+    .bottom-4 { bottom: 1rem; }
+    .right-4 { right: 1rem; }
+    .relative { position: relative; }
+    .z-10 { z-index: 10; }
+    .fixed { position: fixed; }
+    .inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
+    .bg-cover { background-size: cover; }
+    .bg-center { background-position: center; }
+    .min-h-screen { min-height: 100vh; }
+    .bg-gray-900 { background-color: #111827; }
+    .antialiased { -webkit-font-smoothing: antialiased; }
+    .overflow-hidden { overflow: hidden; }
+    
+    /* Hover states */
+    .hover-bg-amber-500:hover { background-color: rgba(245, 158, 11, 0.8); }
+    .hover-bg-indigo-600:hover { background-color: #4f46e5; }
+    .hover-bg-green-600:hover { background-color: #059669; }
+    .hover-bg-red-600:hover { background-color: #dc2626; }
+    .active-scale-98:active { transform: scale(0.98); }
+    .hover-scale-102:hover { transform: scale(1.02); }
+    
+    /* Responsive */
+    @media (min-width: 768px) {
+      .md\\:text-8xl { font-size: 6rem; line-height: 1; }
+      .md\\:text-2xl { font-size: 1.5rem; line-height: 2rem; }
+      .md\\:text-xl { font-size: 1.25rem; line-height: 1.75rem; }
+      .md\\:p-12 { padding: 3rem; }
     }
   </style>
   
@@ -149,7 +280,7 @@
           
           <button 
             id="continue-button"
-            class="hidden bg-amber-600/70 text-white font-inter font-bold py-4 px-10 rounded-xl shadow-xl transition duration-200 hover:bg-amber-500/80 active:scale-[0.98] transform hover:scale-[1.02] cursor-pointer border-b-4 border-r-2 border-amber-800/80 text-lg md:text-xl"
+            class="hidden bg-amber-600 text-white font-inter font-bold py-4 px-10 rounded-xl shadow-xl transition duration-200 hover-bg-amber-500 active-scale-98 hover-scale-102 cursor-pointer border-b-4 border-r-2 border-amber-800 text-lg md:text-xl"
             onclick="continueToApp()"
           >
             Continue to Focus
@@ -174,13 +305,13 @@
         <div class="flex space-x-4">
           <button 
             onclick="goToCalendar()"
-            class="px-6 py-3 bg-indigo-500 rounded-lg hover:bg-indigo-600 transition duration-200"
+            class="px-6 py-3 bg-indigo-500 rounded-lg hover-bg-indigo-600 transition duration-200"
           >
             📅 Go to Calendar
           </button>
           <button 
             onclick="goToWelcome()"
-            class="px-6 py-3 bg-red-500 rounded-lg hover:bg-red-600 transition duration-200"
+            class="px-6 py-3 bg-red-500 rounded-lg hover-bg-red-600 transition duration-200"
           >
             Go Back
           </button>
@@ -198,13 +329,13 @@
         <div class="flex space-x-4">
           <button 
             onclick="goToTimer()"
-            class="px-6 py-3 bg-green-500 rounded-lg hover:bg-green-600 transition duration-200"
+            class="px-6 py-3 bg-green-500 rounded-lg hover-bg-green-600 transition duration-200"
           >
             ⏰ Go to Timer
           </button>
           <button 
             onclick="goToWelcome()"
-            class="px-6 py-3 bg-red-500 rounded-lg hover:bg-red-600 transition duration-200"
+            class="px-6 py-3 bg-red-500 rounded-lg hover-bg-red-600 transition duration-200"
           >
             Go Back
           </button>
