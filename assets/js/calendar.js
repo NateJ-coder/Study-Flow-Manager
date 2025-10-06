@@ -1,4 +1,355 @@
-// calendar.js — Enhanced Calendar functionality with task management, reminders, and seasonal features
+// Calendar JS - Calendar functionality module
+
+// Calendar state
+const CalendarState = {
+  currentMonth: new Date().getMonth(),
+  currentYear: new Date().getFullYear(),
+  selectedDate: null,
+  tasks: {},
+  
+  load() {
+    try {
+      const saved = localStorage.getItem('studyflow-calendar');
+      if (saved) {
+        const data = JSON.parse(saved);
+        this.tasks = data.tasks || {};
+      }
+    } catch (e) {
+      console.warn('Could not load calendar data:', e);
+    }
+  },
+  
+  save() {
+    try {
+      const data = {
+        tasks: this.tasks
+      };
+      localStorage.setItem('studyflow-calendar', JSON.stringify(data));
+    } catch (e) {
+      console.warn('Could not save calendar data:', e);
+    }
+  },
+  
+  getDateKey(date) {
+    return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+  },
+  
+  getTasks(date) {
+    const key = this.getDateKey(date);
+    return this.tasks[key] || [];
+  },
+  
+  addTask(date, task) {
+    const key = this.getDateKey(date);
+    if (!this.tasks[key]) {
+      this.tasks[key] = [];
+    }
+    this.tasks[key].push(task);
+    this.save();
+  },
+  
+  removeTask(date, taskIndex) {
+    const key = this.getDateKey(date);
+    if (this.tasks[key]) {
+      this.tasks[key].splice(taskIndex, 1);
+      if (this.tasks[key].length === 0) {
+        delete this.tasks[key];
+      }
+      this.save();
+    }
+  }
+};
+
+// Calendar functionality
+const Calendar = {
+  container: null,
+  titleElement: null,
+  prevBtn: null,
+  nextBtn: null,
+  
+  monthNames: [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ],
+  
+  dayNames: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+  
+  init() {
+    // Get DOM elements
+    this.container = document.getElementById('calendar-grid');
+    this.titleElement = document.getElementById('calendar-title');
+    this.prevBtn = document.getElementById('prev-month');
+    this.nextBtn = document.getElementById('next-month');
+    
+    if (!this.container || !this.titleElement || !this.prevBtn || !this.nextBtn) {
+      console.warn('Calendar elements not found');
+      return;
+    }
+    
+    // Load state
+    CalendarState.load();
+    
+    // Setup event listeners
+    this.prevBtn.addEventListener('click', () => this.previousMonth());
+    this.nextBtn.addEventListener('click', () => this.nextMonth());
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if (e.target.tagName === 'INPUT') return;
+      
+      switch (e.code) {
+        case 'ArrowLeft':
+          if (e.shiftKey) {
+            e.preventDefault();
+            this.previousMonth();
+          }
+          break;
+        case 'ArrowRight':
+          if (e.shiftKey) {
+            e.preventDefault();
+            this.nextMonth();
+          }
+          break;
+        case 'KeyT':
+          if (e.ctrlKey) {
+            e.preventDefault();
+            this.goToToday();
+          }
+          break;
+      }
+    });
+    
+    // Initial render
+    this.render();
+  },
+  
+  previousMonth() {
+    CalendarState.currentMonth--;
+    if (CalendarState.currentMonth < 0) {
+      CalendarState.currentMonth = 11;
+      CalendarState.currentYear--;
+    }
+    this.render();
+    this.playSound();
+  },
+  
+  nextMonth() {
+    CalendarState.currentMonth++;
+    if (CalendarState.currentMonth > 11) {
+      CalendarState.currentMonth = 0;
+      CalendarState.currentYear++;
+    }
+    this.render();
+    this.playSound();
+  },
+  
+  goToToday() {
+    const today = new Date();
+    CalendarState.currentMonth = today.getMonth();
+    CalendarState.currentYear = today.getFullYear();
+    this.render();
+  },
+  
+  render() {
+    this.updateTitle();
+    this.renderGrid();
+  },
+  
+  updateTitle() {
+    const monthName = this.monthNames[CalendarState.currentMonth];
+    this.titleElement.textContent = `${monthName} ${CalendarState.currentYear}`;
+  },
+  
+  renderGrid() {
+    // Clear existing content
+    this.container.innerHTML = '';
+    
+    // Add day headers
+    this.dayNames.forEach(day => {
+      const header = document.createElement('div');
+      header.className = 'calendar-day-header';
+      header.textContent = day;
+      this.container.appendChild(header);
+    });
+    
+    // Get first day of month and number of days
+    const firstDay = new Date(CalendarState.currentYear, CalendarState.currentMonth, 1);
+    const lastDay = new Date(CalendarState.currentYear, CalendarState.currentMonth + 1, 0);
+    const startDate = new Date(firstDay);
+    startDate.setDate(startDate.getDate() - firstDay.getDay());
+    
+    // Generate 6 weeks (42 days)
+    for (let i = 0; i < 42; i++) {
+      const currentDate = new Date(startDate);
+      currentDate.setDate(startDate.getDate() + i);
+      
+      const dayElement = this.createDayElement(currentDate);
+      this.container.appendChild(dayElement);
+    }
+  },
+  
+  createDayElement(date) {
+    const dayElement = document.createElement('div');
+    dayElement.className = 'calendar-day';
+    dayElement.textContent = date.getDate();
+    
+    // Add classes based on date properties
+    const today = new Date();
+    const isToday = date.toDateString() === today.toDateString();
+    const isCurrentMonth = date.getMonth() === CalendarState.currentMonth;
+    const hasTasks = CalendarState.getTasks(date).length > 0;
+    
+    if (isToday) dayElement.classList.add('today');
+    if (!isCurrentMonth) dayElement.classList.add('other-month');
+    if (hasTasks) dayElement.classList.add('has-tasks');
+    
+    // Add click handler
+    dayElement.addEventListener('click', () => {
+      this.selectDate(date, dayElement);
+    });
+    
+    // Add hover effect with task preview
+    if (hasTasks) {
+      dayElement.title = `${CalendarState.getTasks(date).length} task(s)`;
+    }
+    
+    return dayElement;
+  },
+  
+  selectDate(date, element) {
+    // Remove previous selection
+    document.querySelectorAll('.calendar-day.selected').forEach(el => {
+      el.classList.remove('selected');
+    });
+    
+    // Add selection to clicked element
+    element.classList.add('selected');
+    CalendarState.selectedDate = date;
+    
+    // Show task popup or create one
+    this.showTaskPopup(date, element);
+    this.playSound();
+  },
+  
+  showTaskPopup(date, element) {
+    // Remove existing popup
+    const existingPopup = document.querySelector('.task-popup');
+    if (existingPopup) {
+      existingPopup.remove();
+    }
+    
+    // Create popup
+    const popup = document.createElement('div');
+    popup.className = 'task-popup';
+    
+    const tasks = CalendarState.getTasks(date);
+    const dateString = date.toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+    
+    popup.innerHTML = `
+      <h3>${dateString}</h3>
+      <div class="task-list">
+        ${tasks.map((task, index) => `
+          <div class="task-item">
+            <span>${task}</span>
+            <button onclick="Calendar.removeTaskByIndex(${index})" class="remove-task">&times;</button>
+          </div>
+        `).join('')}
+      </div>
+      <div class="add-task">
+        <input type="text" placeholder="Add a task..." class="task-input" maxlength="50">
+        <button class="add-task-btn">Add</button>
+      </div>
+    `;
+    
+    // Position popup
+    element.style.position = 'relative';
+    element.appendChild(popup);
+    
+    // Setup task input
+    const input = popup.querySelector('.task-input');
+    const addBtn = popup.querySelector('.add-task-btn');
+    
+    const addTask = () => {
+      const taskText = input.value.trim();
+      if (taskText) {
+        CalendarState.addTask(date, taskText);
+        input.value = '';
+        this.render(); // Re-render to show changes
+        this.showTaskPopup(date, element); // Refresh popup
+      }
+    };
+    
+    addBtn.addEventListener('click', addTask);
+    input.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        addTask();
+      }
+    });
+    
+    // Auto-focus input
+    input.focus();
+    
+    // Close popup when clicking outside
+    setTimeout(() => {
+      document.addEventListener('click', function closePopup(e) {
+        if (!popup.contains(e.target) && !element.contains(e.target)) {
+          popup.remove();
+          document.removeEventListener('click', closePopup);
+        }
+      });
+    }, 100);
+  },
+  
+  removeTaskByIndex(index) {
+    if (CalendarState.selectedDate) {
+      CalendarState.removeTask(CalendarState.selectedDate, index);
+      this.render();
+      
+      // Refresh popup if still selected
+      const selectedElement = document.querySelector('.calendar-day.selected');
+      if (selectedElement) {
+        this.showTaskPopup(CalendarState.selectedDate, selectedElement);
+      }
+    }
+  },
+  
+  playSound() {
+    if (!window.StudyFlow?.AppState?.soundsEnabled) return;
+    
+    window.StudyFlow.afterPaint(() => {
+      const audio = new Audio('/assets/audio/click.mp3');
+      audio.volume = 0.2;
+      audio.play().catch(() => {});
+    });
+  }
+};
+
+// Initialize calendar
+const initCalendar = () => {
+  if (document.body.dataset.page === 'calendar') {
+    Calendar.init();
+  }
+};
+
+// Export for global access
+window.StudyFlow = window.StudyFlow || {};
+window.StudyFlow.Calendar = Calendar;
+window.StudyFlow.CalendarState = CalendarState;
+
+// Make removeTaskByIndex globally accessible for inline onclick
+window.Calendar = Calendar;
+
+// Auto-initialize
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initCalendar);
+} else {
+  initCalendar();
+}// calendar.js — Enhanced Calendar functionality with task management, reminders, and seasonal features
 console.log("[calendar.js] Enhanced Calendar module loaded ✅");
 
 let currentMonth = new Date().getMonth();

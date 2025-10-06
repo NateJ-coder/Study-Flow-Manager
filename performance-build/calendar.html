@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#0b0b0b" />
+  <meta name="description" content="StudyFlow Manager - Calendar" />
+
+  <!-- Strong CSP -->
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self';
+                 img-src 'self' data:;
+                 script-src 'self';
+                 style-src 'self' 'unsafe-inline';
+                 font-src 'self' data:;
+                 object-src 'none';
+                 base-uri 'self';
+                 form-action 'self'">
+
+  <!-- Preload assets -->
+  <link rel="preload" as="image" href="/assets/images/summer-day-6.png" fetchpriority="high">
+  
+  <!-- Load CSS -->
+  <link rel="preload" as="style" href="/assets/css/core.css" onload="this.rel='stylesheet'">
+  <link rel="preload" as="style" href="/assets/css/calendar.css" onload="this.rel='stylesheet'">
+  <noscript>
+    <link rel="stylesheet" href="/assets/css/core.css">
+    <link rel="stylesheet" href="/assets/css/calendar.css">
+  </noscript>
+
+  <!-- Critical CSS inline -->
+  <style>
+    :root { color-scheme: dark light; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial, sans-serif;
+      background: var(--bg-color, #0f1419);
+      color: var(--text-color, #e7eaee);
+      min-height: 100dvh;
+      overflow-x: hidden;
+    }
+    
+    .background-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: -2;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+    
+    .nav-container {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 100;
+      display: flex;
+      gap: 0.5rem;
+    }
+  </style>
+
+  <title>StudyFlow Manager - Calendar</title>
+</head>
+<body data-theme="summer" data-page="calendar">
+  <!-- Dynamic background -->
+  <div class="background-container" id="background"></div>
+  
+  <!-- Particle container -->
+  <div id="particles" class="particles-container"></div>
+  
+  <!-- Navigation -->
+  <nav class="nav-container">
+    <a href="/index.html" class="nav-btn" id="timer-nav">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+      </svg>
+    </a>
+    <a href="/settings.html" class="nav-btn" id="settings-nav">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+      </svg>
+    </a>
+  </nav>
+
+  <!-- Main calendar content -->
+  <main class="calendar-main">
+    <div class="calendar-container">
+      <header class="calendar-header">
+        <button id="prev-month" class="calendar-nav-btn">&lt;</button>
+        <h1 id="calendar-title" class="calendar-title">October 2025</h1>
+        <button id="next-month" class="calendar-nav-btn">&gt;</button>
+      </header>
+      
+      <div id="calendar-grid" class="calendar-grid">
+        <!-- Calendar will be generated here -->
+      </div>
+    </div>
+  </main>
+
+  <!-- Load modular JS -->
+  <script type="module" src="/assets/js/core.js" defer></script>
+  <script type="module" src="/assets/js/calendar.js" defer></script>
+</body>
+</html><!doctype html>
+<html lang="en" data-app="StudyFlow">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta http-equi    <!-- ===== Audio (lazy loaded for performance) =====
+  <audio id="audio-rain" src="assets/audio/rainfall.mp3" preload="none" loop></audio>
+  <audio id="audio-splash" src="assets/audio/splash.mp3" preload="none"></audio>
+  <audio id="audio-drawing" src="assets/audio/drawing.mp3" preload="none"></audio>
+  <audio id="audio-click" src="assets/audio/click.mp3" preload="metadata"></audio>ntent-Security-Policy" content="
+      default-src 'self';
+      script-src 'self';
+      style-src 'self' 'unsafe-inline';
+      img-src 'self' data: https:;
+      font-src 'self' data:;
+      media-src 'self' https:;
+      connect-src 'self';
+      object-src 'none';
+      base-uri 'self';
+      frame-ancestors 'none';
+    ">
+    <title>StudyFlow — Calendar</title>
+
+  <!-- Preload critical resources -->
+  <link rel="preload" as="image" href="assets/images/summer-day-6.png" fetchpriority="high">
+  
+  <!-- Modulepreload for calendar modules -->
+  <link rel="modulepreload" href="assets/js/calendar.js">
+  <link rel="modulepreload" href="assets/js/settings.js">
+  <link rel="modulepreload" href="assets/js/svg-utils.js">
+
+  <!-- CSS and JS files -->
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/wooden-buttons.css">
+  <link rel="stylesheet" href="assets/css/calendar-page.css">
+  <!-- Backgrounds live under assets/images; audio under assets/audio; JSON under /data. -->
+    <!-- JS will later fetch: assets/js/studyflow_config.json -->
+  </head>
+
+  <body data-page="calendar" data-theme="summer" data-daynight="day" data-timezone="Africa/Johannesburg">
+    <noscript>
+      <p style="padding:1rem">StudyFlow requires JavaScript to run.</p>
+    </noscript>
+
+    <!-- ===== Global Background & Effects ===== -->
+    <div id="bg-root" aria-hidden="true">
+      <div id="bg-slideshow" role="img" aria-label="Scenery background"></div>
+      <div id="particles-layer" aria-hidden="true"></div>
+      <div id="ui-tint" aria-hidden="true"></div>
+    </div>
+
+    <!-- ===== Background Navigation Arrows ===== -->
+    <button class="bg-nav prev" aria-label="Previous background">‹</button>
+    <button class="bg-nav next" aria-label="Next background">›</button>
+
+    <!-- ===== StudyFlow Title ===== -->
+    <div id="app-title" class="animate-text">
+      <span>S</span><span>t</span><span>u</span><span>d</span><span>y</span><span>F</span><span>l</span><span>o</span><span>w</span>
+    </div>
+
+    <!-- ===== Always-on Clock + Reminders Dropdown ===== -->
+    <header id="global-topbar" aria-label="Global clock and quick actions">
+      <div id="clock" aria-live="polite" aria-label="Current time">
+        <time id="clock-time">00:00</time>
+      </div>
+    </header>
+
+    <!-- ===== Side Navigation (contextual icons; auto-hide via CSS/JS later) ===== -->
+    <nav id="sidebar" aria-label="Page navigation">
+      <a class="nav-item" href="index.html" aria-label="Open Timer" title="Timer" id="nav-timer">
+        <img class="nav-icon-img" src="assets/images/clock-icon.svg" alt="Timer" aria-hidden="true">
+      </a>
+      <a class="nav-item" href="settings.html" aria-label="Open Settings" title="Settings" id="nav-settings">
+        <img class="nav-icon-img" src="assets/images/settings-icon.svg" alt="Settings" aria-hidden="true">
+      </a>
+    </nav>
+
+    <!-- ===== Rain Lockout Overlay (shown during rain) ===== -->
+    <aside id="rain-lockout" role="dialog" aria-modal="true" aria-labelledby="rain-title" hidden>
+      <div class="lockout-card">
+        <h2 id="rain-title">It’s raining!</h2>
+        <p>Don’t touch the electronics—you will get shocked!</p>
+        <p class="lockout-instruction">Use the Rain toggle in Settings to stop the rain.</p>
+      </div>
+    </aside>
+
+    <!-- ===== CALENDAR PAGE ===== -->
+    <main id="app" aria-live="polite">
+      <section id="page-calendar" role="region" aria-label="Calendar" data-view="calendar">
+        <header class="page-title">
+          <h1>Calendar</h1>
+        </header>
+
+        <div id="calendar-header" role="group" aria-label="Month navigation">
+          <button id="cal-prev" aria-label="Previous month">&larr;</button>
+          <h2 id="cal-title" aria-live="polite">Month YYYY</h2>
+          <button id="cal-next" aria-label="Next month">&rarr;</button>
+        </div>
+
+        <div id="calendar-weekdays" aria-hidden="true">
+          <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+        </div>
+
+        <div id="calendar-grid" role="grid" aria-label="Month grid"></div>
+
+        <!-- Keyboard Shortcuts Help -->
+        <div id="keyboard-shortcuts" class="shortcuts-help collapsed">
+          <button id="shortcuts-toggle" class="shortcuts-toggle" aria-label="Toggle keyboard shortcuts help">
+            <span class="shortcuts-icon">⌨️</span>
+            <span class="shortcuts-text">Shortcuts</span>
+          </button>
+          <div class="shortcuts-content">
+            <h4>Keyboard Shortcuts</h4>
+            <ul>
+              <li><kbd>X</kbd> - Mark today as complete</li>
+              <li><kbd>T</kbd> - Open today's tasks</li>
+              <li><kbd>Enter</kbd> - Add task/reminder</li>
+              <li><kbd>Esc</kbd> - Close popup</li>
+              <li><kbd>Ctrl</kbd>+<kbd>←</kbd><kbd>→</kbd> - Navigate months</li>
+              <li><kbd>Click</kbd> - Open day tasks</li>
+              <li><kbd>Right-click</kbd> - Mark day complete</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Enhanced Task popup with smart positioning and full reminder functionality -->
+        <div id="calendar-task-popup" class="task-popup hidden" aria-label="Tasks for selected day" data-popup-position="auto">
+          <div class="popup-arrow"></div>
+          <form id="task-form" autocomplete="off">
+            <header class="popup-header">
+              <h3 id="task-date-label">Tasks — 2025-01-01</h3>
+              <button type="button" id="task-close" class="close-btn wooden-btn btn-close" aria-label="Close">&times;</button>
+            </header>
+
+            <div class="popup-body">
+              <div id="task-list" role="list" class="task-list-container"></div>
+
+              <div class="task-new section-divider">
+                <label class="input-group">
+                  <span class="input-label">New Task:</span>
+                  <input id="new-task-input" name="task_text" type="text" placeholder="Enter task description" class="wooden-input" />
+                </label>
+                <button id="task-add" type="button" class="wooden-btn btn-add-task">Add Task</button>
+              </div>
+
+              <!-- Enhanced Reminder Section with full functionality -->
+              <div class="reminder-section section-divider">
+                <h4 class="section-title">
+                  <span class="reminder-icon">🔔</span>
+                  Set Reminder
+                </h4>
+                
+                <div class="reminder-new">
+                  <div class="reminder-inputs-grid">
+                    <div class="input-group">
+                      <label for="new-reminder-text" class="input-label">Reminder:</label>
+                      <input id="new-reminder-text" type="text" placeholder="What to remember?" class="wooden-input reminder-text-input" />
+                    </div>
+                    <div class="input-group">
+                      <label for="new-reminder-time" class="input-label">Time:</label>
+                      <input id="new-reminder-time" type="time" class="wooden-input reminder-time-input" />
+                    </div>
+                    <div class="input-group">
+                      <label for="new-reminder-date" class="input-label">Date:</label>
+                      <input id="new-reminder-date" type="date" class="wooden-input reminder-date-input" />
+                    </div>
+                  </div>
+                  
+                  <div class="reminder-actions">
+                    <button id="reminder-add" type="button" class="wooden-btn btn-set-reminder">
+                      <span class="btn-icon">⏰</span>
+                      Add Reminder
+                    </button>
+                    <button id="reminder-clear-all" type="button" class="wooden-btn btn-clear-reminders">
+                      Clear All
+                    </button>
+                  </div>
+                </div>
+                
+                <div id="reminder-list" class="reminder-list-container">
+                  <div class="no-reminders-message">No reminders set for this day</div>
+                </div>
+              </div>
+
+              <div class="task-actions section-divider">
+                <button id="task-move-incomplete" type="button" class="wooden-btn btn-move-tasks">
+                  <span class="btn-icon">📅</span>
+                  Move incomplete to next day
+                </button>
+                <button id="task-clear-completed" type="button" class="wooden-btn btn-clear-tasks">
+                  <span class="btn-icon">✨</span>
+                  Clear completed tasks
+                </button>
+              </div>
+
+              <p id="encouragement" class="encouragement-message" aria-live="polite" hidden></p>
+            </div>
+          </form>
+        </div>
+      </section>
+    </main>
+
+    <!-- ===== Audio (preloaded, controlled later by JS) ===== -->
+  <audio id="audio-rain" src="assets/audio/rainfall.mp3" preload="auto" loop></audio>
+  <audio id="audio-splash" src="assets/audio/splash.mp3" preload="auto"></audio>
+  <audio id="audio-drawing" src="assets/audio/drawing.mp3" preload="auto"></audio>
+  <audio id="audio-click" src="assets/audio/click.mp3" preload="auto"></audio>
+
+    <script src="assets/js/splash.js" defer></script>
+    <script src="assets/js/drawing.js" defer></script>
+    <script src="assets/js/core.js" defer></script>
+    <script type="module" src="assets/js/core-modern.js"></script>
+  </body>
+</html>

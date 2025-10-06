@@ -1,4 +1,444 @@
-/* ===== Global STATE and ELEMENTS ===== */
+// Core JS - Main application logic and shared functionality
+
+// Performance utilities
+const afterPaint = (cb) => {
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(cb, { timeout: 800 });
+  } else {
+    setTimeout(cb, 0);
+  }
+};
+
+const throttle = (func, delay) => {
+  let timeoutId;
+  let lastExecTime = 0;
+  return function (...args) {
+    const currentTime = Date.now();
+    if (currentTime - lastExecTime > delay) {
+      func.apply(this, args);
+      lastExecTime = currentTime;
+    } else {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        func.apply(this, args);
+        lastExecTime = Date.now();
+      }, delay - (currentTime - lastExecTime));
+    }
+  };
+};
+
+// State management
+const AppState = {
+  theme: 'summer',
+  currentBackground: 0,
+  particlesEnabled: true,
+  soundsEnabled: true,
+  isLowEndDevice: false,
+  
+  // Initialize from localStorage
+  load() {
+    try {
+      const saved = localStorage.getItem('studyflow-settings');
+      if (saved) {
+        const data = JSON.parse(saved);
+        Object.assign(this, data);
+      }
+    } catch (e) {
+      console.warn('Could not load settings:', e);
+    }
+  },
+  
+  // Save to localStorage
+  save() {
+    try {
+      const data = {
+        theme: this.theme,
+        currentBackground: this.currentBackground,
+        particlesEnabled: this.particlesEnabled,
+        soundsEnabled: this.soundsEnabled
+      };
+      localStorage.setItem('studyflow-settings', JSON.stringify(data));
+    } catch (e) {
+      console.warn('Could not save settings:', e);
+    }
+  }
+};
+
+// Theme system
+const ThemeSystem = {
+  backgrounds: {
+    summer: [
+      '/assets/images/summer-day-1.png',
+      '/assets/images/summer-day-2.png',
+      '/assets/images/summer-day-3.png',
+      '/assets/images/summer-day-4.png',
+      '/assets/images/summer-day-5.png',
+      '/assets/images/summer-day-6.png',
+      '/assets/images/summer-day-7.png',
+      '/assets/images/summer-day-8.png'
+    ],
+    autumn: [
+      '/assets/images/autumn-day-1.png',
+      '/assets/images/autumn-day-2.png',
+      '/assets/images/autumn-day-3.png',
+      '/assets/images/autumn-day-4.png',
+      '/assets/images/autumn-day-5.png',
+      '/assets/images/autumn-day-6.png',
+      '/assets/images/autumn-day-7.png',
+      '/assets/images/autumn-day-8.png'
+    ],
+    winter: [
+      '/assets/images/winter-day-1.png',
+      '/assets/images/winter-day-2.png',
+      '/assets/images/winter-day-3.png',
+      '/assets/images/winter-day-4.png',
+      '/assets/images/winter-day-5.png',
+      '/assets/images/winter-day-6.png',
+      '/assets/images/winter-day-7.png',
+      '/assets/images/winter-day-8.png'
+    ]
+  },
+  
+  setTheme(theme) {
+    AppState.theme = theme;
+    document.body.setAttribute('data-theme', theme);
+    this.updateBackground();
+    AppState.save();
+  },
+  
+  updateBackground() {
+    const backgrounds = this.backgrounds[AppState.theme];
+    if (!backgrounds) return;
+    
+    const bgElement = document.getElementById('background');
+    if (bgElement) {
+      const imageUrl = backgrounds[AppState.currentBackground];
+      bgElement.style.backgroundImage = `url('${imageUrl}')`;
+    }
+  },
+  
+  nextBackground() {
+    const backgrounds = this.backgrounds[AppState.theme];
+    if (!backgrounds) return;
+    
+    AppState.currentBackground = (AppState.currentBackground + 1) % backgrounds.length;
+    this.updateBackground();
+    AppState.save();
+  },
+  
+  prevBackground() {
+    const backgrounds = this.backgrounds[AppState.theme];
+    if (!backgrounds) return;
+    
+    AppState.currentBackground = AppState.currentBackground === 0 
+      ? backgrounds.length - 1 
+      : AppState.currentBackground - 1;
+    this.updateBackground();
+    AppState.save();
+  }
+};
+
+// Particle system
+const ParticleSystem = {
+  particles: [],
+  maxParticles: 30,
+  container: null,
+  isRunning: false,
+  
+  init() {
+    this.container = document.getElementById('particles');
+    if (!this.container) return;
+    
+    // Reduce particles on low-end devices
+    if (AppState.isLowEndDevice) {
+      this.maxParticles = 15;
+    }
+    
+    // Start particles after initial render
+    afterPaint(() => {
+      if (AppState.particlesEnabled && !AppState.isLowEndDevice) {
+        this.start();
+      }
+    });
+  },
+  
+  start() {
+    if (this.isRunning) return;
+    this.isRunning = true;
+    this.createInitialParticles();
+    this.animate();
+  },
+  
+  stop() {
+    this.isRunning = false;
+    this.particles.forEach(particle => {
+      if (particle.element && particle.element.parentNode) {
+        particle.element.parentNode.removeChild(particle.element);
+      }
+    });
+    this.particles = [];
+  },
+  
+  createInitialParticles() {
+    const count = Math.min(this.maxParticles, 20); // Initial burst
+    for (let i = 0; i < count; i++) {
+      this.createParticle();
+    }
+  },
+  
+  createParticle() {
+    if (this.particles.length >= this.maxParticles) {
+      // Remove oldest particle
+      const oldParticle = this.particles.shift();
+      if (oldParticle.element && oldParticle.element.parentNode) {
+        oldParticle.element.parentNode.removeChild(oldParticle.element);
+      }
+    }
+    
+    const element = document.createElement('div');
+    element.className = 'particle';
+    
+    const particle = {
+      element,
+      x: Math.random() * window.innerWidth,
+      y: window.innerHeight + 10,
+      vx: (Math.random() - 0.5) * 2,
+      vy: -Math.random() * 3 - 1,
+      rotation: Math.random() * 360,
+      rotationSpeed: (Math.random() - 0.5) * 4,
+      scale: Math.random() * 0.5 + 0.5,
+      opacity: Math.random() * 0.7 + 0.3
+    };
+    
+    // Style based on theme
+    this.styleParticle(element, particle);
+    
+    this.container.appendChild(element);
+    this.particles.push(particle);
+  },
+  
+  styleParticle(element, particle) {
+    const theme = AppState.theme;
+    let style = '';
+    
+    if (theme === 'summer') {
+      // Green leaves
+      style = `
+        width: ${8 + particle.scale * 4}px;
+        height: ${8 + particle.scale * 4}px;
+        background: radial-gradient(circle, #22c55e, #16a34a);
+        border-radius: 50% 0;
+      `;
+    } else if (theme === 'autumn') {
+      // Orange/red leaves
+      const colors = ['#f59e0b', '#dc2626', '#ea580c'];
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      style = `
+        width: ${6 + particle.scale * 6}px;
+        height: ${6 + particle.scale * 6}px;
+        background: ${color};
+        clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+      `;
+    } else if (theme === 'winter') {
+      // Snowflakes
+      style = `
+        width: ${4 + particle.scale * 3}px;
+        height: ${4 + particle.scale * 3}px;
+        background: #ffffff;
+        border-radius: 50%;
+        box-shadow: 0 0 ${particle.scale * 10}px rgba(255, 255, 255, 0.5);
+      `;
+    }
+    
+    element.style.cssText = `
+      ${style}
+      position: absolute;
+      left: ${particle.x}px;
+      top: ${particle.y}px;
+      transform: rotate(${particle.rotation}deg) scale(${particle.scale});
+      opacity: ${particle.opacity};
+      pointer-events: none;
+      z-index: -1;
+    `;
+  },
+  
+  animate() {
+    if (!this.isRunning) return;
+    
+    // Throttled animation for performance
+    const updateParticles = throttle(() => {
+      this.particles.forEach((particle, index) => {
+        // Update physics
+        particle.x += particle.vx;
+        particle.y += particle.vy;
+        particle.rotation += particle.rotationSpeed;
+        
+        // Apply gravity and wind
+        particle.vy += 0.1;
+        particle.vx += Math.sin(Date.now() * 0.001 + index) * 0.01;
+        
+        // Update DOM
+        particle.element.style.transform = `
+          translate(${particle.x}px, ${particle.y}px) 
+          rotate(${particle.rotation}deg) 
+          scale(${particle.scale})
+        `;
+        
+        // Remove particles that are off-screen
+        if (particle.y > window.innerHeight + 50 || 
+            particle.x < -50 || 
+            particle.x > window.innerWidth + 50) {
+          if (particle.element.parentNode) {
+            particle.element.parentNode.removeChild(particle.element);
+          }
+          this.particles.splice(index, 1);
+        }
+      });
+      
+      // Add new particles occasionally
+      if (Math.random() < 0.02 && this.particles.length < this.maxParticles) {
+        this.createParticle();
+      }
+    }, 16); // ~60fps
+    
+    updateParticles();
+    requestAnimationFrame(() => this.animate());
+  }
+};
+
+// Frame system
+const FrameSystem = {
+  async loadFrame() {
+    const frameContainer = document.getElementById('timer-frame');
+    if (!frameContainer) return;
+    
+    try {
+      const response = await fetch('/assets/images/frame.svg');
+      if (!response.ok) throw new Error('Frame not found');
+      
+      const svgText = await response.text();
+      frameContainer.innerHTML = svgText;
+      
+      // Sync theme
+      this.syncTheme();
+    } catch (e) {
+      console.warn('Could not load frame:', e);
+    }
+  },
+  
+  syncTheme() {
+    const svg = document.querySelector('#timer-frame svg');
+    if (svg) {
+      svg.setAttribute('data-theme', AppState.theme);
+    }
+  }
+};
+
+// Performance detection
+const detectLowEndDevice = () => {
+  // Check various indicators
+  const indicators = {
+    hardwareConcurrency: navigator.hardwareConcurrency <= 2,
+    deviceMemory: navigator.deviceMemory && navigator.deviceMemory <= 2,
+    mobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),
+    slowConnection: navigator.connection && navigator.connection.effectiveType && 
+                   ['slow-2g', '2g'].includes(navigator.connection.effectiveType)
+  };
+  
+  // Consider low-end if 2 or more indicators are true
+  const trueCount = Object.values(indicators).filter(Boolean).length;
+  return trueCount >= 2;
+};
+
+// Navigation helpers
+const setupNavigation = () => {
+  // Add click handlers for nav buttons
+  document.addEventListener('click', (e) => {
+    const navBtn = e.target.closest('.nav-btn');
+    if (navBtn && AppState.soundsEnabled) {
+      // Play click sound if available
+      afterPaint(() => {
+        const audio = new Audio('/assets/audio/click.mp3');
+        audio.volume = 0.3;
+        audio.play().catch(() => {}); // Ignore errors
+      });
+    }
+  });
+};
+
+// Initialize app
+const init = async () => {
+  // Detect device capabilities
+  AppState.isLowEndDevice = detectLowEndDevice();
+  
+  // Load saved state
+  AppState.load();
+  
+  // Set initial theme
+  ThemeSystem.setTheme(AppState.theme);
+  
+  // Load frame for timer page
+  if (document.body.dataset.page === 'timer') {
+    await FrameSystem.loadFrame();
+  }
+  
+  // Initialize particles after paint
+  afterPaint(() => {
+    ParticleSystem.init();
+  });
+  
+  // Setup navigation
+  setupNavigation();
+  
+  // Watch for theme changes
+  const observer = new MutationObserver(() => {
+    const newTheme = document.body.getAttribute('data-theme');
+    if (newTheme && newTheme !== AppState.theme) {
+      AppState.theme = newTheme;
+      FrameSystem.syncTheme();
+    }
+  });
+  
+  observer.observe(document.body, {
+    attributes: true,
+    attributeFilter: ['data-theme']
+  });
+};
+
+// Export for modules
+window.StudyFlow = {
+  AppState,
+  ThemeSystem,
+  ParticleSystem,
+  FrameSystem,
+  afterPaint,
+  throttle
+};
+
+// Service worker registration
+const registerServiceWorker = () => {
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js')
+        .then((registration) => {
+          console.log('SW registered:', registration);
+        })
+        .catch((registrationError) => {
+          console.log('SW registration failed:', registrationError);
+        });
+    });
+  }
+};
+
+// Auto-initialize when DOM is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+
+// Register service worker
+registerServiceWorker();/* ===== Global STATE and ELEMENTS ===== */
 const STATE = {
   currentPage: "timer",     // default page
   rainLockout: false,       // lockout status

@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="Wooden cursor">
+  <defs>
+    <!-- Tunable colors -->
+    <style>
+      :root{
+        --wood1:#C99A63;  /* light wood */
+        --wood2:#A97846;  /* mid wood */
+        --wood3:#7A522F;  /* dark grain */
+        --edge:#4d351f;   /* edge stroke */
+        --highlight:#fff8e6;
+      }
+    </style>
+
+    <!-- Soft drop shadow -->
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0.8" dy="1.2" stdDeviation="1.2" flood-opacity="0.35"/>
+    </filter>
+
+    <!-- Wood base gradient -->
+    <linearGradient id="woodBase" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"  stop-color="var(--wood1)"/>
+      <stop offset="55%" stop-color="var(--wood2)"/>
+      <stop offset="100%" stop-color="var(--wood3)"/>
+    </linearGradient>
+
+    <!-- Subtle wood grain pattern -->
+    <pattern id="grain" patternUnits="userSpaceOnUse" width="24" height="24" patternTransform="rotate(-12)">
+      <rect width="24" height="24" fill="url(#woodBase)"/>
+      <path d="M0,6 C6,3 12,9 18,6 S24,3 24,3
+               M0,16 C6,13 12,19 18,16 S24,13 24,13"
+            fill="none" stroke="rgba(0,0,0,0.10)" stroke-width="1.2"/>
+      <path d="M0,10 C4,8 8,12 12,10 S16,8 24,10
+               M0,20 C4,18 8,22 12,20 S16,18 24,20"
+            fill="none" stroke="rgba(255,255,255,0.09)" stroke-width="1"/>
+    </pattern>
+
+    <!-- Inner shine -->
+    <linearGradient id="shine" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="var(--highlight)" stop-opacity="0.35"/>
+      <stop offset="0.4" stop-color="var(--highlight)" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="var(--highlight)" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Cursor shape (classic arrow) -->
+  <g filter="url(#shadow)">
+    <path id="cursor-arrow"
+      d="M10 6 L10 46 L18 38 L26 54 L34 50 L26 34 L42 34 Z"
+      fill="url(#grain)" stroke="var(--edge)" stroke-width="1.6" stroke-linejoin="round"/>
+    <!-- subtle bevel -->
+    <path d="M10 6 L10 46 L18 38 L26 54 L34 50 L26 34 L42 34"
+      fill="none" stroke="url(#shine)" stroke-width="2" stroke-linecap="round" opacity="0.9"/>
+  </g>
+</svg>

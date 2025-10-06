@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#0b0b0b" />
+  <meta name="description" content="StudyFlow Manager - Focus Timer with Seasonal Themes" />
+
+  <!-- Strong CSP for security -->
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self';
+                 img-src 'self' data:;
+                 script-src 'self';
+                 style-src 'self' 'unsafe-inline';
+                 font-src 'self' data:;
+                 object-src 'none';
+                 base-uri 'self';
+                 form-action 'self'">
+
+  <!-- Preload critical assets for main app -->
+  <link rel="preload" as="image" href="/assets/images/summer-day-6.png" fetchpriority="high">
+  <link rel="preload" as="style" href="/assets/css/core.css">
+  <link rel="preload" as="script" href="/assets/js/core.js">
+
+  <!-- Load welcome CSS inline for instant render -->
+  <style>
+    :root { color-scheme: dark light; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #0f1419 0%, #1a2332 100%);
+      color: #e7eaee;
+      min-height: 100dvh;
+      display: grid;
+      place-items: center;
+    }
+    .welcome-container {
+      text-align: center;
+      padding: 2rem;
+      max-width: 600px;
+    }
+    .logo {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, #4ade80, #22d3ee);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .tagline {
+      font-size: 1.125rem;
+      color: #9aa3af;
+      margin-bottom: 2rem;
+    }
+    .enter-btn {
+      display: inline-block;
+      padding: 1rem 2rem;
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      color: white;
+      text-decoration: none;
+      border-radius: 12px;
+      font-weight: 600;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      min-width: 44px;
+      min-height: 44px;
+    }
+    .enter-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(34, 197, 94, 0.2);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .enter-btn { transition: none; }
+      .enter-btn:hover { transform: none; }
+    }
+  </style>
+
+  <title>StudyFlow Manager - Welcome</title>
+</head>
+<body>
+  <div class="welcome-container">
+    <h1 class="logo">StudyFlow Manager</h1>
+    <p class="tagline">Focus timer with beautiful seasonal themes</p>
+    <a href="/index.html" class="enter-btn">Start Focusing</a>
+  </div>
+
+  <!-- Prefetch main app resources -->
+  <link rel="prefetch" href="/index.html">
+  <link rel="prefetch" href="/assets/css/core.css">
+  <link rel="prefetch" href="/assets/js/core.js">
+</body>
+</html>

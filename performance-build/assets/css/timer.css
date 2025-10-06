@@ -1,0 +1,219 @@
+/* Timer CSS - Timer page specific styles */
+
+.timer-main {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: var(--spacing-md);
+  position: relative;
+}
+
+/* Frame container */
+#timer-frame {
+  width: min(100%, 1000px);
+  aspect-ratio: 5 / 4;
+  display: grid;
+  place-items: center;
+  margin: auto;
+  position: relative;
+}
+
+#timer-frame svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.3));
+}
+
+/* Timer display */
+.timer-display {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  pointer-events: none;
+}
+
+.timer-text {
+  font-size: clamp(2rem, 8vw, 4rem);
+  font-weight: 700;
+  color: var(--text-primary);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  letter-spacing: 0.05em;
+}
+
+/* Timer controls */
+.timer-controls {
+  position: absolute;
+  bottom: -80px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: var(--spacing-lg);
+  z-index: 10;
+}
+
+.timer-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 120px;
+  height: 48px;
+  padding: var(--spacing-md) var(--spacing-xl);
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  color: var(--text-primary);
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--timing-fast) ease;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  position: relative;
+  overflow: hidden;
+}
+
+.timer-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left var(--timing-normal) ease;
+}
+
+.timer-btn:hover::before {
+  left: 100%;
+}
+
+.timer-btn:hover {
+  background: var(--accent-primary);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+  border-color: var(--accent-primary);
+}
+
+.timer-btn:active {
+  transform: translateY(-1px);
+  transition-duration: 0.1s;
+}
+
+.start-btn {
+  background: var(--accent-primary);
+  color: white;
+  border-color: var(--accent-primary);
+}
+
+.start-btn:hover {
+  background: var(--accent-secondary);
+  border-color: var(--accent-secondary);
+}
+
+.reset-btn:hover {
+  background: var(--danger);
+  border-color: var(--danger);
+}
+
+/* Timer states */
+.timer-running .start-btn {
+  background: var(--warning);
+  border-color: var(--warning);
+}
+
+.timer-running .start-btn:hover {
+  background: #d97706;
+  border-color: #d97706;
+}
+
+.timer-paused .start-btn {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+}
+
+/* Progress ring (if added later) */
+.progress-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-90deg);
+  z-index: 5;
+}
+
+.progress-ring circle {
+  fill: none;
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+
+.progress-ring .progress-bg {
+  stroke: var(--border);
+}
+
+.progress-ring .progress-bar {
+  stroke: var(--accent-primary);
+  stroke-dasharray: 0 1000;
+  transition: stroke-dasharray 1s linear;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .timer-main {
+    padding: var(--spacing-sm);
+  }
+  
+  .timer-controls {
+    bottom: -60px;
+    gap: var(--spacing-md);
+  }
+  
+  .timer-btn {
+    min-width: 100px;
+    height: 44px;
+    padding: var(--spacing-sm) var(--spacing-lg);
+    font-size: var(--font-size-base);
+  }
+  
+  .timer-text {
+    font-size: clamp(1.5rem, 12vw, 3rem);
+  }
+}
+
+@media (max-width: 480px) {
+  .timer-controls {
+    flex-direction: column;
+    align-items: center;
+    bottom: -120px;
+    gap: var(--spacing-sm);
+  }
+  
+  .timer-btn {
+    width: 140px;
+  }
+}
+
+/* Landscape orientation on mobile */
+@media (orientation: landscape) and (max-height: 600px) {
+  .timer-main {
+    padding: var(--spacing-sm);
+  }
+  
+  .timer-controls {
+    position: fixed;
+    bottom: var(--spacing-md);
+    left: var(--spacing-md);
+    transform: none;
+    flex-direction: row;
+  }
+  
+  #timer-frame {
+    width: min(70%, 600px);
+  }
+}

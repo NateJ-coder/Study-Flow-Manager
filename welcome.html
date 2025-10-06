@@ -1,163 +1,92 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Welcome to StudyFlow</title>
-  
-  <!-- Prefetch next page resources -->
-  <link rel="prefetch" href="index.html">
-  <link rel="prefetch" href="assets/css/style.css">
-  <link rel="prefetch" href="assets/images/summer-day-6.png">
-  <link rel="prefetch" href="assets/js/core-modern.js">
-  <link rel="modulepreload" href="assets/js/timer-module.js">
-  
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#0b0b0b" />
+  <meta name="description" content="StudyFlow Manager - Focus Timer with Seasonal Themes" />
+
+  <!-- Strong CSP for security -->
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self';
+                 img-src 'self' data:;
+                 script-src 'self';
+                 style-src 'self' 'unsafe-inline';
+                 font-src 'self' data:;
+                 object-src 'none';
+                 base-uri 'self';
+                 form-action 'self'">
+
+  <!-- Preload critical assets for main app -->
+  <link rel="preload" as="image" href="/assets/images/summer-day-6.png" fetchpriority="high">
+  <link rel="preload" as="style" href="/assets/css/core.css">
+  <link rel="preload" as="script" href="/assets/js/core.js">
+
+  <!-- Load welcome CSS inline for instant render -->
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    
+    :root { color-scheme: dark light; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      overflow: hidden;
+      margin: 0;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #0f1419 0%, #1a2332 100%);
+      color: #e7eaee;
+      min-height: 100dvh;
+      display: grid;
+      place-items: center;
     }
-    
-    .welcome-card {
+    .welcome-container {
       text-align: center;
-      background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: 20px;
-      padding: 3rem 2rem;
-      max-width: 400px;
-      width: 90%;
-      animation: fadeInUp 0.8s ease-out;
+      padding: 2rem;
+      max-width: 600px;
     }
-    
-    @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(30px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-    
     .logo {
       font-size: 2.5rem;
       font-weight: 700;
       margin-bottom: 1rem;
-      background: linear-gradient(45deg, #fff, #e0e0e0);
+      background: linear-gradient(135deg, #4ade80, #22d3ee);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
     }
-    
-    .subtitle {
-      font-size: 1.1rem;
-      opacity: 0.9;
+    .tagline {
+      font-size: 1.125rem;
+      color: #9aa3af;
       margin-bottom: 2rem;
-      font-weight: 300;
     }
-    
     .enter-btn {
-      background: linear-gradient(145deg, #4CAF50, #45a049);
-      border: none;
-      border-radius: 50px;
+      display: inline-block;
+      padding: 1rem 2rem;
+      background: linear-gradient(135deg, #22c55e, #16a34a);
       color: white;
-      font-size: 1.2rem;
+      text-decoration: none;
+      border-radius: 12px;
       font-weight: 600;
-      padding: 18px 36px;
-      min-width: 200px;
-      min-height: 48px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      box-shadow: 0 8px 20px rgba(76, 175, 80, 0.3);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      min-width: 44px;
+      min-height: 44px;
     }
-    
     .enter-btn:hover {
       transform: translateY(-2px);
-      box-shadow: 0 12px 25px rgba(76, 175, 80, 0.4);
-      background: linear-gradient(145deg, #45a049, #3d8b40);
+      box-shadow: 0 10px 25px rgba(34, 197, 94, 0.2);
     }
-    
-    .enter-btn:active {
-      transform: translateY(0);
-    }
-    
-    .loading {
-      display: none;
-      margin-top: 1rem;
-      font-size: 0.9rem;
-      opacity: 0.7;
-    }
-    
-    /* Floating particles for visual appeal */
-    .particle {
-      position: absolute;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 50%;
-      pointer-events: none;
-      animation: float 6s ease-in-out infinite;
-    }
-    
-    @keyframes float {
-      0%, 100% { transform: translateY(0px) rotate(0deg); }
-      50% { transform: translateY(-20px) rotate(180deg); }
+    @media (prefers-reduced-motion: reduce) {
+      .enter-btn { transition: none; }
+      .enter-btn:hover { transform: none; }
     }
   </style>
+
+  <title>StudyFlow Manager - Welcome</title>
 </head>
 <body>
-  <div class="welcome-card">
-    <h1 class="logo">StudyFlow</h1>
-    <p class="subtitle">Your focused productivity companion</p>
-    <button class="enter-btn" onclick="enterApp()">
-      Enter App
-    </button>
-    <div class="loading" id="loading">Preparing your workspace...</div>
+  <div class="welcome-container">
+    <h1 class="logo">StudyFlow Manager</h1>
+    <p class="tagline">Focus timer with beautiful seasonal themes</p>
+    <a href="/index.html" class="enter-btn">Start Focusing</a>
   </div>
-  
-  <!-- Minimal floating particles -->
-  <div class="particle" style="width: 8px; height: 8px; top: 20%; left: 15%; animation-delay: 0s;"></div>
-  <div class="particle" style="width: 6px; height: 6px; top: 70%; left: 85%; animation-delay: 2s;"></div>
-  <div class="particle" style="width: 10px; height: 10px; top: 40%; left: 10%; animation-delay: 4s;"></div>
-  
-  <script>
-    function enterApp() {
-      const btn = document.querySelector('.enter-btn');
-      const loading = document.getElementById('loading');
-      
-      btn.style.opacity = '0.7';
-      btn.disabled = true;
-      loading.style.display = 'block';
-      
-      // Small delay to show loading state
-      setTimeout(() => {
-        window.location.href = 'index.html';
-      }, 300);
-    }
-    
-    // Preload critical resources after welcome page loads
-    window.addEventListener('load', () => {
-      // Register service worker for caching (optional)
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js').catch(() => {});
-      }
-    });
-    
-    // Keyboard shortcut
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        enterApp();
-      }
-    });
-  </script>
+
+  <!-- Prefetch main app resources -->
+  <link rel="prefetch" href="/index.html">
+  <link rel="prefetch" href="/assets/css/core.css">
+  <link rel="prefetch" href="/assets/js/core.js">
 </body>
 </html>

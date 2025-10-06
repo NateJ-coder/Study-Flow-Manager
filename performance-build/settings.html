@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#0b0b0b" />
+  <meta name="description" content="StudyFlow Manager - Settings" />
+
+  <!-- Strong CSP -->
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self';
+                 img-src 'self' data:;
+                 script-src 'self';
+                 style-src 'self' 'unsafe-inline';
+                 font-src 'self' data:;
+                 object-src 'none';
+                 base-uri 'self';
+                 form-action 'self'">
+
+  <!-- Preload assets -->
+  <link rel="preload" as="image" href="/assets/images/summer-day-6.png" fetchpriority="high">
+  
+  <!-- Load CSS -->
+  <link rel="preload" as="style" href="/assets/css/core.css" onload="this.rel='stylesheet'">
+  <link rel="preload" as="style" href="/assets/css/settings.css" onload="this.rel='stylesheet'">
+  <noscript>
+    <link rel="stylesheet" href="/assets/css/core.css">
+    <link rel="stylesheet" href="/assets/css/settings.css">
+  </noscript>
+
+  <!-- Critical CSS inline -->
+  <style>
+    :root { color-scheme: dark light; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial, sans-serif;
+      background: var(--bg-color, #0f1419);
+      color: var(--text-color, #e7eaee);
+      min-height: 100dvh;
+      overflow-x: hidden;
+    }
+    
+    .background-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: -2;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+    
+    .nav-container {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 100;
+      display: flex;
+      gap: 0.5rem;
+    }
+  </style>
+
+  <title>StudyFlow Manager - Settings</title>
+</head>
+<body data-theme="summer" data-page="settings">
+  <!-- Dynamic background -->
+  <div class="background-container" id="background"></div>
+  
+  <!-- Particle container -->
+  <div id="particles" class="particles-container"></div>
+  
+  <!-- Navigation -->
+  <nav class="nav-container">
+    <a href="/index.html" class="nav-btn" id="timer-nav">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+      </svg>
+    </a>
+    <a href="/calendar.html" class="nav-btn" id="calendar-nav">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
+      </svg>
+    </a>
+  </nav>
+
+  <!-- Main settings content -->
+  <main class="settings-main">
+    <div class="settings-container">
+      <h1 class="settings-title">Settings</h1>
+      
+      <div class="settings-grid">
+        <section class="setting-group">
+          <h2>Theme</h2>
+          <div class="theme-selector">
+            <button class="theme-btn" data-theme="summer">Summer</button>
+            <button class="theme-btn" data-theme="autumn">Autumn</button>
+            <button class="theme-btn" data-theme="winter">Winter</button>
+          </div>
+        </section>
+        
+        <section class="setting-group">
+          <h2>Timer</h2>
+          <label>
+            Work Duration (minutes)
+            <input type="number" id="work-duration" min="1" max="60" value="25">
+          </label>
+          <label>
+            Break Duration (minutes)
+            <input type="number" id="break-duration" min="1" max="30" value="5">
+          </label>
+        </section>
+        
+        <section class="setting-group">
+          <h2>Effects</h2>
+          <label>
+            <input type="checkbox" id="particles-enabled" checked>
+            Enable Particles
+          </label>
+          <label>
+            <input type="checkbox" id="sounds-enabled" checked>
+            Enable Sounds
+          </label>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <!-- Load modular JS -->
+  <script type="module" src="/assets/js/core.js" defer></script>
+  <script type="module" src="/assets/js/settings.js" defer></script>
+</body>
+</html>
