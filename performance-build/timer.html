@@ -5,10 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>StudyFlow Timer - Focus & Flow</title>
   
-  <!-- Performance Preloads -->
+  <!-- Performance Preloads - LCP Optimized -->
   <link rel="preload" href="assets/images/autumn-day-8.png" as="image" fetchpriority="high">
-  <link rel="preload" href="assets/audio/click.mp3" as="audio">
-  <link rel="preload" href="assets/audio/splash.mp3" as="audio">
+  <link rel="preload" href="assets/images/summer-day-1.png" as="image" fetchpriority="low">
+  <link rel="preload" href="assets/images/winter-day-1.png" as="image" fetchpriority="low">
+  <link rel="preload" href="assets/audio/click.mp3" as="audio" fetchpriority="low">
+  <link rel="preload" href="assets/audio/splash.mp3" as="audio" fetchpriority="low">
+  
+  <!-- Critical font preload -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   
   <!-- Critical CSS Inline for Performance -->
   <style>
@@ -63,7 +69,7 @@
       overflow-x: hidden;
     }
     
-    /* Background container with slideshow capability */
+    /* Background container with slideshow capability - LCP Optimized */
     .bg-container {
       position: fixed;
       top: 0;
@@ -73,9 +79,13 @@
       background-size: cover;
       background-position: center;
       background-attachment: fixed;
+      background-image: url('assets/images/autumn-day-8.png'); /* Default for LCP */
       filter: brightness(0.7) blur(1px);
-      transition: opacity 1s ease-in-out;
+      transition: background-image 1s ease-in-out, opacity 1s ease-in-out;
       z-index: 0;
+      opacity: 1;
+      will-change: background-image, opacity; /* GPU optimization */
+      transform: translateZ(0); /* Force GPU layer */
     }
     
     /* Main container */
@@ -589,7 +599,9 @@
         <h3>🖼️ Background Settings</h3>
         <div class="settings-row">
           <label>Slideshow Transition (seconds):</label>
-          <input type="number" id="slideshow-time" class="settings-input" value="20" min="5" max="120">
+          <input type="number" id="slideshow-time" class="settings-input" value="20" min="20" max="120" 
+                 title="Minimum 20 seconds required for proper image preloading">
+          <small style="color: var(--season-accent); font-size: 0.8rem; margin-left: 0.5rem;">Min: 20s</small>
         </div>
       </div>
       
@@ -636,7 +648,7 @@
       shortBreak: 5,
       longBreak: 15,
       sessionsUntilLong: 4,
-      slideshowTime: 20,
+      slideshowTime: 20, // 20 seconds default
       theme: 'autumn',
       notificationAudio: true,
       clickAudio: true
@@ -784,7 +796,26 @@
       window.timerSettings.shortBreak = parseInt(document.getElementById('short-break').value);
       window.timerSettings.longBreak = parseInt(document.getElementById('long-break').value);
       window.timerSettings.sessionsUntilLong = parseInt(document.getElementById('sessions-until-long').value);
-      window.timerSettings.slideshowTime = parseInt(document.getElementById('slideshow-time').value);
+      
+      // Enforce minimum slideshow timing
+      const requestedTime = parseInt(document.getElementById('slideshow-time').value);
+      const MIN_SLIDESHOW_TIME = 20;
+      
+      if (requestedTime < MIN_SLIDESHOW_TIME) {
+        window.timerSettings.slideshowTime = MIN_SLIDESHOW_TIME;
+        document.getElementById('slideshow-time').value = MIN_SLIDESHOW_TIME;
+        
+        // Show user feedback
+        const slideshowInput = document.getElementById('slideshow-time');
+        slideshowInput.style.border = '2px solid var(--season-accent)';
+        setTimeout(() => {
+          slideshowInput.style.border = '';
+        }, 2000);
+        
+        console.log(`⚠️ Slideshow time adjusted to minimum: ${MIN_SLIDESHOW_TIME}s`);
+      } else {
+        window.timerSettings.slideshowTime = requestedTime;
+      }
       
       // Save to localStorage
       localStorage.setItem('studyflow-timer-settings', JSON.stringify(window.timerSettings));
@@ -796,7 +827,9 @@
       
       // Update background slideshow timing
       if (window.backgroundManager) {
-        window.backgroundManager.updateSlideshowTiming(window.timerSettings.slideshowTime * 1000);
+        const actualInterval = window.backgroundManager.updateSlideshowTiming(window.timerSettings.slideshowTime * 1000);
+        // Update the setting to reflect actual interval used
+        window.timerSettings.slideshowTime = actualInterval / 1000;
       }
     }
     
@@ -816,9 +849,19 @@
       }
       
       // Initialize Background Manager for seasonal images
-      if (typeof BackgroundManager !== 'undefined') {
+      if (typeof BackgroundManager !== 'undefined' && typeof SETTINGS_CONFIG !== 'undefined') {
         window.backgroundManager = new BackgroundManager();
+        window.backgroundManager.currentTheme = window.timerSettings.theme.toUpperCase();
+        
+        // Update slideshow timing before initialization
+        if (window.timerSettings.slideshowTime) {
+          SETTINGS_CONFIG.themes.backgroundRotation.interval = window.timerSettings.slideshowTime * 1000;
+          console.log(`🔄 Updated slideshow interval to ${window.timerSettings.slideshowTime}s`);
+        }
+        
         window.backgroundManager.init();
+      } else {
+        console.error('❌ BackgroundManager or SETTINGS_CONFIG not available');
       }
       
       // Apply saved theme

@@ -105,18 +105,48 @@ class BackgroundManager {
     const themeImages = this.getThemeImages();
     if (themeImages.length === 0) return;
 
-    const firstImage = themeImages[0];
-    this.preloadImage(firstImage, 'high').then(() => {
+    // Use the preloaded LCP image first (already in HTML)
+    const lcpImage = 'assets/images/autumn-day-8.png';
+    const firstImage = themeImages.includes(lcpImage) ? lcpImage : themeImages[0];
+    
+    // Set background immediately if it's the LCP image (already preloaded)
+    if (firstImage === lcpImage) {
       this.setBackground(firstImage);
-      console.log('🚀 LCP Optimized: First background loaded');
+      this.loadedImages.set(firstImage, true); // Mark as loaded
+      console.log('🚀 LCP Optimized: Using preloaded background');
       
-      // Preload next image in background
-      if (themeImages.length > 1) {
+      // Start preloading next images after LCP
+      setTimeout(() => {
+        this.preloadNextImages(themeImages);
+      }, 1000);
+    } else {
+      // Fallback for non-autumn themes
+      this.preloadImage(firstImage, 'high').then(() => {
+        this.setBackground(firstImage);
+        console.log('🚀 LCP Optimized: First background loaded');
+        
         setTimeout(() => {
-          this.preloadImage(themeImages[1], 'low');
-        }, 2000); // Wait 2s after LCP before preloading next
+          this.preloadNextImages(themeImages);
+        }, 2000);
+      });
+    }
+  }
+
+  /**
+   * Preload next 2-3 images for smooth transitions
+   */
+  preloadNextImages(themeImages) {
+    if (themeImages.length <= 1) return;
+    
+    // Preload next 2 images for smoother transitions
+    const preloadCount = Math.min(3, themeImages.length);
+    for (let i = 1; i < preloadCount; i++) {
+      if (i < themeImages.length) {
+        setTimeout(() => {
+          this.preloadImage(themeImages[i], 'low');
+        }, i * 500); // Stagger preloading every 500ms
       }
-    });
+    }
   }
 
   /**
@@ -169,13 +199,21 @@ class BackgroundManager {
                       document.getElementById('bg-container');
     
     if (bgContainer) {
-      bgContainer.style.backgroundImage = `url('${imageUrl}')`;
-      bgContainer.style.opacity = '0';
+      console.log(`🖼️ Setting background to: ${imageUrl}`);
       
-      // Fade in
+      // Fade out
+      bgContainer.style.opacity = '0.3';
+      
       setTimeout(() => {
-        bgContainer.style.opacity = '1';
-      }, 50);
+        bgContainer.style.backgroundImage = `url('${imageUrl}')`;
+        
+        // Fade back in
+        setTimeout(() => {
+          bgContainer.style.opacity = '1';
+        }, 100);
+      }, 300);
+    } else {
+      console.warn('❌ Background container not found');
     }
   }
 
@@ -184,18 +222,19 @@ class BackgroundManager {
    */
   startBackgroundRotation() {
     const interval = SETTINGS_CONFIG.themes.backgroundRotation.interval;
-    const preloadBuffer = SETTINGS_CONFIG.performance.imagePreloadBuffer * 1000;
+    const preloadBuffer = Math.max(5000, SETTINGS_CONFIG.performance.imagePreloadBuffer * 1000); // Minimum 5s buffer
     
     this.rotationTimer = setInterval(() => {
+      console.log('🔄 Timer triggered - rotating background');
       this.rotateBackground();
     }, interval);
 
-    // Schedule preloading 10 seconds before each rotation
-    setInterval(() => {
+    // Schedule preloading at least 5 seconds before each rotation
+    this.preloadTimer = setInterval(() => {
       this.preloadNextBackground();
     }, interval - preloadBuffer);
 
-    console.log(`🔄 Background rotation started (${interval/1000}s interval)`);
+    console.log(`🔄 Background rotation started (${interval/1000}s interval) with ${preloadBuffer/1000}s preload buffer for ${this.getThemeImages().length} images`);
   }
 
   /**
@@ -203,14 +242,28 @@ class BackgroundManager {
    */
   rotateBackground() {
     const images = this.getThemeImages();
-    if (images.length <= 1) return;
+    console.log(`🔄 Attempting rotation - ${images.length} images available`);
+    
+    if (images.length <= 1) {
+      console.log('❌ Not enough images for rotation');
+      return;
+    }
 
     this.currentIndex = (this.currentIndex + 1) % images.length;
     const nextImage = images[this.currentIndex];
     
+    console.log(`🔄 Next image: ${nextImage} (index: ${this.currentIndex})`);
+    
     if (this.loadedImages.has(nextImage)) {
       this.setBackground(nextImage);
-      console.log(`🔄 Rotated to: ${nextImage.split('/').pop()}`);
+      console.log(`✅ Rotated to: ${nextImage.split('/').pop()}`);
+    } else {
+      console.log(`❌ Image not preloaded: ${nextImage}`);
+      // Try to load it now
+      this.preloadImage(nextImage, 'high').then(() => {
+        this.setBackground(nextImage);
+        console.log(`✅ Loaded and rotated to: ${nextImage.split('/').pop()}`);
+      });
     }
   }
 
@@ -259,8 +312,38 @@ class BackgroundManager {
     if (this.rotationTimer) {
       clearInterval(this.rotationTimer);
       this.rotationTimer = null;
-      console.log('⏹️ Background rotation stopped');
     }
+    if (this.preloadTimer) {
+      clearInterval(this.preloadTimer);
+      this.preloadTimer = null;
+    }
+    console.log('⏹️ Background rotation stopped');
+  }
+
+  /**
+   * Update slideshow timing with minimum constraint
+   */
+  updateSlideshowTiming(newInterval) {
+    // Enforce minimum 20-second interval (20000ms) for proper preloading
+    const MIN_INTERVAL = 20000;
+    const safeInterval = Math.max(newInterval, MIN_INTERVAL);
+    
+    if (newInterval < MIN_INTERVAL) {
+      console.warn(`⚠️ Slideshow interval ${newInterval/1000}s below minimum. Using ${MIN_INTERVAL/1000}s instead.`);
+    }
+    
+    if (this.rotationTimer) {
+      clearInterval(this.rotationTimer);
+    }
+    
+    SETTINGS_CONFIG.themes.backgroundRotation.interval = safeInterval;
+    
+    if (SETTINGS_CONFIG.themes.backgroundRotation.enabled) {
+      this.startBackgroundRotation();
+    }
+    
+    console.log(`🔄 Slideshow timing updated to ${safeInterval/1000}s`);
+    return safeInterval;
   }
 }
 
