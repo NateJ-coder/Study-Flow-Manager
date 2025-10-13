@@ -86,14 +86,14 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      backdrop-filter: blur(4px);
-      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(2px);
+      background: rgba(0, 0, 0, 0.1);
       padding: 2rem;
     }
     
     /* Timer interface card */
     .timer-card {
-      background: rgba(0, 0, 0, 0.8);
+      background: rgba(0, 0, 0, 0.2);
       padding: 3rem;
       border-radius: 20px;
       text-align: center;
@@ -105,20 +105,7 @@
       position: relative;
     }
     
-    /* StudyFlow title */
-    .app-title {
-      font-size: clamp(2.5rem, 6vw, 4rem);
-      font-weight: 900;
-      color: var(--season-primary);
-      margin-bottom: 2rem;
-      text-shadow: 4px 4px 8px rgba(0, 0, 0, 0.3);
-      animation: subtle-glow 3s ease-in-out infinite alternate;
-    }
-    
-    @keyframes subtle-glow {
-      0% { text-shadow: 4px 4px 8px rgba(0, 0, 0, 0.3); }
-      100% { text-shadow: 4px 4px 12px var(--season-border); }
-    }
+
     
     /* Timer display */
     .timer-display {
@@ -127,7 +114,7 @@
       font-variant-numeric: tabular-nums;
       line-height: 1;
       margin: 2rem 0;
-      color: var(--season-primary);
+      color: #ffffff !important;
       text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
       font-family: 'Courier New', monospace;
       letter-spacing: 0.1em;
@@ -199,20 +186,78 @@
         0 2px 4px rgba(0, 0, 0, 0.2);
     }
     
-    /* Perpetual Clock - Top Right */
-    .perpetual-clock {
+    /* StudyFlow Logo - Top Left */
+    .studyflow-logo {
+      position: fixed;
+      top: 2rem;
+      left: 2rem;
+      z-index: 20;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #ffffff !important;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      letter-spacing: 0.05em;
+    }
+
+    /* Clock Container - Top Right */
+    .clock-container {
       position: fixed;
       top: 2rem;
       right: 2rem;
       z-index: 20;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    /* Clock Icon */
+    .clock-icon {
+      width: 24px;
+      height: 24px;
+      cursor: pointer;
+      opacity: 0.6;
+      transition: all 0.2s ease;
+      background: none;
+      border: none;
+      padding: 0;
+    }
+    
+    .clock-icon:hover {
+      opacity: 1;
+      transform: scale(1.1);
+    }
+
+    /* Perpetual Clock */
+    .perpetual-clock {
       font-size: 1.5rem;
       font-weight: 600;
-      color: var(--season-secondary);
+      color: #ffffff !important;
       text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
       font-family: 'Courier New', monospace;
       letter-spacing: 0.1em;
     }
     
+    /* Calendar icon */
+    .calendar-icon {
+      position: absolute;
+      top: 1rem;
+      right: 4rem;
+      width: 32px;
+      height: 32px;
+      cursor: pointer;
+      opacity: 0.6;
+      transition: all 0.2s ease;
+      background: none;
+      border: none;
+      color: var(--season-secondary);
+    }
+    
+    .calendar-icon:hover {
+      opacity: 1;
+      transform: scale(1.1);
+    }
+
     /* Settings icon */
     .settings-icon {
       position: absolute;
@@ -385,17 +430,48 @@
         max-width: 200px;
       }
       
-      .perpetual-clock {
+      .studyflow-logo {
+        top: 1rem;
+        left: 1rem;
+        font-size: 1.2rem;
+      }
+
+      .clock-container {
         top: 1rem;
         right: 1rem;
+      }
+      
+      .perpetual-clock {
         font-size: 1.2rem;
+      }
+      
+      .calendar-icon {
+        right: 3rem;
+        top: 0.5rem;
       }
     }
   </style>
 </head>
 <body class="autumn-theme">
-  <!-- Perpetual Clock -->
-  <div class="perpetual-clock" id="perpetual-clock">00:00:00</div>
+  <!-- StudyFlow Logo - Top Left -->
+  <div class="studyflow-logo">StudyFlow</div>
+
+  <!-- Perpetual Clock with Icon -->
+  <div class="clock-container">
+    <button class="clock-icon" onclick="goToTimer(); playClickSound(event);" title="Timer">
+      <svg width="24" height="24" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="30" cy="30" r="25" fill="#8B4513" stroke="#A0522D" stroke-width="2"/>
+        <circle cx="30" cy="30" r="20" fill="none" stroke="#6F3B18" stroke-width="1"/>
+        <path d="M30 15L30 30L40 35" stroke="#5A2D0C" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="30" cy="30" r="2" fill="#5A2D0C"/>
+        <path d="M30 10V15" stroke="#6F3B18" stroke-width="1.5"/>
+        <path d="M50 30H45" stroke="#6F3B18" stroke-width="1.5"/>
+        <path d="M30 50V45" stroke="#6F3B18" stroke-width="1.5"/>
+        <path d="M10 30H15" stroke="#6F3B18" stroke-width="1.5"/>
+      </svg>
+    </button>
+    <div class="perpetual-clock" id="perpetual-clock">00:00:00</div>
+  </div>
   
   <!-- Dynamic background container -->
   <div id="bg-container" class="bg-container" style="background-image: url('assets/images/autumn-day-8.png');"></div>
@@ -408,15 +484,35 @@
         <span>←</span> Back
       </a>
       
-      <!-- Settings icon -->
-      <button class="settings-icon" onclick="openSettings(); playClickSound(event);" title="Settings">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3c-.46-4.17-3.77-7.48-7.94-7.94V1h-2v2.06C6.83 3.52 3.52 6.83 3.06 11H1v2h2.06c.46 4.17 3.77 7.48 7.94 7.94V23h2v-2.06c4.17-.46 7.48-3.77 7.94-7.94H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/>
+      <!-- Calendar icon -->
+      <button class="calendar-icon" onclick="goToCalendar(); playClickSound(event);" title="Calendar">
+        <svg width="32" height="32" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="15" y="15" width="30" height="35" rx="5" fill="#A0522D"/>
+          <rect x="18" y="10" width="24" height="8" rx="3" fill="#8B4513"/>
+          <circle cx="23" cy="14" r="2" fill="#5A2D0C"/>
+          <circle cx="37" cy="14" r="2" fill="#5A2D0C"/>
+          <path d="M15 25H45" stroke="#6F3B18" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M15 32H45" stroke="#6F3B18" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M15 39H45" stroke="#6F3B18" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M22 15V50" stroke="#6F3B18" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M29 15V50" stroke="#6F3B18" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M36 15V50" stroke="#6F3B18" stroke-width="1.5" stroke-linecap="round"/>
+          <text x="25" y="47" font-family="Arial, sans-serif" font-size="14" fill="#E8D1B5" font-weight="bold">17</text>
+          <path d="M17 20C19 18 25 18 27 20" stroke="#6F3B18" stroke-width="0.8" stroke-linecap="round"/>
+          <path d="M38 30C40 28 40 32 38 34" stroke="#6F3B18" stroke-width="0.8" stroke-linecap="round"/>
         </svg>
       </button>
-      
-      <!-- App title -->
-      <h1 class="app-title">StudyFlow</h1>
+
+      <!-- Settings icon -->
+      <button class="settings-icon" onclick="openSettings(); playClickSound(event);" title="Settings">
+        <svg width="32" height="32" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="30" cy="30" r="20" fill="#8B4513"/>
+          <path d="M30 8L33 16L39 17L44 12L49 17L52 23L49 28L54 33L49 38L52 44L49 49L44 44L39 43L33 44L30 52L27 44L21 43L16 48L11 43L8 38L11 33L6 28L11 23L8 17L11 12L16 17L21 16L27 17L30 8Z" fill="#A0522D"/>
+          <circle cx="30" cy="30" r="8" fill="#5A2D0C"/>
+          <path d="M25 15C27 13 33 13 35 15" stroke="#6F3B18" stroke-width="1" stroke-linecap="round"/>
+          <path d="M18 30C16 32 16 28 18 26" stroke="#6F3B18" stroke-width="1" stroke-linecap="round"/>
+        </svg>
+      </button>
       
       <!-- Timer mode -->
       <div class="timer-mode" id="timer-mode">Focus Session</div>
@@ -526,6 +622,7 @@
   </div>
 
   <!-- Performance-Optimized Scripts -->
+  <script src="assets/js/core.js" defer></script>
   <script src="assets/js/settings.js" defer></script>
   <script src="assets/js/timer.js" defer></script>
   
@@ -612,10 +709,24 @@
       window.timerSettings.theme = theme;
       
       // Apply theme to background manager if available
-      if (window.StudyFlowSettings && window.StudyFlowSettings.backgroundManager) {
-        window.StudyFlowSettings.backgroundManager.currentTheme = theme.toUpperCase();
-        window.StudyFlowSettings.backgroundManager.loadInitialBackground();
+      if (window.backgroundManager) {
+        window.backgroundManager.currentTheme = theme.toUpperCase();
+        window.backgroundManager.loadInitialBackground();
       }
+    }
+    
+    // ============================================
+    // NAVIGATION FUNCTIONS
+    // ============================================
+    
+    function goToTimer() {
+      // Already on timer page, could add visual feedback or refresh
+      console.log('Already on timer page');
+    }
+    
+    function goToCalendar() {
+      playClickSound();
+      window.location.href = 'calendar.html';
     }
     
     // ============================================
@@ -684,8 +795,8 @@
       }
       
       // Update background slideshow timing
-      if (window.StudyFlowSettings && window.StudyFlowSettings.backgroundManager) {
-        window.StudyFlowSettings.backgroundManager.updateSlideshowTiming(window.timerSettings.slideshowTime * 1000);
+      if (window.backgroundManager) {
+        window.backgroundManager.updateSlideshowTiming(window.timerSettings.slideshowTime * 1000);
       }
     }
     
@@ -702,6 +813,12 @@
         }
       } catch (e) {
         console.log('Could not load saved settings');
+      }
+      
+      // Initialize Background Manager for seasonal images
+      if (typeof BackgroundManager !== 'undefined') {
+        window.backgroundManager = new BackgroundManager();
+        window.backgroundManager.init();
       }
       
       // Apply saved theme
