@@ -19,7 +19,8 @@
 const SETTINGS_CONFIG = {
   // Performance Settings
   performance: {
-    imagePreloadBuffer: 10, // seconds before transition to preload next image
+    imagePreloadBuffer: 5, // minimum 5 seconds before transition to preload next image
+    minSlideshowInterval: 20000, // minimum 20 seconds between slides - cannot be bypassed
     maxConcurrentImages: 2, // maximum images loaded at once (current + next)
     useWebP: true, // prefer WebP format when available
     lazyLoadThreshold: 0.1 // intersection observer threshold
@@ -30,7 +31,7 @@ const SETTINGS_CONFIG = {
     current: 'AUTUMN',
     backgroundRotation: {
       enabled: true,
-      interval: 30000, // 30 seconds between slides
+      interval: 20000, // 20 seconds minimum - enforced by validation
       randomize: false // sequential vs random order
     }
   },
@@ -71,14 +72,34 @@ const SETTINGS_CONFIG = {
 
 class BackgroundManager {
   constructor() {
+    console.log('🏗️ BackgroundManager constructor called');
     this.currentIndex = 0;
     this.loadedImages = new Map();
     this.preloadQueue = [];
     this.rotationTimer = null;
+    this.preloadTimer = null;
     
-    // Get theme data from core.js
+    // Get theme data from core.js with fallback checking
     this.themeData = window.THEME_DATA || {};
     this.currentTheme = SETTINGS_CONFIG.themes.current;
+    
+    console.log('🏗️ BackgroundManager initialized with:');
+    console.log('  - Theme data available:', Object.keys(this.themeData).length > 0);
+    console.log('  - Current theme:', this.currentTheme);
+    console.log('  - Theme data keys:', Object.keys(this.themeData));
+    console.log('  - Full theme data:', this.themeData);
+    
+    // If no theme data, try to get it directly
+    if (Object.keys(this.themeData).length === 0) {
+      console.warn('❌ No THEME_DATA found in window. Checking alternatives...');
+      // Try different possible locations
+      if (typeof THEME_DATA !== 'undefined') {
+        this.themeData = THEME_DATA;
+        console.log('✅ Found THEME_DATA in global scope');
+      } else {
+        console.error('❌ THEME_DATA not available anywhere');
+      }
+    }
   }
 
   /**
@@ -153,14 +174,31 @@ class BackgroundManager {
    * Get current theme's background images
    */
   getThemeImages() {
-    const theme = this.themeData[this.currentTheme.toLowerCase()];
-    if (!theme) return [];
+    console.log(`🎨 Getting theme images for: ${this.currentTheme}`);
+    console.log(`🎨 Available theme data:`, this.themeData);
+    
+    // Ensure we check both uppercase and lowercase theme names
+    const themeName = this.currentTheme.toLowerCase();
+    const theme = this.themeData[themeName];
+    console.log(`🎨 Looking for theme: '${themeName}'`);
+    console.log(`🎨 Selected theme object:`, theme);
+    
+    if (!theme) {
+      console.warn(`❌ No theme found for: ${this.currentTheme} (${themeName})`);
+      console.log(`❌ Available themes:`, Object.keys(this.themeData));
+      return [];
+    }
     
     // Combine day and night images for variety
-    return [
-      ...(theme.day?.images || []),
-      ...(theme.night?.images || [])
-    ];
+    const dayImages = theme.day?.images || [];
+    const nightImages = theme.night?.images || [];
+    const allImages = [...dayImages, ...nightImages];
+    
+    console.log(`🎨 Day images (${dayImages.length}):`, dayImages);
+    console.log(`🎨 Night images (${nightImages.length}):`, nightImages);
+    console.log(`🎨 Total images (${allImages.length}):`, allImages);
+    
+    return allImages;
   }
 
   /**
@@ -198,43 +236,62 @@ class BackgroundManager {
     const bgContainer = document.getElementById('background-container') || 
                       document.getElementById('bg-container');
     
+    console.log(`🖼️ Attempting to set background to: ${imageUrl}`);
+    console.log(`🔍 Background container found:`, bgContainer);
+    
     if (bgContainer) {
-      console.log(`🖼️ Setting background to: ${imageUrl}`);
+      console.log(`✅ Setting background to: ${imageUrl}`);
       
       // Fade out
       bgContainer.style.opacity = '0.3';
       
       setTimeout(() => {
         bgContainer.style.backgroundImage = `url('${imageUrl}')`;
+        console.log(`🖼️ Background image set to: ${bgContainer.style.backgroundImage}`);
         
         // Fade back in
         setTimeout(() => {
           bgContainer.style.opacity = '1';
+          console.log(`✅ Background transition complete`);
         }, 100);
       }, 300);
     } else {
-      console.warn('❌ Background container not found');
+      console.error('❌ Background container not found! Available elements:', 
+        document.getElementById('bg-container'), 
+        document.getElementById('background-container'));
     }
   }
 
   /**
-   * Start automatic background rotation with intelligent preloading
+   * Start automatic background rotation with guaranteed 5-second preloading
    */
   startBackgroundRotation() {
     const interval = SETTINGS_CONFIG.themes.backgroundRotation.interval;
-    const preloadBuffer = Math.max(5000, SETTINGS_CONFIG.performance.imagePreloadBuffer * 1000); // Minimum 5s buffer
+    const minPreloadBuffer = 5000; // Guaranteed 5-second minimum
+    const configuredBuffer = SETTINGS_CONFIG.performance.imagePreloadBuffer * 1000;
+    const preloadBuffer = Math.max(minPreloadBuffer, configuredBuffer);
+    
+    // Ensure interval is long enough for proper preloading
+    if (interval < preloadBuffer + 2000) {
+      console.error(`❌ Interval ${interval/1000}s too short for ${preloadBuffer/1000}s preload buffer`);
+      return;
+    }
     
     this.rotationTimer = setInterval(() => {
       console.log('🔄 Timer triggered - rotating background');
       this.rotateBackground();
     }, interval);
 
-    // Schedule preloading at least 5 seconds before each rotation
+    // Schedule preloading with guaranteed 5+ second buffer
     this.preloadTimer = setInterval(() => {
+      console.log(`⏰ Preload trigger - ${preloadBuffer/1000}s before next rotation`);
       this.preloadNextBackground();
     }, interval - preloadBuffer);
 
-    console.log(`🔄 Background rotation started (${interval/1000}s interval) with ${preloadBuffer/1000}s preload buffer for ${this.getThemeImages().length} images`);
+    console.log(`🔄 Background rotation started:`);
+    console.log(`   - Rotation interval: ${interval/1000}s`);
+    console.log(`   - Preload buffer: ${preloadBuffer/1000}s`);
+    console.log(`   - Total images: ${this.getThemeImages().length}`);
   }
 
   /**
@@ -242,7 +299,9 @@ class BackgroundManager {
    */
   rotateBackground() {
     const images = this.getThemeImages();
-    console.log(`🔄 Attempting rotation - ${images.length} images available`);
+    console.log(`🔄🔄 ROTATION TRIGGERED - ${images.length} images available`);
+    console.log(`🔄 Available images:`, images);
+    console.log(`🔄 Current index: ${this.currentIndex}`);
     
     if (images.length <= 1) {
       console.log('❌ Not enough images for rotation');
@@ -253,12 +312,13 @@ class BackgroundManager {
     const nextImage = images[this.currentIndex];
     
     console.log(`🔄 Next image: ${nextImage} (index: ${this.currentIndex})`);
+    console.log(`🔄 Image preloaded?`, this.loadedImages.has(nextImage));
     
     if (this.loadedImages.has(nextImage)) {
       this.setBackground(nextImage);
       console.log(`✅ Rotated to: ${nextImage.split('/').pop()}`);
     } else {
-      console.log(`❌ Image not preloaded: ${nextImage}`);
+      console.log(`❌ Image not preloaded: ${nextImage} - Loading now...`);
       // Try to load it now
       this.preloadImage(nextImage, 'high').then(() => {
         this.setBackground(nextImage);
@@ -321,19 +381,22 @@ class BackgroundManager {
   }
 
   /**
-   * Update slideshow timing with minimum constraint
+   * Update slideshow timing with strict minimum enforcement
    */
   updateSlideshowTiming(newInterval) {
-    // Enforce minimum 20-second interval (20000ms) for proper preloading
-    const MIN_INTERVAL = 20000;
+    // Enforce absolute minimum from performance config - cannot be bypassed
+    const MIN_INTERVAL = SETTINGS_CONFIG.performance.minSlideshowInterval;
     const safeInterval = Math.max(newInterval, MIN_INTERVAL);
     
     if (newInterval < MIN_INTERVAL) {
-      console.warn(`⚠️ Slideshow interval ${newInterval/1000}s below minimum. Using ${MIN_INTERVAL/1000}s instead.`);
+      console.warn(`⚠️ ENFORCED: Slideshow interval ${newInterval/1000}s below minimum ${MIN_INTERVAL/1000}s. Using minimum instead.`);
     }
     
     if (this.rotationTimer) {
       clearInterval(this.rotationTimer);
+    }
+    if (this.preloadTimer) {
+      clearInterval(this.preloadTimer);
     }
     
     SETTINGS_CONFIG.themes.backgroundRotation.interval = safeInterval;
@@ -342,7 +405,7 @@ class BackgroundManager {
       this.startBackgroundRotation();
     }
     
-    console.log(`🔄 Slideshow timing updated to ${safeInterval/1000}s`);
+    console.log(`🔄 Slideshow timing set to ${safeInterval/1000}s (min: ${MIN_INTERVAL/1000}s)`);
     return safeInterval;
   }
 }

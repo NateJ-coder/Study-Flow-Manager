@@ -515,12 +515,133 @@
 
       <!-- Settings icon -->
       <button class="settings-icon" onclick="openSettings(); playClickSound(event);" title="Settings">
-        <svg width="32" height="32" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="30" cy="30" r="20" fill="#8B4513"/>
-          <path d="M30 8L33 16L39 17L44 12L49 17L52 23L49 28L54 33L49 38L52 44L49 49L44 44L39 43L33 44L30 52L27 44L21 43L16 48L11 43L8 38L11 33L6 28L11 23L8 17L11 12L16 17L21 16L27 17L30 8Z" fill="#A0522D"/>
-          <circle cx="30" cy="30" r="8" fill="#5A2D0C"/>
-          <path d="M25 15C27 13 33 13 35 15" stroke="#6F3B18" stroke-width="1" stroke-linecap="round"/>
-          <path d="M18 30C16 32 16 28 18 26" stroke="#6F3B18" stroke-width="1" stroke-linecap="round"/>
+        <!-- Wooden Gear Icon (SVG) -->
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 128 128"
+          width="32"
+          height="32"
+          role="img"
+          aria-labelledby="title desc"
+        >
+          <title id="title">Settings</title>
+          <desc id="desc">A wooden gear icon with subtle grain and bevel highlights.</desc>
+
+          <!-- Easy theme variables -->
+          <style>
+            :root{
+              --wood-base: #b98344;     /* main wood color */
+              --wood-light: #e8bc7a;    /* highlight wood tone */
+              --wood-dark: #7b5126;     /* shadow wood tone */
+              --edge-stroke: rgba(0,0,0,0.35);
+              --edge-stroke-inner: rgba(0,0,0,0.2);
+              --specular: rgba(255,255,255,0.35);
+              --shadow: rgba(0,0,0,0.2);
+            }
+          </style>
+
+          <!-- Gradients for shading -->
+          <defs>
+            <!-- Radial light across the whole gear -->
+            <radialGradient id="gRad" cx="35%" cy="30%" r="80%">
+              <stop offset="0%"  stop-color="var(--wood-light)"/>
+              <stop offset="55%" stop-color="var(--wood-base)"/>
+              <stop offset="100%" stop-color="var(--wood-dark)"/>
+            </radialGradient>
+
+            <!-- Bevel for the teeth faces -->
+            <linearGradient id="gBevel" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%"   stop-color="var(--wood-light)" />
+              <stop offset="50%"  stop-color="var(--wood-base)" />
+              <stop offset="100%" stop-color="var(--wood-dark)" />
+            </linearGradient>
+
+            <!-- Subtle specular sweep -->
+            <linearGradient id="gSpec" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%"   stop-color="transparent"/>
+              <stop offset="45%"  stop-color="transparent"/>
+              <stop offset="60%"  stop-color="var(--specular)"/>
+              <stop offset="100%" stop-color="transparent"/>
+            </linearGradient>
+
+            <!-- Wood grain filter (lightweight) -->
+            <filter id="fGrain" x="-10%" y="-10%" width="120%" height="120%">
+              <!-- Create organic streaks -->
+              <feTurbulence type="fractalNoise" baseFrequency="0.015 0.25" numOctaves="2" seed="11" result="noise"/>
+              <!-- Stretch streaks horizontally (wood-like) -->
+              <feComponentTransfer in="noise" result="noise2">
+                <feFuncR type="linear" slope="1.0" intercept="0"/>
+                <feFuncG type="linear" slope="1.0" intercept="0"/>
+                <feFuncB type="linear" slope="1.0" intercept="0"/>
+                <feFuncA type="gamma" amplitude="0.7" exponent="1.2" offset="0"/>
+              </feComponentTransfer>
+              <!-- Slightly displace the underlying fill to mimic grain undulation -->
+              <feDisplacementMap in="SourceGraphic" in2="noise2" scale="1.2" xChannelSelector="R" yChannelSelector="G"/>
+            </filter>
+
+            <!-- Inner shadow for the center hole -->
+            <filter id="fInnerShadow" x="-50%" y="-50%" width="200%" height="200%">
+              <feOffset dx="0" dy="0"/>
+              <feGaussianBlur stdDeviation="1.2" result="b"/>
+              <feComposite in="b" in2="SourceAlpha" operator="out" result="cut"/>
+              <feColorMatrix in="cut" type="matrix"
+                values="0 0 0 0 0
+                        0 0 0 0 0
+                        0 0 0 0 0
+                        0 0 0 0.6 0" />
+              <feBlend in="SourceGraphic" in2="cut" mode="normal"/>
+            </filter>
+
+            <!-- ClipPath to confine grain to the gear silhouette -->
+            <clipPath id="clipGear">
+              <path id="gearShape"
+                    d="M64 16
+                       a48 48 0 0 1 10.6 1.2l3.2-7.5 12.4 5.2-3.1 7.5a48.8 48.8 0 0 1 8.9 6.1l6.5-4.7 8.9 10.7-6.5 4.7a48.6 48.6 0 0 1 4.9 9.3l7.8-1.3 2.7 13.3-7.8 1.3a48.6 48.6 0 0 1 0 10.8l7.8 1.3-2.7 13.3-7.8-1.3a48.6 48.6 0 0 1-4.9 9.3l6.5 4.7-8.9 10.7-6.5-4.7a48.8 48.8 0 0 1-8.9 6.1l3.1 7.5-12.4 5.2-3.2-7.5A48 48 0 0 1 64 112a48 48 0 0 1-10.6-1.2l-3.2 7.5-12.4-5.2 3.1-7.5a48.8 48.8 0 0 1-8.9-6.1l-6.5 4.7-8.9-10.7 6.5-4.7a48.6 48.6 0 0 1-4.9-9.3l-7.8 1.3-2.7-13.3 7.8-1.3a48.6 48.6 0 0 1 0-10.8l-7.8-1.3 2.7-13.3 7.8 1.3a48.6 48.6 0 0 1 4.9-9.3l-6.5-4.7 8.9-10.7 6.5 4.7a48.8 48.8 0 0 1 8.9-6.1l-3.1-7.5 12.4-5.2 3.2 7.5A48 48 0 0 1 64 16Z
+                       M64 44
+                       a20 20 0 1 0 0 40a20 20 0 1 0 0-40Z" />
+            </clipPath>
+          </defs>
+
+          <!-- Base gear body -->
+          <g>
+            <!-- Main silhouette with radial wood shading -->
+            <use href="#gearShape" fill="url(#gRad)" stroke="var(--edge-stroke)" stroke-width="2"/>
+
+            <!-- Teeth (subtle bevel overlay). 12 short rectangles rotated around -->
+            <g transform="translate(64,64)">
+              <!-- one tooth template -->
+              <g id="tooth">
+                <rect x="-6" y="-54" width="12" height="12" rx="2" ry="2" fill="url(#gBevel)" stroke="var(--edge-stroke)" stroke-width="1"/>
+              </g>
+              <!-- clone & rotate -->
+              <use href="#tooth" transform="rotate(30)"/>
+              <use href="#tooth" transform="rotate(60)"/>
+              <use href="#tooth" transform="rotate(90)"/>
+              <use href="#tooth" transform="rotate(120)"/>
+              <use href="#tooth" transform="rotate(150)"/>
+              <use href="#tooth" transform="rotate(180)"/>
+              <use href="#tooth" transform="rotate(210)"/>
+              <use href="#tooth" transform="rotate(240)"/>
+              <use href="#tooth" transform="rotate(270)"/>
+              <use href="#tooth" transform="rotate(300)"/>
+              <use href="#tooth" transform="rotate(330)"/>
+              <!-- original at 0deg is inherent -->
+            </g>
+
+            <!-- Wood grain confined to gear -->
+            <g clip-path="url(#clipGear)" filter="url(#fGrain)">
+              <rect x="0" y="0" width="128" height="128" fill="transparent"/>
+            </g>
+
+            <!-- Specular highlight sweep -->
+            <use href="#gearShape" fill="url(#gSpec)" />
+
+            <!-- Inner hole rim -->
+            <circle cx="64" cy="64" r="20" fill="none" stroke="var(--edge-stroke-inner)" stroke-width="2" filter="url(#fInnerShadow)"/>
+
+            <!-- Tiny center dot for polish -->
+            <circle cx="64" cy="64" r="1.6" fill="var(--specular)" opacity="0.6"/>
+          </g>
         </svg>
       </button>
       
@@ -599,9 +720,11 @@
         <h3>🖼️ Background Settings</h3>
         <div class="settings-row">
           <label>Slideshow Transition (seconds):</label>
-          <input type="number" id="slideshow-time" class="settings-input" value="20" min="20" max="120" 
-                 title="Minimum 20 seconds required for proper image preloading">
-          <small style="color: var(--season-accent); font-size: 0.8rem; margin-left: 0.5rem;">Min: 20s</small>
+          <input type="number" id="slideshow-time" class="settings-input" value="20" min="20" max="120" step="1"
+                 title="Minimum 20 seconds required for proper image preloading" 
+                 onchange="if(this.value < 20) { this.value = 20; this.style.border = '2px solid #ff6b6b'; setTimeout(() => this.style.border = '', 2000); }"
+                 oninput="if(this.value && this.value < 20) this.style.color = '#ff6b6b'; else this.style.color = '';">
+          <small style="color: var(--season-accent); font-size: 0.8rem; margin-left: 0.5rem; font-weight: bold;">Min: 20s</small>
         </div>
       </div>
       
@@ -629,6 +752,10 @@
         <button class="wooden-btn" onclick="saveSettings(); closeSettings(); playClickSound(event);">
           Save Settings
         </button>
+        <br><br>
+        <button class="wooden-btn" onclick="testBackgroundRotation(); playClickSound(event);" style="background: linear-gradient(145deg, #CD853F, #8B4513);">
+          🔄 Test Background Rotation
+        </button>
       </div>
     </div>
   </div>
@@ -648,7 +775,7 @@
       shortBreak: 5,
       longBreak: 15,
       sessionsUntilLong: 4,
-      slideshowTime: 20, // 20 seconds default
+      slideshowTime: 20, // 20 seconds minimum - enforced
       theme: 'autumn',
       notificationAudio: true,
       clickAudio: true
@@ -742,6 +869,72 @@
     }
     
     // ============================================
+    // TEST FUNCTIONS
+    // ============================================
+    
+    function testBackgroundRotation() {
+      console.log('🧪 Testing background rotation...');
+      if (window.backgroundManager) {
+        console.log('✅ BackgroundManager found, triggering rotation');
+        console.log('🧪 Current theme:', window.backgroundManager.currentTheme);
+        console.log('🧪 Current index:', window.backgroundManager.currentIndex);
+        console.log('🧪 Available images:', window.backgroundManager.getThemeImages().length);
+        console.log('🧪 Theme data keys:', Object.keys(window.backgroundManager.themeData));
+        
+        // Force rotation
+        window.backgroundManager.rotateBackground();
+      } else {
+        console.error('❌ BackgroundManager not found');
+        console.log('Available window objects:', Object.keys(window).filter(key => key.includes('background') || key.includes('Background')));
+        
+        // Try to initialize manually
+        if (typeof BackgroundManager !== 'undefined') {
+          console.log('🧪 Attempting manual BackgroundManager initialization...');
+          window.backgroundManager = new BackgroundManager();
+          if (window.timerSettings && window.timerSettings.theme) {
+            window.backgroundManager.currentTheme = window.timerSettings.theme.toUpperCase();
+          }
+          window.backgroundManager.init();
+          console.log('🧪 Manual initialization complete, trying rotation...');
+          window.backgroundManager.rotateBackground();
+        }
+      }
+    }
+    
+    // Test function to manually set background
+    function testSetBackground(imagePath) {
+      console.log(`🧪 Testing direct background set to: ${imagePath}`);
+      const bgContainer = document.getElementById('bg-container');
+      if (bgContainer) {
+        bgContainer.style.backgroundImage = `url('${imagePath}')`;
+        console.log('✅ Background set directly');
+      } else {
+        console.error('❌ bg-container not found');
+      }
+    }
+    
+    // Add keyboard shortcut for testing
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'r' && e.ctrlKey) {
+        e.preventDefault();
+        testBackgroundRotation();
+      } else if (e.key === 't' && e.ctrlKey) {
+        e.preventDefault();
+        testSetBackground('assets/images/summer-day-1.png');
+      } else if (e.key === '1') {
+        testSetBackground('assets/images/autumn-day-1.png');
+      } else if (e.key === '2') {
+        testSetBackground('assets/images/autumn-day-2.png');
+      } else if (e.key === '3') {
+        testSetBackground('assets/images/summer-day-1.png');
+      } else if (e.key === '4') {
+        testSetBackground('assets/images/winter-day-1.png');
+      }
+    });
+    
+    // Note: Simple test slideshow removed - using proper 20-second BackgroundManager system
+    
+    // ============================================
     // SETTINGS MODAL FUNCTIONS
     // ============================================
     
@@ -797,24 +990,33 @@
       window.timerSettings.longBreak = parseInt(document.getElementById('long-break').value);
       window.timerSettings.sessionsUntilLong = parseInt(document.getElementById('sessions-until-long').value);
       
-      // Enforce minimum slideshow timing
+      // Enforce strict minimum slideshow timing - cannot be bypassed
       const requestedTime = parseInt(document.getElementById('slideshow-time').value);
-      const MIN_SLIDESHOW_TIME = 20;
+      const MIN_SLIDESHOW_TIME = 20; // Absolute minimum for proper preloading
+      const safeTime = Math.max(requestedTime, MIN_SLIDESHOW_TIME);
       
       if (requestedTime < MIN_SLIDESHOW_TIME) {
+        // Force the safe value
         window.timerSettings.slideshowTime = MIN_SLIDESHOW_TIME;
         document.getElementById('slideshow-time').value = MIN_SLIDESHOW_TIME;
         
-        // Show user feedback
+        // Show strong visual feedback
         const slideshowInput = document.getElementById('slideshow-time');
-        slideshowInput.style.border = '2px solid var(--season-accent)';
+        slideshowInput.style.border = '3px solid #ff6b6b';
+        slideshowInput.style.backgroundColor = 'rgba(255, 107, 107, 0.1)';
+        
         setTimeout(() => {
-          slideshowInput.style.border = '';
+          slideshowInput.style.border = '2px solid var(--season-accent)';
+          slideshowInput.style.backgroundColor = '';
+          setTimeout(() => {
+            slideshowInput.style.border = '';
+          }, 1000);
         }, 2000);
         
-        console.log(`⚠️ Slideshow time adjusted to minimum: ${MIN_SLIDESHOW_TIME}s`);
+        console.warn(`🚫 BLOCKED: Slideshow time ${requestedTime}s rejected. Minimum ${MIN_SLIDESHOW_TIME}s enforced.`);
       } else {
-        window.timerSettings.slideshowTime = requestedTime;
+        window.timerSettings.slideshowTime = safeTime;
+        console.log(`✅ Slideshow time set to ${safeTime}s`);
       }
       
       // Save to localStorage
@@ -849,19 +1051,40 @@
       }
       
       // Initialize Background Manager for seasonal images
+      console.log('🚀 Checking BackgroundManager availability...');
+      console.log('BackgroundManager available:', typeof BackgroundManager !== 'undefined');
+      console.log('SETTINGS_CONFIG available:', typeof SETTINGS_CONFIG !== 'undefined');
+      console.log('THEME_DATA available:', typeof THEME_DATA !== 'undefined');
+      
       if (typeof BackgroundManager !== 'undefined' && typeof SETTINGS_CONFIG !== 'undefined') {
+        console.log('✅ Initializing BackgroundManager...');
         window.backgroundManager = new BackgroundManager();
         window.backgroundManager.currentTheme = window.timerSettings.theme.toUpperCase();
         
-        // Update slideshow timing before initialization
-        if (window.timerSettings.slideshowTime) {
-          SETTINGS_CONFIG.themes.backgroundRotation.interval = window.timerSettings.slideshowTime * 1000;
-          console.log(`🔄 Updated slideshow interval to ${window.timerSettings.slideshowTime}s`);
+        console.log('🎨 Theme set to:', window.backgroundManager.currentTheme);
+        
+        // Enforce minimum slideshow timing before initialization
+        const requestedInterval = window.timerSettings.slideshowTime * 1000;
+        const minInterval = 20000; // 20 seconds minimum
+        const safeInterval = Math.max(requestedInterval, minInterval);
+        
+        if (requestedInterval < minInterval) {
+          console.warn(`🚫 Settings slideshow time ${requestedInterval/1000}s below minimum. Using ${minInterval/1000}s.`);
+          window.timerSettings.slideshowTime = 20;
         }
         
+        SETTINGS_CONFIG.themes.backgroundRotation.interval = safeInterval;
+        console.log(`🔄 Slideshow interval set to ${safeInterval/1000}s (enforced minimum: 20s)`);
+        
+        // Store the safe interval back to settings
+        localStorage.setItem('studyflow-timer-settings', JSON.stringify(window.timerSettings));
+        
+        console.log('🚀 Starting BackgroundManager initialization...');
         window.backgroundManager.init();
+        console.log('✅ BackgroundManager initialized');
       } else {
         console.error('❌ BackgroundManager or SETTINGS_CONFIG not available');
+        console.log('Available globals:', Object.keys(window).filter(key => key.includes('Background') || key.includes('THEME') || key.includes('SETTINGS')));
       }
       
       // Apply saved theme
