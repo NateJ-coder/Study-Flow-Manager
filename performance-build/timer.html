@@ -726,6 +726,23 @@
                  oninput="if(this.value && this.value < 20) this.style.color = '#ff6b6b'; else this.style.color = '';">
           <small style="color: var(--season-accent); font-size: 0.8rem; margin-left: 0.5rem; font-weight: bold;">Min: 20s</small>
         </div>
+        <div class="settings-row">
+          <label>🌍 Timezone (for day/night images):</label>
+          <select id="timezone-select" class="settings-input" onchange="updateTimezone(this.value);">
+            <option value="America/New_York">Eastern (New York)</option>
+            <option value="America/Chicago">Central (Chicago)</option>
+            <option value="America/Denver">Mountain (Denver)</option>
+            <option value="America/Los_Angeles">Pacific (Los Angeles)</option>
+            <option value="Europe/London">London</option>
+            <option value="Europe/Paris">Paris</option>
+            <option value="Europe/Berlin">Berlin</option>
+            <option value="Asia/Tokyo">Tokyo</option>
+            <option value="Asia/Shanghai">Shanghai</option>
+            <option value="Australia/Sydney">Sydney</option>
+            <option value="Pacific/Auckland">Auckland</option>
+          </select>
+          <small style="color: var(--season-accent); font-size: 0.8rem; margin-left: 0.5rem;">Day: 6AM-6PM</small>
+        </div>
       </div>
       
       <!-- Theme Settings -->
@@ -762,6 +779,7 @@
 
   <!-- Performance-Optimized Scripts -->
   <script src="assets/js/core.js" defer></script>
+  <script src="assets/js/background-manager.js" defer></script>
   <script src="assets/js/settings.js" defer></script>
   <script src="assets/js/timer.js" defer></script>
   
@@ -777,6 +795,7 @@
       sessionsUntilLong: 4,
       slideshowTime: 20, // 20 seconds minimum - enforced
       theme: 'autumn',
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone, // Default to system timezone
       notificationAudio: true,
       clickAudio: true
     };
@@ -847,11 +866,39 @@
       // Update settings
       window.timerSettings.theme = theme;
       
-      // Apply theme to background manager if available
-      if (window.backgroundManager) {
+      // Apply theme to smart background manager if available
+      if (window.backgroundManager && window.backgroundManager.setSeason) {
+        console.log(`🎨 Changing season to: ${theme}`);
+        window.backgroundManager.setSeason(theme);
+      } else if (window.backgroundManager) {
+        // Fallback for old background manager
         window.backgroundManager.currentTheme = theme.toUpperCase();
         window.backgroundManager.loadInitialBackground();
       }
+      
+      console.log(`✅ Theme changed to: ${theme}`);
+    }
+    
+    // ============================================
+    // TIMEZONE MANAGEMENT
+    // ============================================
+    
+    function updateTimezone(timezone) {
+      console.log(`🌍 Timezone changed to: ${timezone}`);
+      
+      // Update settings
+      if (!window.timerSettings.timezone) {
+        window.timerSettings.timezone = timezone;
+      } else {
+        window.timerSettings.timezone = timezone;
+      }
+      
+      // Apply to smart background manager
+      if (window.backgroundManager && window.backgroundManager.setTimezone) {
+        window.backgroundManager.setTimezone(timezone);
+      }
+      
+      console.log(`✅ Timezone updated: ${timezone}`);
     }
     
     // ============================================
@@ -874,29 +921,31 @@
     
     function testBackgroundRotation() {
       console.log('🧪 Testing background rotation...');
+      
       if (window.backgroundManager) {
-        console.log('✅ BackgroundManager found, triggering rotation');
-        console.log('🧪 Current theme:', window.backgroundManager.currentTheme);
-        console.log('🧪 Current index:', window.backgroundManager.currentIndex);
-        console.log('🧪 Available images:', window.backgroundManager.getThemeImages().length);
-        console.log('🧪 Theme data keys:', Object.keys(window.backgroundManager.themeData));
-        
-        // Force rotation
-        window.backgroundManager.rotateBackground();
+        // Check if it's the new SmartBackgroundManager
+        if (window.backgroundManager.rotateToNext) {
+          console.log('✅ SmartBackgroundManager found');
+          console.log('🧪 Status:', window.backgroundManager.getStatus());
+          
+          // Force rotation with smart manager
+          window.backgroundManager.rotateToNext();
+          
+        } else if (window.backgroundManager.rotateBackground) {
+          console.log('✅ Legacy BackgroundManager found, triggering rotation');
+          console.log('🧪 Current theme:', window.backgroundManager.currentTheme);
+          window.backgroundManager.rotateBackground();
+        }
       } else {
         console.error('❌ BackgroundManager not found');
         console.log('Available window objects:', Object.keys(window).filter(key => key.includes('background') || key.includes('Background')));
         
-        // Try to initialize manually
-        if (typeof BackgroundManager !== 'undefined') {
-          console.log('🧪 Attempting manual BackgroundManager initialization...');
-          window.backgroundManager = new BackgroundManager();
-          if (window.timerSettings && window.timerSettings.theme) {
-            window.backgroundManager.currentTheme = window.timerSettings.theme.toUpperCase();
-          }
-          window.backgroundManager.init();
+        // Try to initialize SmartBackgroundManager manually
+        if (typeof SmartBackgroundManager !== 'undefined') {
+          console.log('🧪 Attempting manual SmartBackgroundManager initialization...');
+          window.backgroundManager = new SmartBackgroundManager();
           console.log('🧪 Manual initialization complete, trying rotation...');
-          window.backgroundManager.rotateBackground();
+          window.backgroundManager.rotateToNext();
         }
       }
     }
@@ -954,6 +1003,16 @@
       document.getElementById('sessions-until-long').value = window.timerSettings.sessionsUntilLong;
       document.getElementById('slideshow-time').value = window.timerSettings.slideshowTime;
       
+      // Load timezone setting
+      if (window.timerSettings.timezone) {
+        document.getElementById('timezone-select').value = window.timerSettings.timezone;
+      } else {
+        // Default to system timezone
+        const systemTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        document.getElementById('timezone-select').value = systemTimezone;
+        window.timerSettings.timezone = systemTimezone;
+      }
+      
       // Update toggle switches
       const notificationToggle = document.getElementById('notification-audio-toggle');
       const clickToggle = document.getElementById('click-audio-toggle');
@@ -989,6 +1048,9 @@
       window.timerSettings.shortBreak = parseInt(document.getElementById('short-break').value);
       window.timerSettings.longBreak = parseInt(document.getElementById('long-break').value);
       window.timerSettings.sessionsUntilLong = parseInt(document.getElementById('sessions-until-long').value);
+      
+      // Save timezone setting
+      window.timerSettings.timezone = document.getElementById('timezone-select').value;
       
       // Enforce strict minimum slideshow timing - cannot be bypassed
       const requestedTime = parseInt(document.getElementById('slideshow-time').value);
@@ -1027,11 +1089,21 @@
         window.pomodoroTimer.updateSettings(window.timerSettings);
       }
       
-      // Update background slideshow timing
+      // Update background slideshow timing and timezone
       if (window.backgroundManager) {
-        const actualInterval = window.backgroundManager.updateSlideshowTiming(window.timerSettings.slideshowTime * 1000);
-        // Update the setting to reflect actual interval used
-        window.timerSettings.slideshowTime = actualInterval / 1000;
+        // Update rotation interval
+        if (window.backgroundManager.setRotationInterval) {
+          window.backgroundManager.setRotationInterval(window.timerSettings.slideshowTime * 1000);
+        } else if (window.backgroundManager.updateSlideshowTiming) {
+          // Fallback for legacy manager
+          const actualInterval = window.backgroundManager.updateSlideshowTiming(window.timerSettings.slideshowTime * 1000);
+          window.timerSettings.slideshowTime = actualInterval / 1000;
+        }
+        
+        // Update timezone
+        if (window.backgroundManager.setTimezone) {
+          window.backgroundManager.setTimezone(window.timerSettings.timezone);
+        }
       }
     }
     
@@ -1050,16 +1122,20 @@
         console.log('Could not load saved settings');
       }
       
-      // Initialize Background Manager for seasonal images
-      console.log('🚀 Checking BackgroundManager availability...');
-      console.log('BackgroundManager available:', typeof BackgroundManager !== 'undefined');
-      console.log('SETTINGS_CONFIG available:', typeof SETTINGS_CONFIG !== 'undefined');
+      // Initialize Smart Background Manager for seasonal images
+      console.log('🚀 Checking SmartBackgroundManager availability...');
+      console.log('SmartBackgroundManager available:', typeof SmartBackgroundManager !== 'undefined');
       console.log('THEME_DATA available:', typeof THEME_DATA !== 'undefined');
       
-      if (typeof BackgroundManager !== 'undefined' && typeof SETTINGS_CONFIG !== 'undefined') {
-        console.log('✅ Initializing BackgroundManager...');
-        window.backgroundManager = new BackgroundManager();
-        window.backgroundManager.currentTheme = window.timerSettings.theme.toUpperCase();
+      if (typeof SmartBackgroundManager !== 'undefined' && typeof THEME_DATA !== 'undefined') {
+        console.log('✅ Initializing SmartBackgroundManager...');
+        window.backgroundManager = new SmartBackgroundManager();
+        
+        // Set initial season and timezone
+        window.backgroundManager.setSeason(window.timerSettings.theme);
+        if (window.timerSettings.timezone) {
+          window.backgroundManager.setTimezone(window.timerSettings.timezone);
+        }
         
         console.log('🎨 Theme set to:', window.backgroundManager.currentTheme);
         
