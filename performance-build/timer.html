@@ -770,10 +770,6 @@
         <button class="wooden-btn" onclick="saveSettings(); closeSettings(); playClickSound(event);">
           Save Settings
         </button>
-        <br><br>
-        <button class="wooden-btn" onclick="testBackgroundRotation(); playClickSound(event);" style="background: linear-gradient(145deg, #CD853F, #8B4513);">
-          🔄 Test Background Rotation
-        </button>
       </div>
     </div>
   </div>
@@ -915,77 +911,6 @@
       playClickSound();
       window.location.href = 'calendar.html';
     }
-    
-    // ============================================
-    // TEST FUNCTIONS
-    // ============================================
-    
-    function testBackgroundRotation() {
-      console.log('🧪 Testing background rotation...');
-      
-      if (window.backgroundManager) {
-        // Check if it's the new SmartBackgroundManager
-        if (window.backgroundManager.rotateToNext) {
-          console.log('✅ SmartBackgroundManager found');
-          console.log('🧪 Status:', window.backgroundManager.getStatus());
-          
-          // Force rotation with smart manager
-          window.backgroundManager.rotateToNext();
-          
-        } else if (window.backgroundManager.rotateBackground) {
-          console.log('✅ Legacy BackgroundManager found, triggering rotation');
-          console.log('🧪 Current theme:', window.backgroundManager.currentTheme);
-          window.backgroundManager.rotateBackground();
-        }
-      } else {
-        console.error('❌ BackgroundManager not found');
-        console.log('Available window objects:', Object.keys(window).filter(key => key.includes('background') || key.includes('Background')));
-        
-        // Wait for auto-initialization then retry
-        console.log('🧪 Waiting for auto-initialization...');
-        setTimeout(() => {
-          if (window.backgroundManager && window.backgroundManager.rotateToNext) {
-            console.log('🧪 Found background manager after delay, trying rotation...');
-            window.backgroundManager.rotateToNext();
-          } else {
-            console.error('🧪 Background manager still not available after delay');
-          }
-        }, 1000);
-      }
-    }
-    
-    // Test function to manually set background
-    function testSetBackground(imagePath) {
-      console.log(`🧪 Testing direct background set to: ${imagePath}`);
-      const bgContainer = document.getElementById('bg-container');
-      if (bgContainer) {
-        bgContainer.style.backgroundImage = `url('${imagePath}')`;
-        console.log('✅ Background set directly');
-      } else {
-        console.error('❌ bg-container not found');
-      }
-    }
-    
-    // Add keyboard shortcut for testing
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'r' && e.ctrlKey) {
-        e.preventDefault();
-        testBackgroundRotation();
-      } else if (e.key === 't' && e.ctrlKey) {
-        e.preventDefault();
-        testSetBackground('assets/images/summer-day-1.png');
-      } else if (e.key === '1') {
-        testSetBackground('assets/images/autumn-day-1.png');
-      } else if (e.key === '2') {
-        testSetBackground('assets/images/autumn-day-2.png');
-      } else if (e.key === '3') {
-        testSetBackground('assets/images/summer-day-1.png');
-      } else if (e.key === '4') {
-        testSetBackground('assets/images/winter-day-1.png');
-      }
-    });
-    
-    // Note: Simple test slideshow removed - using proper 20-second BackgroundManager system
     
     // ============================================
     // SETTINGS MODAL FUNCTIONS
