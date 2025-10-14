@@ -208,6 +208,9 @@ function checkLoadingComplete() {
 
 // Update loading progress display
 function updateLoadingProgress() {
+  // Don't update if already loaded to prevent overwriting the checkmark
+  if (isLoaded) return;
+  
   const completed = Object.values(loadingState).filter(state => state === true).length;
   const total = Object.keys(loadingState).length;
   const percentage = Math.round((completed / total) * 100);

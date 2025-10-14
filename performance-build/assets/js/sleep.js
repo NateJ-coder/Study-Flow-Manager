@@ -7,7 +7,7 @@ class SleepModeManager {
   constructor() {
     this.isInSleepMode = false;
     this.inactivityTimer = null;
-    this.inactivityDelay = this.getSleepTimeout(); // Get from settings
+    this.inactivityDelay = 10 * 1000; // TEMPORARY: 10 seconds for debugging
     this.lastActivity = Date.now();
     
     // Elements to manage
@@ -24,6 +24,10 @@ class SleepModeManager {
   
   init() {
     console.log('💤 Sleep Mode Manager starting initialization...');
+    
+    // Update timeout from settings now that they're available
+    this.updateSleepTimeout();
+    
     this.setupActivityListeners();
     this.startInactivityTracking();
     console.log('💤 Sleep Mode Manager initialized - inactivity delay:', this.inactivityDelay, 'ms');
@@ -32,9 +36,12 @@ class SleepModeManager {
   
   // Get sleep timeout from app settings
   getSleepTimeout() {
-    if (window.appSettings && window.appSettings.sleepTimeout) {
-      return window.appSettings.sleepTimeout * 1000; // Convert seconds to milliseconds
+    if (window.appSettings && typeof window.appSettings.sleepTimeout !== 'undefined') {
+      const timeoutSeconds = window.appSettings.sleepTimeout;
+      console.log('💤 Sleep timeout from settings:', timeoutSeconds, 'seconds');
+      return timeoutSeconds * 1000; // Convert seconds to milliseconds
     }
+    console.log('💤 Using default sleep timeout: 300 seconds');
     return 5 * 60 * 1000; // Default 5 minutes
   }
   
@@ -95,6 +102,12 @@ class SleepModeManager {
   resetInactivityTimer() {
     if (this.inactivityTimer) {
       clearTimeout(this.inactivityTimer);
+    }
+    
+    // Skip timer if sleep mode is disabled (timeout = 0)
+    if (this.inactivityDelay === 0) {
+      console.log('💤 Sleep mode disabled (timeout = 0)');
+      return;
     }
     
     console.log('⏰ Inactivity timer reset - sleep mode in', this.inactivityDelay / 1000, 'seconds');
