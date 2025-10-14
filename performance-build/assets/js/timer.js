@@ -468,6 +468,8 @@ let animationFrameId;
 let transitionParticles = [];
 let isTransitioning = false;
 let transitionProgress = 0;
+let isSleepMode = false;
+let sleepModeFrameSkip = 0;
 
 function initializeParticles(config) {
     // Stop any running animation
@@ -641,8 +643,51 @@ function drawParticles(config) {
     }
   }
 
+  // Sleep mode optimization: Skip frames to reduce CPU usage
+  if (isSleepMode) {
+    sleepModeFrameSkip++;
+    if (sleepModeFrameSkip < 4) { // Only render every 4th frame in sleep mode
+      animationFrameId = requestAnimationFrame(() => drawParticles(config));
+      return;
+    }
+    sleepModeFrameSkip = 0;
+  }
+  
   animationFrameId = requestAnimationFrame(() => drawParticles(config));
 }
+
+// Particle system sleep mode control
+window.particleSystem = {
+  setSleepMode: function(sleepMode) {
+    isSleepMode = sleepMode;
+    console.log(`🎭 Particle system ${sleepMode ? 'entering' : 'exiting'} sleep mode`);
+  }
+};
+
+// Slideshow system sleep mode control
+window.slideshowSystem = {
+  originalInterval: null,
+  setSleepMode: function(sleepMode) {
+    if (sleepMode) {
+      // Store original interval and slow down slideshow
+      this.originalInterval = appSettings.slideshowInterval;
+      const sleepInterval = Math.max(this.originalInterval * 3, 90); // 3x slower, minimum 90s
+      
+      if (backgroundInterval) {
+        clearInterval(backgroundInterval);
+        backgroundInterval = setInterval(() => updateBackground(false), sleepInterval * 1000);
+        console.log(`🖼️ Slideshow entering sleep mode: ${sleepInterval}s intervals`);
+      }
+    } else {
+      // Restore original interval
+      if (this.originalInterval && backgroundInterval) {
+        clearInterval(backgroundInterval);
+        backgroundInterval = setInterval(() => updateBackground(false), this.originalInterval * 1000);
+        console.log(`🖼️ Slideshow exiting sleep mode: ${this.originalInterval}s intervals`);
+      }
+    }
+  }
+};
 
 // Handle canvas resize
 window.addEventListener('resize', () => {

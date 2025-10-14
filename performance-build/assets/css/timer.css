@@ -152,6 +152,20 @@ body {
   margin-bottom: 0.5rem;
   color: var(--accent-color);
   text-transform: uppercase;
+  transition: color 0.3s ease;
+}
+
+/* Seasonal Timer Mode Colors */
+.summer-theme .timer-mode {
+  color: #22c55e; /* Green for summer */
+}
+
+.autumn-theme .timer-mode {
+  color: #d97706; /* Burnt orange/brown for autumn */
+}
+
+.winter-theme .timer-mode {
+  color: #60a5fa; /* Light blue for winter */
 }
 
 .timer-display {
