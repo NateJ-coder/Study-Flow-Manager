@@ -28,14 +28,22 @@ let currentTheme = 'AUTUMN';
 let isLoaded = false;
 let isAuthReady = false;
 
-// Comprehensive Loading State
+// Optimized Loading State - Priority-based loading
 let loadingState = {
   criticalAssets: false,
-  backgroundImages: false,
   firebaseReady: false,
   userSettings: false,
-  timerAssets: false
+  timerReady: false
 };
+
+// Performance optimization: Load only essential images first
+const CRITICAL_IMAGES = [
+  'performance-build/assets/images/autumn-day-8.png',
+  'performance-build/assets/images/autumn-night-1.png'
+];
+
+// Load additional images in background after timer is accessible
+const BACKGROUND_IMAGES_BATCH_SIZE = 8;
 
 // All background images for complete preloading
 const ALL_BACKGROUND_IMAGES = [
@@ -141,6 +149,24 @@ function updateDebugInfo(message) {
   }
 }
 
+// Background loading of remaining assets (non-blocking)
+async function preloadRemainingAssets() {
+  try {
+    console.log('🎨 Background loading: Additional images...');
+    
+    // Load background images in batches to avoid overwhelming the browser
+    for (let i = 0; i < ALL_BACKGROUND_IMAGES.length; i += BACKGROUND_IMAGES_BATCH_SIZE) {
+      const batch = ALL_BACKGROUND_IMAGES.slice(i, i + BACKGROUND_IMAGES_BATCH_SIZE);
+      await preloadImages(batch);
+      console.log(`📦 Loaded batch ${Math.floor(i / BACKGROUND_IMAGES_BATCH_SIZE) + 1}`);
+    }
+    
+    console.log('🎉 Background loading complete!');
+  } catch (error) {
+    console.warn('Background loading had some issues:', error);
+  }
+}
+
 // ============================================
 // PAGE NAVIGATION FUNCTIONS
 // ============================================
@@ -166,12 +192,15 @@ function showPage(pageId) {
 
 // Check if all loading is complete
 function checkLoadingComplete() {
-  const allReady = Object.values(loadingState).every(state => state === true);
+  // Fast track: Enable timer when critical assets + Firebase are ready
+  const criticalReady = loadingState.criticalAssets && loadingState.firebaseReady && loadingState.timerReady;
   
-  if (allReady && !isLoaded) {
+  if (criticalReady && !isLoaded) {
     isLoaded = true;
     enableContinueButton();
-    console.log('✅ All systems ready! Continue button enabled.');
+    console.log('✅ Critical systems ready! Timer accessible now.');
+    updateDebugInfo('Status: Timer ready for use! Background loading continues...');
+    return;
   }
   
   updateLoadingProgress();
@@ -189,7 +218,7 @@ function updateLoadingProgress() {
     continueBtn.innerHTML = `
       <div class="flex items-center justify-center">
         <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-        Loading... ${percentage}%
+        Loading Critical Assets... ${percentage}%
       </div>
     `;
   }
@@ -328,34 +357,28 @@ document.addEventListener('DOMContentLoaded', async function() {
   updateLoadingProgress();
   
   try {
-    // Phase 1: Critical Assets
-    console.log('� Phase 1: Loading critical assets...');
-    await preloadImages(CRITICAL_ASSETS);
+    // Phase 1: Critical assets only (for fast LCP)
+    console.log('🌟 Phase 1: Loading critical assets...');
+    await preloadImages(CRITICAL_IMAGES);
     loadingState.criticalAssets = true;
-    checkLoadingComplete();
     
-    // Phase 2: Firebase & User Settings (parallel)
-    console.log('🔥 Phase 2: Initializing Firebase and user settings...');
+    // Phase 2: Firebase initialization (parallel)
+    console.log('🔥 Phase 2: Initializing Firebase...');
     initializeFirebaseConnection(); // Runs async
     
-    // Phase 3: All Background Images
-    console.log('🖼️ Phase 3: Preloading all background images...');
-    await preloadImages(ALL_BACKGROUND_IMAGES);
-    loadingState.backgroundImages = true;
+    // Phase 3: Enable timer immediately (fast access)
+    console.log('⏱️ Phase 3: Timer ready for use...');
+    loadingState.timerReady = true;
     checkLoadingComplete();
     
-    // Phase 4: Timer Page Assets
-    console.log('⏱️ Phase 4: Preloading timer assets...');
-    const timerAssets = [
-      'performance-build/assets/css/timer.css',
-      'performance-build/assets/js/timer.js'
-    ];
-    // We can't preload JS/CSS the same way as images, so just mark as ready
-    loadingState.timerAssets = true;
-    checkLoadingComplete();
+    // Phase 4: Background loading of remaining assets (non-blocking)
+    console.log('🖼️ Phase 4: Background loading remaining assets...');
+    setTimeout(() => {
+      preloadRemainingAssets();
+    }, 100); // Load after timer is accessible
     
-    console.log('✅ All phases initiated! Waiting for completion...');
-    updateDebugInfo('Status: All loading phases initiated, waiting for completion...');
+    console.log('✅ Critical loading complete! Timer accessible...');
+    updateDebugInfo('Status: Critical loading complete, timer accessible...');
     
   } catch (error) {
     console.error('Preloading error:', error);

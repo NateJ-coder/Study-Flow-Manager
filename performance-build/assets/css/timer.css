@@ -205,27 +205,71 @@ body {
 }
 
 .control-btn {
-  background: transparent;
-  border: none;
   cursor: pointer;
-  padding: 0;
-  margin: 0 0.5rem;
-  transition: transform 0.2s, opacity 0.2s;
+  margin: 0 0.75rem;
+  transition: all 0.2s ease;
   outline: none;
 }
 
-.control-btn:hover {
-  transform: translateY(-2px);
+/* Cartoon/Anime Wood Style Buttons */
+.wood-btn {
+  background: linear-gradient(145deg, #8b5a3c, #6b4226);
+  border: 3px solid #5d3a21;
+  border-radius: 25px;
+  padding: 12px 24px;
+  font-family: 'Comic Sans MS', cursive, sans-serif;
+  font-size: 16px;
+  font-weight: bold;
+  color: #fff2e6;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+  box-shadow: 
+    0 6px 0 #4a2c17,
+    0 8px 15px rgba(0, 0, 0, 0.4),
+    inset 0 2px 0 rgba(255, 255, 255, 0.2);
+  position: relative;
 }
 
-.control-btn:active {
-  transform: translateY(0);
+.wood-btn::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  right: 2px;
+  bottom: 8px;
+  background: linear-gradient(145deg, #a0674a, #8b5a3c);
+  border-radius: 22px;
+  z-index: -1;
 }
 
-.control-btn:disabled {
-  opacity: 0.4;
+.wood-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 
+    0 8px 0 #4a2c17,
+    0 12px 20px rgba(0, 0, 0, 0.5),
+    inset 0 2px 0 rgba(255, 255, 255, 0.3);
+}
+
+.wood-btn:active {
+  transform: translateY(2px);
+  box-shadow: 
+    0 2px 0 #4a2c17,
+    0 4px 8px rgba(0, 0, 0, 0.3),
+    inset 0 2px 0 rgba(255, 255, 255, 0.2);
+}
+
+.wood-btn:disabled {
+  background: linear-gradient(145deg, #6b5a5a, #5a4949);
+  border-color: #4a3939;
+  color: #bbb;
   cursor: not-allowed;
   transform: none;
+  box-shadow: 
+    0 3px 0 #3d2d2d,
+    0 5px 10px rgba(0, 0, 0, 0.2);
+}
+
+.wood-btn:disabled::before {
+  background: linear-gradient(145deg, #7a6969, #6b5a5a);
 }
 
 /* Loading Indicator */
