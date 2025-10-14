@@ -6,12 +6,12 @@
   <meta name="description" content="StudyFlow Manager - Welcome">
   
   <!-- Performance-Critical Preloads -->
-  <link rel="preload" href="assets/images/welcome-page.png" as="image" fetchpriority="high">
-  <link rel="preload" href="assets/css/welcome.css" as="style">
-  <link rel="preload" href="assets/js/welcome.js" as="script">
+  <link rel="preload" href="performance-build/assets/images/welcome-page.png" as="image" fetchpriority="high">
+  <link rel="preload" href="performance-build/assets/css/welcome.css" as="style">
+  <link rel="preload" href="performance-build/assets/js/welcome.js" as="script">
   
   <!-- External CSS -->
-  <link rel="stylesheet" href="assets/css/welcome.css">
+  <link rel="stylesheet" href="performance-build/assets/css/welcome.css">
   
 
   
@@ -23,7 +23,7 @@
     id="background-container"
     class="fixed inset-0 bg-cover bg-center transition-opacity duration-1000 ease-in-out"
     style="
-      background-image: url('assets/images/welcome-page.png');
+      background-image: url('performance-build/assets/images/welcome-page.png');
       filter: brightness(0.7) blur(1px);
       z-index: 0;
     "
@@ -137,6 +137,6 @@
     </div>
   </div>
 
-  <script src="assets/js/welcome.js" defer></script>
+  <script src="performance-build/assets/js/welcome.js" defer></script>
 </body>
 </html>

@@ -25,7 +25,7 @@ Visit [natej-coder.github.io/Study-Flow-Manager](https://natej-coder.github.io/S
 git clone https://github.com/NateJ-coder/Study-Flow-Manager.git
 cd Study-Flow-Manager/performance-build
 python -m http.server 8080
-# Visit: http://localhost:8080/welcome.html
+# Visit: http://localhost:8080
 ```
 
 ## 🏗️ Architecture
@@ -33,7 +33,7 @@ python -m http.server 8080
 ### **Performance-Optimized Structure**
 ```
 performance-build/           # Main application
-├── welcome.html            # Landing page (React-inspired)
+├── index.html              # Landing page (React-inspired)
 ├── timer.html             # Minimal focus page  
 ├── calendar.html          # Session tracking
 └── assets/

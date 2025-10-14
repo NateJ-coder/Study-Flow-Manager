@@ -1,0 +1,304 @@
+/* StudyFlow Timer Page Styles */
+/* Using system fonts for performance */
+:root {
+  --primary-bg: #0f1419;
+  --text-color: #e7eaee;
+  --accent-color: #64ffda;
+  --card-bg: rgba(15, 20, 25, 0.85); /* Semi-transparent dark background */
+  --btn-bg: #1c232d;
+  --btn-hover: #293440;
+  --timer-text-size: 5rem;
+  --timer-mode-size: 1.5rem;
+  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+
+/* Theme-specific Overrides (set by JS) */
+.autumn-theme { --particle-color: rgba(255, 140, 0, 0.7); } /* Dark Orange/Red for leaves */
+.winter-theme { --particle-color: rgba(200, 230, 255, 0.9); } /* Light Blue/White for snowflakes */
+.summer-theme { --particle-color: rgba(255, 255, 0, 0.5); } /* Yellow/Gold for fireflies/glow */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-family);
+  background: var(--primary-bg);
+  color: var(--text-color);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.5s;
+}
+
+/* Background and Particle Containers */
+#bg-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  z-index: -2;
+}
+
+#background-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.9;
+  transition: opacity 1.5s ease-in-out;
+}
+
+#particle-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Header (Logo and Clock) */
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  z-index: 10;
+}
+
+.studyflow-logo {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--accent-color);
+}
+
+.clock-container {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.1rem;
+}
+
+/* Main Timer Card */
+.container {
+  padding: 2rem 1rem;
+  max-width: 90%;
+  width: 450px;
+}
+
+.timer-card {
+  background: var(--card-bg);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 2.5rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  position: relative;
+  text-align: center;
+}
+
+/* Utility Icons */
+.card-icon {
+  position: absolute;
+  top: 1.5rem;
+  cursor: pointer;
+  width: 24px;
+  height: 24px;
+  fill: var(--text-color);
+  transition: fill 0.2s, transform 0.1s;
+}
+
+.card-icon:hover {
+  fill: var(--accent-color);
+  transform: scale(1.05);
+}
+
+.calendar-icon { right: 1.5rem; }
+.settings-icon { right: 4.5rem; }
+
+.back-btn {
+  position: absolute;
+  top: 1.2rem;
+  left: 1.5rem;
+  background: #8b4513; /* Wooden style color */
+  color: #fff;
+  padding: 0.3rem 0.8rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border: 2px solid #5a2e0a;
+  box-shadow: 0 3px 5px rgba(0, 0, 0, 0.4);
+  transition: background 0.2s, transform 0.1s;
+}
+
+.back-btn:hover {
+  background: #9d5220;
+}
+
+/* Timer Content */
+.timer-mode {
+  font-size: var(--timer-mode-size);
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: var(--accent-color);
+  text-transform: uppercase;
+}
+
+.timer-display {
+  font-size: var(--timer-text-size);
+  font-weight: 700;
+  margin: 0.5rem 0 1.5rem;
+  letter-spacing: 0.1rem;
+}
+
+.timer-controls {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+}
+
+.control-btn {
+  background: var(--btn-bg);
+  color: var(--text-color);
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.control-btn:hover {
+  background: var(--btn-hover);
+  transform: translateY(-2px);
+}
+
+.control-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+.session-info {
+  margin-top: 1.5rem;
+  font-size: 0.9rem;
+  color: #b0b0b0;
+}
+
+/* Loading Indicator */
+#loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--primary-bg);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: var(--accent-color);
+  font-size: 1.5rem;
+  z-index: 100;
+  transition: opacity 0.5s;
+}
+
+/* Settings Modal (Placeholder) */
+.settings-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--card-bg);
+  backdrop-filter: blur(10px);
+  padding: 2rem;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+  z-index: 20;
+  max-width: 400px;
+  width: 90%;
+  display: none;
+}
+
+.settings-modal.show { display: block; }
+
+.settings-modal h2 { margin-bottom: 1.5rem; font-size: 1.8rem; }
+
+.setting-group {
+  margin-bottom: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.setting-group label {
+  font-size: 1rem;
+  margin-right: 1rem;
+}
+
+.setting-group select {
+  background: var(--btn-bg);
+  color: var(--text-color);
+  border: 1px solid var(--btn-hover);
+  padding: 0.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.settings-close-btn {
+  margin-top: 1.5rem;
+  background: var(--accent-color);
+  color: var(--primary-bg);
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: opacity 0.2s;
+}
+
+.settings-close-btn:hover { opacity: 0.8; }
+
+/* Responsive Mobile Adaptations */
+@media (max-width: 768px) {
+  :root {
+    --timer-text-size: 4rem;
+    --timer-mode-size: 1.2rem;
+  }
+  .header {
+    padding: 0.75rem 1rem;
+  }
+  .studyflow-logo {
+    font-size: 1.2rem;
+  }
+  .clock-container {
+    font-size: 0.9rem;
+  }
+  .timer-card {
+    padding: 2rem 1.5rem;
+  }
+  .timer-controls {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .control-btn {
+    width: 100%;
+    padding: 0.8rem 1rem;
+  }
+  .back-btn {
+    top: 0.75rem;
+    left: 0.75rem;
+  }
+  .calendar-icon { right: 0.75rem; }
+  .settings-icon { right: 3.5rem; }
+}

@@ -267,7 +267,7 @@ The timer page expects these external JavaScript files:
 - **Theme System**: CSS custom properties + JavaScript theme switching
 - **Settings Persistence**: localStorage with structured data
 - **Audio System**: Integrated with user preferences
-- **Navigation**: Links to welcome.html and calendar pages
+- **Navigation**: Links to index.html and calendar pages
 - **Clock Integration**: Real-time display in header
 
 This documentation provides the complete foundation for rebuilding the StudyFlow Timer page from scratch while maintaining all its functionality and visual design.
