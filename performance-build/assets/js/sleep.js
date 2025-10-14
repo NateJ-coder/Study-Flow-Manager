@@ -428,6 +428,8 @@ function initializeSleepMode() {
 }
 
 // Auto-initialize when DOM is ready
+console.log('🚀 SLEEP.JS LOADED! Document ready state:', document.readyState);
+
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initializeSleepMode);
 } else {
