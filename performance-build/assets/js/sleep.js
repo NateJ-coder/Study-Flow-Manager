@@ -7,7 +7,7 @@ class SleepModeManager {
   constructor() {
     this.isInSleepMode = false;
     this.inactivityTimer = null;
-    this.inactivityDelay = 5 * 60 * 1000; // 5 minutes in milliseconds
+    this.inactivityDelay = 30 * 1000; // 30 seconds for testing (was 5 minutes)
     this.lastActivity = Date.now();
     
     // Elements to manage
@@ -23,9 +23,11 @@ class SleepModeManager {
   }
   
   init() {
+    console.log('💤 Sleep Mode Manager starting initialization...');
     this.setupActivityListeners();
     this.startInactivityTracking();
-    console.log('💤 Sleep Mode Manager initialized');
+    console.log('💤 Sleep Mode Manager initialized - inactivity delay:', this.inactivityDelay, 'ms');
+    console.log('💤 Activity listeners setup complete');
   }
   
   // Setup activity detection listeners
@@ -45,6 +47,7 @@ class SleepModeManager {
   // Record user activity and exit sleep mode if needed
   recordActivity() {
     this.lastActivity = Date.now();
+    console.log('👆 User activity detected at', new Date().toLocaleTimeString());
     
     if (this.isInSleepMode) {
       this.exitSleepMode();
@@ -65,7 +68,9 @@ class SleepModeManager {
       clearTimeout(this.inactivityTimer);
     }
     
+    console.log('⏰ Inactivity timer reset - sleep mode in', this.inactivityDelay / 1000, 'seconds');
     this.inactivityTimer = setTimeout(() => {
+      console.log('😴 Inactivity timeout reached - entering sleep mode');
       this.enterSleepMode();
     }, this.inactivityDelay);
   }
