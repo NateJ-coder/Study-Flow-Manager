@@ -4,10 +4,24 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebas
 import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-// Global Firebase Variables
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+// Global Firebase Variables - HARDCODED CONFIGURATION
+// We are hardcoding the values since the environment variables are not available.
+const firebaseConfig = {
+    apiKey: "AIzaSyDiY_fxXuLNSTgpPIiHTkmvSAlT-Owqkgc",
+    authDomain: "studyflowapp-2dfd0.firebaseapp.com",
+    projectId: "studyflowapp-2dfd0",
+    storageBucket: "studyflowapp-2dfd0.firebasestorage.app",
+    messagingSenderId: "292997866503",
+    appId: "1:292997866503:web:a999c0ef9d3f06b61136a2",
+    measurementId: "G-CEJ384DE17"
+};
+
+// We will use the projectId as the appId for Firestore rules compatibility.
+const appId = firebaseConfig.projectId;
+
+// Since we are using hardcoded config, we must explicitly set the initial auth token to null
+// and rely on signInAnonymously() to handle authentication.
+const initialAuthToken = null;
 
 let app;
 let db;
@@ -59,47 +73,37 @@ let isFocusSession = true; // Placeholder for future Pomodoro logic
 // --- FIREBASE AND AUTHENTICATION ---
 
 async function initializeFirebase() {
-  try {
-    if (Object.keys(firebaseConfig).length === 0) {
-      console.warn("Firebase config is empty. Functionality will be limited.");
-      return;
-    }
-    
-    app = initializeApp(firebaseConfig);
-    db = getFirestore(app);
-    auth = getAuth(app);
-    
-    // Custom token sign-in for Canvas environment
-    if (initialAuthToken) {
-      await signInWithCustomToken(auth, initialAuthToken);
-    } else {
-      await signInAnonymously(auth);
-    }
+    // Function to hide the loading overlay (CRITICAL for fixing the hang)
+    const hideLoadingOverlay = () => {
+        document.getElementById('loading-overlay').style.opacity = '0';
+        // After transition, remove it from flow
+        setTimeout(() => document.getElementById('loading-overlay').style.display = 'none', 500);
+    };
 
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        userId = user.uid;
-        console.log('Firebase user authenticated. User ID:', userId);
-      } else {
-        // Fallback for extremely rare cases or sign-out
-        userId = crypto.randomUUID();
-        console.log('Firebase signed out/anonymous. Using temporary ID:', userId);
-      }
-      isAuthReady = true;
-      loadSettings();
-      // Hide loading overlay once settings are loaded and app is ready
-      document.getElementById('loading-overlay').style.opacity = '0';
-      setTimeout(() => document.getElementById('loading-overlay').style.display = 'none', 500);
-    });
+    try {
+        // We assume firebaseConfig is valid since it was just hardcoded.
+        app = initializeApp(firebaseConfig);
+        db = getFirestore(app);
+        auth = getAuth(app);
+        
+        // Use Anonymous Sign-in for persistent settings storage (user's ID is tied to the browser)
+        const userCredential = await signInAnonymously(auth);
+        userId = userCredential.user.uid;
+        console.log('Firebase initialized. User ID:', userId);
 
-  } catch (error) {
-    console.error("Error initializing Firebase or signing in:", error);
-    userId = crypto.randomUUID(); // Use temporary ID if Firebase fails entirely
-    isAuthReady = true;
-    loadSettings();
-    document.getElementById('loading-overlay').style.opacity = '0';
-    setTimeout(() => document.getElementById('loading-overlay').style.display = 'none', 500);
-  }
+    } catch (error) {
+        // If Firebase fails (e.g., network error, auth not enabled)
+        console.error("Critical error during Firebase operations. App will run without persistence:", error);
+    } finally {
+        // --- GUARANTEE UNLOCK ---
+        // If authentication failed, use a temporary ID so the app still runs.
+        if (!userId) {
+            userId = crypto.randomUUID(); 
+        }
+        isAuthReady = true;
+        loadSettings(); // This runs and applies settings (defaults if no persistence)
+        hideLoadingOverlay(); // Ensure the UI is unlocked!
+    }
 }
 
 
