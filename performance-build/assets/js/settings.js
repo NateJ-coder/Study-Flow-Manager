@@ -28,7 +28,7 @@ const SETTINGS_CONFIG = {
   
   // Theme & Background Settings
   themes: {
-    current: 'AUTUMN',
+    current: 'autumn',
     backgroundRotation: {
       enabled: true,
       interval: 20000, // 20 seconds minimum - enforced by validation

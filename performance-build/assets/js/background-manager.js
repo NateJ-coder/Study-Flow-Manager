@@ -42,7 +42,7 @@
       this.settings = window.timerSettings || {};
       
       // slideshow state
-      this.season = this.settings.theme;          // 'summer' | 'autumn' | 'winter'
+      this.season = this.settings.theme || 'autumn'; // BUG FIX: Add fallback to prevent undefined
       this.timeOfDay = 'day';                     // 'day' | 'night'
       this.indices = [];                          // shuffled index order for current image set
       this.cursor = 0;                            // current position in indices
@@ -263,12 +263,12 @@
   function snowSystem(canvas, ctx) {
     let raf = 0;
     const flakes = [];
-    const density = Math.round((canvas.width * canvas.height) / 26000); // scale by screen
+    const density = Math.round((canvas.width * canvas.height) / 24000); // Slightly more snowflakes
     for (let i = 0; i < density; i++) {
       flakes.push({
         x: Math.random() * canvas.width,
         y: Math.random() * canvas.height,
-        r: 1 + Math.random() * 2.2,
+        r: 1.2 + Math.random() * 2.5, // Slightly larger
         vx: (Math.random() - 0.5) * 0.3,
         vy: 0.4 + Math.random() * 0.9,
         drift: Math.random() * Math.PI * 2
@@ -276,8 +276,7 @@
     }
     const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.globalAlpha = 0.9;
-      ctx.fillStyle = '#ffffff';
+      ctx.globalAlpha = 0.95; // More visible
       for (const f of flakes) {
         f.drift += 0.01;
         f.x += f.vx + Math.sin(f.drift) * 0.2;
@@ -285,8 +284,23 @@
         if (f.y > canvas.height + 5) { f.y = -5; f.x = Math.random() * canvas.width; }
         if (f.x < -5) f.x = canvas.width + 5;
         if (f.x > canvas.width + 5) f.x = -5;
+        
+        // Higher poly snowflake: 6-pointed star instead of circle
+        ctx.fillStyle = '#ffffff';
         ctx.beginPath();
-        ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+        for (let i = 0; i < 6; i++) {
+          const angle = (i * Math.PI) / 3;
+          const px = f.x + Math.cos(angle) * f.r;
+          const py = f.y + Math.sin(angle) * f.r;
+          if (i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        ctx.fill();
+        
+        // Add subtle center dot for more definition
+        ctx.beginPath();
+        ctx.arc(f.x, f.y, f.r * 0.3, 0, Math.PI * 2);
         ctx.fill();
       }
       raf = requestAnimationFrame(draw);
@@ -305,7 +319,7 @@
     const [minS, maxS] = opts?.size ?? [3, 6];
 
     const leaves = [];
-    const density = Math.round((canvas.width * canvas.height) / 22000);
+    const density = Math.round((canvas.width * canvas.height) / 20000); // Slightly more particles
     for (let i = 0; i < density; i++) {
       leaves.push({
         x: Math.random() * canvas.width,
@@ -320,7 +334,7 @@
     }
     const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.globalAlpha = 0.85;
+      ctx.globalAlpha = 0.95; // More visible
       for (const L of leaves) {
         L.wob += 0.02;
         L.x += L.vx + Math.sin(L.wob) * 0.6;
@@ -329,16 +343,25 @@
         if (L.x < -8) L.x = canvas.width + 8;
         if (L.x > canvas.width + 8) L.x = -8;
 
-        // low-poly "leaf": rotated diamond
+        // Higher poly leaf: hexagonal shape instead of diamond
         const c = `hsl(${hue} ${sat}% ${light}%)`;
         ctx.fillStyle = c;
         ctx.beginPath();
-        ctx.moveTo(L.x, L.y - L.s);
-        ctx.lineTo(L.x + L.s, L.y);
-        ctx.lineTo(L.x, L.y + L.s);
-        ctx.lineTo(L.x - L.s, L.y);
+        // Create a 6-sided leaf shape
+        for (let i = 0; i < 6; i++) {
+          const angle = (i * Math.PI) / 3;
+          const px = L.x + Math.cos(angle) * L.s;
+          const py = L.y + Math.sin(angle) * L.s * 0.7; // Slightly flattened
+          if (i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
         ctx.closePath();
         ctx.fill();
+        
+        // Add subtle outline for more definition
+        ctx.strokeStyle = `hsl(${hue} ${sat + 10}% ${light - 15}%)`;
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
       }
       raf = requestAnimationFrame(draw);
     };
