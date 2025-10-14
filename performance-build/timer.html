@@ -54,11 +54,22 @@
       <div id="timer-display" class="timer-display">25:00</div>
       
       <div class="timer-controls">
-        <button id="startButton" class="control-btn">Start</button>
-        <button id="resetButton" class="control-btn" disabled>Reset</button>
+        <button id="startButton" class="control-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 180" width="120" height="43">
+            <path d="M60 10 10 60v60l50 50h380l50-50V60l-50-50H60z" fill="#754608"></path>
+            <text x="250" y="95" text-anchor="middle" dy="0.35em" fill="white" font-family="Times New Roman" font-size="28" font-weight="bold">Start</text>
+          </svg>
+        </button>
+        <button id="resetButton" class="control-btn" disabled>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 180" width="120" height="43">
+            <path d="M60 10 10 60v60l50 50h380l50-50V60l-50-50H60z" fill="#754608"></path>
+            <text x="250" y="95" text-anchor="middle" dy="0.35em" fill="white" font-family="Times New Roman" font-size="28" font-weight="bold">Reset</text>
+          </svg>
+        </button>
       </div>
 
-      <p class="session-info">Time to dive into deep work. Good luck!</p>
+      <p class="session-counter" id="session-counter">Session 1 of 4</p>
+      <p class="session-info" id="session-info">Time to dive into deep work. Good luck!</p>
     </div>
   </div>
 
@@ -78,10 +89,42 @@
     <div class="setting-group">
       <label for="focus-duration">Focus Duration (min)</label>
       <select id="focus-duration">
+        <option value="15">15</option>
         <option value="25">25</option>
         <option value="30">30</option>
         <option value="45">45</option>
         <option value="60">60</option>
+      </select>
+    </div>
+
+    <div class="setting-group">
+      <label for="short-break-duration">Short Break (min)</label>
+      <select id="short-break-duration">
+        <option value="3">3</option>
+        <option value="5">5</option>
+        <option value="10">10</option>
+        <option value="15">15</option>
+      </select>
+    </div>
+
+    <div class="setting-group">
+      <label for="long-break-duration">Long Break (min)</label>
+      <select id="long-break-duration">
+        <option value="15">15</option>
+        <option value="20">20</option>
+        <option value="30">30</option>
+        <option value="45">45</option>
+      </select>
+    </div>
+
+    <div class="setting-group">
+      <label for="sessions-before-long-break">Sessions until Long Break</label>
+      <select id="sessions-before-long-break">
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+        <option value="6">6</option>
       </select>
     </div>
 

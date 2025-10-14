@@ -70,6 +70,9 @@ let appSettings = {
   theme: 'autumn',
   bgIndex: 0,
   focusDuration: 25, // minutes
+  shortBreakDuration: 5, // minutes
+  longBreakDuration: 15, // minutes
+  sessionsBeforeLongBreak: 4, // number of focus sessions before long break
   slideshowInterval: 30, // seconds (will be validated against minimum)
 };
 
@@ -77,7 +80,33 @@ let appSettings = {
 let timerInterval = null;
 let totalSeconds = appSettings.focusDuration * 60;
 let isRunning = false;
-let isFocusSession = true; // Placeholder for future Pomodoro logic
+
+// Pomodoro State
+let currentSession = 1; // Current session number
+let sessionType = 'focus'; // 'focus', 'short-break', 'long-break'
+let completedSessions = 0; // Completed focus sessions
+
+// Session Messages
+const sessionMessages = {
+  focus: [
+    "Time to dive into deep work. Good luck!",
+    "Focus mode activated. You've got this!",
+    "Deep work time. Eliminate distractions!",
+    "Channel your concentration. Make it count!"
+  ],
+  'short-break': [
+    "Take a breather! Stretch, walk, or grab some water.",
+    "Short break time. Step away from the screen!",
+    "Quick break! Get some fresh air or do light stretches.",
+    "Mini-break activated. Recharge for the next session!"
+  ],
+  'long-break': [
+    "Well deserved break! Go for a walk or grab coffee.",
+    "Long break time! Treat yourself to something nice.",
+    "Extended break! Take a proper rest, you've earned it.",
+    "Big break time! Step outside or enjoy a healthy snack."
+  ]
+};
 
 // Background Slideshow State
 let backgroundInterval = null;
@@ -179,13 +208,18 @@ function applySettings() {
   // 2. Apply Background (Force update to use loaded index)
   initializeBackgroundSystem(true); 
 
-  // 3. Apply Timer Duration
+  // 3. Apply Pomodoro Settings
   totalSeconds = appSettings.focusDuration * 60;
   document.getElementById('focus-duration').value = appSettings.focusDuration;
+  document.getElementById('short-break-duration').value = appSettings.shortBreakDuration;
+  document.getElementById('long-break-duration').value = appSettings.longBreakDuration;
+  document.getElementById('sessions-before-long-break').value = appSettings.sessionsBeforeLongBreak;
   
   // 4. Apply Slideshow Interval - update options based on preload performance
   updateSlideshowIntervalOptions();
   
+  // 5. Initialize Pomodoro UI
+  updateSessionUI();
   updateDisplay();
 }
 
@@ -638,6 +672,76 @@ updatePerpetualClock();
 
 // --- TIMER LOGIC (Placeholder) ---
 
+// Audio Management
+function playCompletionSound() {
+  try {
+    const audio = new Audio('assets/audio/splash.mp3');
+    audio.volume = 0.7;
+    audio.play().catch(e => console.log('Audio play failed:', e));
+  } catch (e) {
+    console.log('Audio loading failed:', e);
+  }
+}
+
+// Update UI elements for current session
+function updateSessionUI() {
+  const sessionCounter = document.getElementById('session-counter');
+  const sessionInfo = document.getElementById('session-info');
+  const timerMode = document.getElementById('timer-mode');
+  
+  // Update session counter
+  if (sessionType === 'focus') {
+    sessionCounter.textContent = `Session ${currentSession} of ${appSettings.sessionsBeforeLongBreak}`;
+  } else if (sessionType === 'short-break') {
+    sessionCounter.textContent = `Short Break after Session ${completedSessions}`;
+  } else {
+    sessionCounter.textContent = `Long Break after ${completedSessions} sessions`;
+  }
+  
+  // Update timer mode title
+  const modeTitle = {
+    'focus': 'Focus Session',
+    'short-break': 'Short Break',
+    'long-break': 'Long Break'
+  };
+  timerMode.textContent = modeTitle[sessionType];
+  
+  // Update session info with random message
+  const messages = sessionMessages[sessionType];
+  const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+  sessionInfo.textContent = randomMessage;
+}
+
+// Start next session in the Pomodoro cycle
+function startNextSession() {
+  if (sessionType === 'focus') {
+    completedSessions++;
+    
+    if (completedSessions % appSettings.sessionsBeforeLongBreak === 0) {
+      // Start long break
+      sessionType = 'long-break';
+      totalSeconds = appSettings.longBreakDuration * 60;
+    } else {
+      // Start short break  
+      sessionType = 'short-break';
+      totalSeconds = appSettings.shortBreakDuration * 60;
+    }
+  } else {
+    // Break finished, start next focus session
+    sessionType = 'focus';
+    currentSession = (completedSessions % appSettings.sessionsBeforeLongBreak) + 1;
+    totalSeconds = appSettings.focusDuration * 60;
+  }
+  
+  updateSessionUI();
+  updateDisplay();
+  
+  // Auto-start breaks, but not focus sessions
+  if (sessionType !== 'focus') {
+    startTimer();
+  }
+}
+
 function formatTime(seconds) {
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = seconds % 60;
@@ -646,17 +750,18 @@ function formatTime(seconds) {
 
 function updateDisplay() {
   document.getElementById('timer-display').textContent = formatTime(totalSeconds);
-  document.getElementById('timer-mode').textContent = isFocusSession ? 'Focus Session' : 'Short Break'; // Placeholder
 }
 
 function startTimer() {
   if (isRunning) {
+    // Pause timer
     clearInterval(timerInterval);
     isRunning = false;
-    document.getElementById('startButton').textContent = 'Resume';
+    updateStartButton('Resume');
   } else {
+    // Start/Resume timer
     isRunning = true;
-    document.getElementById('startButton').textContent = 'Pause';
+    updateStartButton('Pause');
     document.getElementById('resetButton').disabled = false;
 
     timerInterval = setInterval(() => {
@@ -666,21 +771,46 @@ function startTimer() {
       if (totalSeconds <= 0) {
         clearInterval(timerInterval);
         isRunning = false;
-        document.getElementById('startButton').textContent = 'Start';
-        document.getElementById('resetButton').disabled = true;
-        console.log('Timer finished!');
-        // TODO: Add notification and audio feedback here
+        
+        // Play completion sound
+        playCompletionSound();
+        
+        console.log(`${sessionType} session completed!`);
+        
+        // Auto-transition to next session
+        setTimeout(() => {
+          startNextSession();
+          updateStartButton(sessionType === 'focus' ? 'Start' : 'Pause');
+          if (sessionType === 'focus') {
+            document.getElementById('resetButton').disabled = true;
+          }
+        }, 1000); // 1 second delay to hear the sound
       }
     }, 1000);
+  }
+}
+
+function updateStartButton(text) {
+  const button = document.getElementById('startButton');
+  const textElement = button.querySelector('text');
+  if (textElement) {
+    textElement.textContent = text;
   }
 }
 
 function resetTimer() {
   clearInterval(timerInterval);
   isRunning = false;
-  document.getElementById('startButton').textContent = 'Start';
+  updateStartButton('Start');
   document.getElementById('resetButton').disabled = true;
-  totalSeconds = appSettings.focusDuration * 60; // Reset to configured duration
+  
+  // Reset to focus session
+  sessionType = 'focus';
+  currentSession = 1;
+  completedSessions = 0;
+  totalSeconds = appSettings.focusDuration * 60;
+  
+  updateSessionUI();
   updateDisplay();
 }
 
@@ -742,6 +872,24 @@ document.getElementById('slideshow-interval').addEventListener('change', (e) => 
     // Reinitialize background system with new interval
     initializeBackgroundSystem(true);
     console.log(`🖼️ Slideshow interval updated to ${appSettings.slideshowInterval} seconds`);
+});
+
+// Pomodoro Settings Event Listeners
+document.getElementById('short-break-duration').addEventListener('change', (e) => {
+    appSettings.shortBreakDuration = parseInt(e.target.value);
+    saveSettings();
+});
+
+document.getElementById('long-break-duration').addEventListener('change', (e) => {
+    appSettings.longBreakDuration = parseInt(e.target.value);
+    saveSettings();
+});
+
+document.getElementById('sessions-before-long-break').addEventListener('change', (e) => {
+    appSettings.sessionsBeforeLongBreak = parseInt(e.target.value);
+    saveSettings();
+    // Update current session UI to reflect new total
+    updateSessionUI();
 });
 
 
