@@ -61,6 +61,7 @@ let appSettings = {
   theme: 'autumn',
   bgIndex: 0,
   focusDuration: 25, // minutes
+  slideshowInterval: 30, // seconds (will be validated against minimum)
 };
 
 // Timer State
@@ -172,6 +173,10 @@ function applySettings() {
   // 3. Apply Timer Duration
   totalSeconds = appSettings.focusDuration * 60;
   document.getElementById('focus-duration').value = appSettings.focusDuration;
+  
+  // 4. Apply Slideshow Interval - update options based on preload performance
+  updateSlideshowIntervalOptions();
+  
   updateDisplay();
 }
 
@@ -194,13 +199,96 @@ function getCurrentImageAssets() {
   return themeConfig.images[timeOfDay];
 }
 
+// Track preload times for dynamic minimum interval calculation
+let preloadTimes = [];
+const MAX_PRELOAD_SAMPLES = 10; // Keep last 10 measurements
+
 function preloadImage(url) {
+  const startTime = performance.now();
+  
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.onload = () => resolve(url);
+    
+    img.onload = () => {
+      const loadTime = performance.now() - startTime;
+      
+      // Track preload time for minimum interval calculation
+      preloadTimes.push(loadTime);
+      if (preloadTimes.length > MAX_PRELOAD_SAMPLES) {
+        preloadTimes.shift(); // Keep only recent samples
+      }
+      
+      console.log(`📊 Image preloaded in ${Math.round(loadTime)}ms`);
+      resolve(url);
+    };
+    
     img.onerror = () => reject(new Error(`Failed to load image: ${url}`));
     img.src = url;
   });
+}
+
+// Calculate minimum safe slideshow interval based on average preload time + buffer
+function getMinimumSlideshowInterval() {
+  if (preloadTimes.length === 0) {
+    return 15; // Default minimum if no preload data yet (15 seconds)
+  }
+  
+  const averagePreloadMs = preloadTimes.reduce((a, b) => a + b, 0) / preloadTimes.length;
+  const averagePreloadSeconds = Math.ceil(averagePreloadMs / 1000);
+  const minimumInterval = averagePreloadSeconds + 5; // Add 5 second safety buffer
+  
+  // Ensure minimum is at least 10 seconds regardless
+  return Math.max(minimumInterval, 10);
+}
+
+// Update slideshow interval dropdown with valid options based on minimum
+function updateSlideshowIntervalOptions() {
+  const minInterval = getMinimumSlideshowInterval();
+  const select = document.getElementById('slideshow-interval');
+  
+  // Define all possible options
+  const allOptions = [
+    { value: 10, label: '10 seconds' },
+    { value: 15, label: '15 seconds' },
+    { value: 30, label: '30 seconds' },
+    { value: 60, label: '1 minute' },
+    { value: 120, label: '2 minutes' },
+    { value: 300, label: '5 minutes' },
+    { value: 600, label: '10 minutes' },
+    { value: 1800, label: '30 minutes' }
+  ];
+  
+  // Clear existing options
+  select.innerHTML = '';
+  
+  // Add valid options (only those >= minimum interval)
+  const validOptions = allOptions.filter(option => option.value >= minInterval);
+  
+  validOptions.forEach(option => {
+    const optionElement = document.createElement('option');
+    optionElement.value = option.value;
+    optionElement.textContent = option.label;
+    
+    // Add minimum indicator for the first valid option
+    if (option.value === validOptions[0].value && minInterval > 10) {
+      optionElement.textContent += ` (minimum: ${minInterval}s)`;
+    }
+    
+    select.appendChild(optionElement);
+  });
+  
+  // Ensure current setting is valid, upgrade if necessary
+  if (appSettings.slideshowInterval < minInterval) {
+    const newInterval = validOptions[0].value;
+    console.log(`⚠️ Upgrading slideshow interval from ${appSettings.slideshowInterval}s to ${newInterval}s (minimum required)`);
+    appSettings.slideshowInterval = newInterval;
+    saveSettings();
+  }
+  
+  // Set the current value
+  select.value = appSettings.slideshowInterval;
+  
+  console.log(`📊 Minimum slideshow interval: ${minInterval}s (based on ${preloadTimes.length} preload samples)`);
 }
 
 async function updateBackground(forceUpdate = false) {
@@ -240,6 +328,11 @@ async function updateBackground(forceUpdate = false) {
     // Save the new index/theme
     if (oldIndex !== appSettings.bgIndex || forceUpdate) {
       saveSettings();
+    }
+    
+    // Update slideshow options if we have enough preload samples
+    if (preloadTimes.length >= 3) {
+      updateSlideshowIntervalOptions();
     }
 
   } catch (error) {
@@ -289,8 +382,10 @@ function initializeBackgroundSystem(force = false) {
     updateBackground(true);
 
     // Set the intervals
-    // 1. Background image cycling every 30 minutes
-    backgroundInterval = setInterval(() => updateBackground(false), 1000 * 60 * 30); // 30 mins
+    // 1. Background image cycling using user-configurable interval
+    const intervalMs = appSettings.slideshowInterval * 1000; // Convert seconds to milliseconds
+    backgroundInterval = setInterval(() => updateBackground(false), intervalMs);
+    console.log(`🖼️ Slideshow interval set to ${appSettings.slideshowInterval} seconds`);
 
     // 2. Day/Night boundary check every 1 minute
     dayNightCheckInterval = setInterval(checkDayNightBoundary, 1000 * 60); // 1 min
@@ -494,6 +589,24 @@ document.getElementById('focus-duration').addEventListener('change', (e) => {
     if (!isRunning) {
         resetTimer();
     }
+});
+
+document.getElementById('slideshow-interval').addEventListener('change', (e) => {
+    const requestedInterval = parseInt(e.target.value);
+    const minInterval = getMinimumSlideshowInterval();
+    
+    if (requestedInterval < minInterval) {
+        console.warn(`⚠️ Requested interval ${requestedInterval}s is below minimum ${minInterval}s. Using minimum.`);
+        appSettings.slideshowInterval = minInterval;
+        e.target.value = minInterval; // Update UI to show actual value
+    } else {
+        appSettings.slideshowInterval = requestedInterval;
+    }
+    
+    saveSettings();
+    // Reinitialize background system with new interval
+    initializeBackgroundSystem(true);
+    console.log(`🖼️ Slideshow interval updated to ${appSettings.slideshowInterval} seconds`);
 });
 
 
