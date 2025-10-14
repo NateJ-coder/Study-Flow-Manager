@@ -69,6 +69,11 @@ let totalSeconds = appSettings.focusDuration * 60;
 let isRunning = false;
 let isFocusSession = true; // Placeholder for future Pomodoro logic
 
+// Background Slideshow State
+let backgroundInterval = null;
+let dayNightCheckInterval = null;
+let isBackgroundSystemInitialized = false; // Flag to track if background intervals are running
+
 
 // --- FIREBASE AND AUTHENTICATION ---
 
@@ -254,31 +259,48 @@ function changeTheme(newTheme) {
     }
 }
 
+// Helper function for checking day/night boundary transitions
+function checkDayNightBoundary() {
+  if (isNight !== isNightTime()) {
+    // Day/Night transition detected, force an immediate update and reset index
+    console.log(`🌓 Day/Night transition detected. Switching image set.`);
+    appSettings.bgIndex = 0;
+    updateBackground(true);
+  }
+}
+
 // Main initialisation function for the background system
 function initializeBackgroundSystem(force = false) {
-  const isInitialLoad = !timerInterval && !force; // Only run slideshow interval once
-  
-  // Update background immediately
-  updateBackground(true); 
-  
-  // Set up the background slideshow to run every 30 minutes
-  if (isInitialLoad) {
-    // Check day/night boundary every minute to ensure the correct image set is used.
-    setInterval(() => {
-      if (isNight !== isNightTime()) {
-        // Day/Night transition detected, force an immediate update and reset index
-        console.log(`🌓 Day/Night transition detected. Switching image set.`);
-        appSettings.bgIndex = 0;
-        updateBackground(true);
-      }
-    }, 60000); // Check every minute
+    // 🛠️ New logic: Check the dedicated background flag instead of timerInterval
+    if (isBackgroundSystemInitialized && !force) {
+        // If already initialized and not forcing a re-initialization (like a theme change)
+        return;
+    }
 
-    // Cycle through images every 30 minutes (1,800,000 ms)
-    setInterval(() => updateBackground(false), 1800000);
-  }
-  
-  // Initialize Particles based on current theme
-  initializeParticles(BACKGROUND_CONFIG[appSettings.theme].particles);
+    // Clear existing intervals before setting new ones (important for theme changes)
+    if (backgroundInterval) {
+        clearInterval(backgroundInterval);
+    }
+    if (dayNightCheckInterval) {
+        clearInterval(dayNightCheckInterval);
+    }
+
+    // Update background immediately
+    updateBackground(true);
+
+    // Set the intervals
+    // 1. Background image cycling every 30 minutes
+    backgroundInterval = setInterval(() => updateBackground(false), 1000 * 60 * 30); // 30 mins
+
+    // 2. Day/Night boundary check every 1 minute
+    dayNightCheckInterval = setInterval(checkDayNightBoundary, 1000 * 60); // 1 min
+
+    // Update the flag
+    isBackgroundSystemInitialized = true;
+    console.log("🖼️ Background Slideshow System Initialized.");
+
+    // Initialize Particles based on current theme
+    initializeParticles(BACKGROUND_CONFIG[appSettings.theme].particles);
 }
 
 
