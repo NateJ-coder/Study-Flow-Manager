@@ -228,10 +228,20 @@ function updateLoadingProgress() {
 function enableContinueButton() {
   const continueBtn = document.getElementById('continue-button');
   if (continueBtn) {
-    continueBtn.innerHTML = 'Continue to Focus';
+    continueBtn.innerHTML = `
+      <div class="flex items-center justify-center">
+        <span class="mr-2">✅</span>
+        Continue to Focus
+      </div>
+    `;
     continueBtn.disabled = false;
     continueBtn.classList.remove('opacity-75', 'cursor-not-allowed');
-    continueBtn.classList.add('hover:bg-amber-500', 'active:scale-98', 'hover:scale-102', 'cursor-pointer', 'animate-pulse');
+    continueBtn.classList.add('hover:bg-amber-500', 'active:scale-98', 'hover:scale-102', 'cursor-pointer');
+    
+    // Remove any spinning animation and add a subtle ready pulse
+    setTimeout(() => {
+      continueBtn.classList.add('animate-pulse');
+    }, 200);
   }
 }
 

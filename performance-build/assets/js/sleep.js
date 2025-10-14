@@ -7,7 +7,7 @@ class SleepModeManager {
   constructor() {
     this.isInSleepMode = false;
     this.inactivityTimer = null;
-    this.inactivityDelay = 30 * 1000; // 30 seconds for testing (was 5 minutes)
+    this.inactivityDelay = this.getSleepTimeout(); // Get from settings
     this.lastActivity = Date.now();
     
     // Elements to manage
@@ -28,6 +28,35 @@ class SleepModeManager {
     this.startInactivityTracking();
     console.log('💤 Sleep Mode Manager initialized - inactivity delay:', this.inactivityDelay, 'ms');
     console.log('💤 Activity listeners setup complete');
+  }
+  
+  // Get sleep timeout from app settings
+  getSleepTimeout() {
+    if (window.appSettings && window.appSettings.sleepTimeout) {
+      return window.appSettings.sleepTimeout * 1000; // Convert seconds to milliseconds
+    }
+    return 5 * 60 * 1000; // Default 5 minutes
+  }
+  
+  // Update sleep timeout (called when settings change)
+  updateSleepTimeout() {
+    this.inactivityDelay = this.getSleepTimeout();
+    console.log('💤 Sleep timeout updated to:', this.inactivityDelay / 1000, 'seconds');
+    
+    // If timeout is 0, disable sleep mode
+    if (this.inactivityDelay === 0) {
+      if (this.inactivityTimer) {
+        clearTimeout(this.inactivityTimer);
+        this.inactivityTimer = null;
+      }
+      if (this.isInSleepMode) {
+        this.exitSleepMode();
+      }
+      console.log('💤 Sleep mode disabled');
+    } else {
+      // Restart timer with new timeout
+      this.resetInactivityTimer();
+    }
   }
   
   // Setup activity detection listeners
@@ -205,18 +234,26 @@ class SleepModeManager {
     const timerDisplay = document.getElementById('sleep-timer-display');
     const sessionInfo = document.getElementById('sleep-session-info');
     
-    if (timerDisplay && window.pomodoroTimer) {
+    if (timerDisplay && window.studyFlowTimer) {
       // Get current time from main timer
-      const timeLeft = window.pomodoroTimer.timeLeft;
+      const timeLeft = window.studyFlowTimer.timeLeft;
       const minutes = Math.floor(timeLeft / 60);
       const seconds = timeLeft % 60;
       timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
       
       // Update session info
-      if (sessionInfo && window.pomodoroTimer.settings) {
-        const currentSession = window.pomodoroTimer.currentSession;
-        const totalSessions = window.pomodoroTimer.settings.sessionsBeforeLongBreak;
-        sessionInfo.textContent = `Session ${currentSession} of ${totalSessions}`;
+      if (sessionInfo) {
+        const currentSession = window.studyFlowTimer.currentSession;
+        const totalSessions = window.studyFlowTimer.totalSessions;
+        const sessionType = window.studyFlowTimer.sessionType;
+        
+        if (sessionType === 'focus') {
+          sessionInfo.textContent = `Session ${currentSession} of ${totalSessions}`;
+        } else if (sessionType === 'short-break') {
+          sessionInfo.textContent = `Short Break`;
+        } else {
+          sessionInfo.textContent = `Long Break`;
+        }
       }
     }
   }

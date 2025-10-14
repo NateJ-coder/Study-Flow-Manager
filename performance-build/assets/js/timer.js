@@ -39,8 +39,8 @@ const BACKGROUND_CONFIG = {
       night: Array.from({ length: 8 }, (_, i) => `assets/images/summer-night-${i + 1}.png`),
     },
     particles: {
-      day: { count: 55, size: 6, speed: 1.5, type: 'green-leaf' }, // Green leaves for summer days
-      night: { count: 30, size: 2, speed: 0.5, type: 'glow' } // Fireflies at night
+      day: { count: 50, size: 8, speed: 1.2, type: 'green-leaf' }, // Green leaves for summer days
+      night: { count: 60, size: 4, speed: 0.8, type: 'glow' } // More visible fireflies for summer nights
     }
   },
   autumn: {
@@ -50,7 +50,7 @@ const BACKGROUND_CONFIG = {
     },
     particles: {
       day: { count: 60, size: 6, speed: 1.5, type: 'leaf' }, // Autumn leaves for days
-      night: { count: 30, size: 2, speed: 0.5, type: 'glow' } // Fireflies at night
+      night: { count: 45, size: 3, speed: 0.5, type: 'glow' } // More visible fireflies at night
     }
   },
   winter: {
@@ -60,7 +60,7 @@ const BACKGROUND_CONFIG = {
     },
     particles: {
       day: { count: 70, size: 4, speed: 1, type: 'snow' }, // Snowflakes for days
-      night: { count: 30, size: 2, speed: 0.5, type: 'glow' } // Fireflies at night
+      night: { count: 45, size: 3, speed: 0.5, type: 'glow' } // More visible fireflies at night
     }
   }
 };
@@ -74,6 +74,7 @@ let appSettings = {
   longBreakDuration: 15, // minutes
   sessionsBeforeLongBreak: 4, // number of focus sessions before long break
   slideshowInterval: 30, // seconds (will be validated against minimum)
+  sleepTimeout: 300, // seconds (5 minutes default)
 };
 
 // Timer State
@@ -85,6 +86,18 @@ let isRunning = false;
 let currentSession = 1; // Current session number
 let sessionType = 'focus'; // 'focus', 'short-break', 'long-break'
 let completedSessions = 0; // Completed focus sessions
+
+// Global timer access for sleep mode
+window.studyFlowTimer = {
+  get timeLeft() { return totalSeconds; },
+  get currentSession() { return currentSession; },
+  get sessionType() { return sessionType; },
+  get totalSessions() { return appSettings.sessionsBeforeLongBreak; },
+  get isRunning() { return isRunning; }
+};
+
+// Global settings access for sleep mode
+window.appSettings = appSettings;
 
 // Session Messages
 const sessionMessages = {
@@ -214,6 +227,7 @@ function applySettings() {
   document.getElementById('short-break-duration').value = appSettings.shortBreakDuration;
   document.getElementById('long-break-duration').value = appSettings.longBreakDuration;
   document.getElementById('sessions-before-long-break').value = appSettings.sessionsBeforeLongBreak;
+  document.getElementById('sleep-timeout').value = appSettings.sleepTimeout;
   
   // 4. Apply Slideshow Interval - update options based on preload performance
   updateSlideshowIntervalOptions();
@@ -570,14 +584,17 @@ function drawParticles(config) {
     } else if (config.type === 'leaf' || config.type === 'green-leaf') {
         ctx.fillRect(p.x, p.y, p.size, p.size * 0.5); // Rectangular shape for leaves
     } else {
-        // Glow effect (Subtle circle)
+        // Enhanced glow effect for fireflies
+        ctx.globalAlpha = 0.9; // Increase opacity
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        // Optional: add a blur/shadow for a better glow effect
-        ctx.shadowColor = ctx.fillStyle;
-        ctx.shadowBlur = p.size * 3;
+        // Enhanced glow with multiple layers
+        ctx.shadowColor = '#ffff80'; // Warm yellow glow
+        ctx.shadowBlur = p.size * 5; // Larger glow radius
+        ctx.fillStyle = '#ffff99'; // Brighter firefly color
     }
     ctx.fill();
     ctx.shadowBlur = 0; // Reset shadow for next draw
+    ctx.globalAlpha = 1; // Reset alpha for next draw
   });
   
   // Draw transition particles if transitioning
@@ -622,12 +639,16 @@ function drawParticles(config) {
       } else if (config.type === 'leaf' || config.type === 'green-leaf') {
         ctx.fillRect(p.x, p.y, p.size, p.size * 0.5);
       } else {
+        // Enhanced transition glow
+        ctx.globalAlpha = p.life * 0.8; // Fade based on life and increase visibility
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.shadowColor = ctx.fillStyle;
-        ctx.shadowBlur = p.size * 4;
+        ctx.shadowColor = '#ffff80';
+        ctx.shadowBlur = p.size * 6; // Even more dramatic for transition
+        ctx.fillStyle = '#ffff99';
       }
       ctx.fill();
       ctx.shadowBlur = 0;
+      ctx.globalAlpha = 1; // Reset alpha
     });
     
     ctx.globalAlpha = 1.0; // Reset alpha
@@ -935,6 +956,19 @@ document.getElementById('sessions-before-long-break').addEventListener('change',
     saveSettings();
     // Update current session UI to reflect new total
     updateSessionUI();
+});
+
+document.getElementById('sleep-timeout').addEventListener('change', (e) => {
+    appSettings.sleepTimeout = parseInt(e.target.value);
+    saveSettings();
+    
+    // Update sleep manager if it exists
+    if (window.sleepManager) {
+        window.sleepManager.updateSleepTimeout();
+    }
+    
+    const timeoutText = appSettings.sleepTimeout === 0 ? 'disabled' : `${appSettings.sleepTimeout} seconds`;
+    console.log(`💤 Sleep mode timeout updated to: ${timeoutText}`);
 });
 
 
