@@ -851,12 +851,19 @@
     // ============================================
     
     function selectTheme(theme) {
-      // Update theme selection UI
+      // Only update UI selection, don't apply the theme yet
       document.querySelectorAll('.theme-option').forEach(option => {
         option.classList.remove('active');
       });
       document.querySelector(`[data-theme="${theme}"]`).classList.add('active');
       
+      // Store the selected theme for later application
+      window.pendingTheme = theme;
+      
+      console.log(`🎨 Theme selected: ${theme} (will apply after Save Settings)`);
+    }
+    
+    function applyTheme(theme) {
       // Apply theme to body
       document.body.className = theme + '-theme';
       
@@ -865,7 +872,7 @@
       
       // Apply theme to smart background manager if available
       if (window.backgroundManager && window.backgroundManager.setSeason) {
-        console.log(`🎨 Changing season to: ${theme}`);
+        console.log(`🎨 Applying season: ${theme}`);
         window.backgroundManager.setSeason(theme);
       } else if (window.backgroundManager) {
         // Fallback for old background manager
@@ -873,7 +880,7 @@
         window.backgroundManager.loadInitialBackground();
       }
       
-      console.log(`✅ Theme changed to: ${theme}`);
+      console.log(`✅ Theme applied: ${theme}`);
     }
     
     // ============================================
@@ -881,21 +888,8 @@
     // ============================================
     
     function updateTimezone(timezone) {
-      console.log(`🌍 Timezone changed to: ${timezone}`);
-      
-      // Update settings
-      if (!window.timerSettings.timezone) {
-        window.timerSettings.timezone = timezone;
-      } else {
-        window.timerSettings.timezone = timezone;
-      }
-      
-      // Apply to smart background manager
-      if (window.backgroundManager && window.backgroundManager.setTimezone) {
-        window.backgroundManager.setTimezone(timezone);
-      }
-      
-      console.log(`✅ Timezone updated: ${timezone}`);
+      console.log(`🌍 Timezone selected: ${timezone} (will apply after Save Settings)`);
+      // Timezone will be applied in saveSettings() function
     }
     
     // ============================================
@@ -972,6 +966,12 @@
     }
     
     function saveSettings() {
+      // Apply pending theme if one was selected
+      if (window.pendingTheme) {
+        applyTheme(window.pendingTheme);
+        window.pendingTheme = null; // Clear pending theme
+      }
+      
       // Get values from inputs
       window.timerSettings.focusTime = parseInt(document.getElementById('focus-time').value);
       window.timerSettings.shortBreak = parseInt(document.getElementById('short-break').value);

@@ -73,7 +73,16 @@ class SmartBackgroundManager {
       this.startRotation();
     }
     
-    console.log('✅ SmartBackgroundManager ready');
+    // Log current status for debugging
+    console.log(`✅ SmartBackgroundManager ready`);
+    console.log(`🎯 Current state: ${this.currentSeason} ${this.currentTimeOfDay}`);
+    console.log(`📸 Image count: ${this.currentImageSet.length}`);
+    
+    // Force a time update to ensure proper day/night detection
+    setTimeout(() => {
+      console.log('🔄 Performing initial time verification...');
+      this.updateTimeOfDay();
+    }, 1000);
   }
   
   /**
@@ -95,11 +104,13 @@ class SmartBackgroundManager {
       }
       
       console.log(`🕐 Time check: ${currentHour}:${userTime.getMinutes().toString().padStart(2, '0')} (${this.userTimezone})`);
-      console.log(`🌅 Time of day: ${this.currentTimeOfDay}`);
+      console.log(`🌅 Time of day: ${this.currentTimeOfDay} (day: ${this.settings.dayStartHour}-${this.settings.nightStartHour})`);
       
       // If time of day changed, update image set
       if (previousTimeOfDay !== this.currentTimeOfDay) {
         console.log(`🔄 Time of day changed from ${previousTimeOfDay} to ${this.currentTimeOfDay}`);
+        // Clear any cached images from wrong time period
+        this.loadedImages.clear();
         this.updateImageSet();
         this.loadInitialBackground(); // Load new time-appropriate image
       }
@@ -133,7 +144,8 @@ class SmartBackgroundManager {
     
     console.log(`🎨 Updated image set: ${this.currentSeason} ${this.currentTimeOfDay}`);
     console.log(`📸 Available images: ${this.currentImageSet.length}`);
-    console.log(`🔀 Shuffled order:`, this.shuffledIndices);
+    console.log(`�️ Image list:`, this.currentImageSet.map(img => img.split('/').pop()));
+    console.log(`�🔀 Shuffled order:`, this.shuffledIndices);
   }
   
   /**
@@ -276,7 +288,18 @@ class SmartBackgroundManager {
     }
     
     const nextImage = this.getCurrentImage();
-    console.log(`🔄 Rotating to: ${nextImage.split('/').pop()} (${this.currentImageIndex + 1}/${this.shuffledIndices.length})`);
+    const imageName = nextImage.split('/').pop();
+    console.log(`🔄 Rotating to: ${imageName} (${this.currentImageIndex + 1}/${this.shuffledIndices.length})`);
+    
+    // Verify the image matches current time of day
+    const isCorrectTimeOfDay = imageName.includes(`-${this.currentTimeOfDay}-`);
+    if (!isCorrectTimeOfDay) {
+      console.warn(`⚠️ INCORRECT TIME IMAGE: ${imageName} doesn't match ${this.currentTimeOfDay} time!`);
+      console.warn(`🔍 Current image set:`, this.currentImageSet.map(img => img.split('/').pop()));
+      // Force refresh the image set
+      this.forceRefresh();
+      return;
+    }
     
     // Set the background
     if (this.loadedImages.has(nextImage)) {
@@ -400,6 +423,10 @@ class SmartBackgroundManager {
     
     console.log(`🌿 Season changed: ${previousSeason} → ${this.currentSeason}`);
     
+    // Clear cache and reset index when changing seasons
+    this.loadedImages.clear();
+    this.currentImageIndex = 0;
+    
     // Update image set and start fresh
     this.updateImageSet();
     this.loadInitialBackground();
@@ -411,7 +438,20 @@ class SmartBackgroundManager {
   setTimezone(timezone) {
     console.log(`🌍 Timezone changed: ${this.userTimezone} → ${timezone}`);
     this.userTimezone = timezone;
+    // Clear cache and force refresh when timezone changes
+    this.loadedImages.clear();
     this.updateTimeOfDay(); // This will trigger image set update if needed
+  }
+  
+  /**
+   * Debug function to force refresh the background system
+   */
+  forceRefresh() {
+    console.log('🔄 Force refreshing background system...');
+    this.loadedImages.clear();
+    this.updateTimeOfDay();
+    this.updateImageSet();
+    this.loadInitialBackground();
   }
   
   /**
