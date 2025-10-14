@@ -472,6 +472,16 @@ document.getElementById('startButton').addEventListener('click', startTimer);
 document.getElementById('resetButton').addEventListener('click', resetTimer);
 document.getElementById('settingsButton').addEventListener('click', () => toggleSettingsModal(true));
 
+// Settings modal close button handler
+document.querySelector('.settings-close-btn').addEventListener('click', () => toggleSettingsModal(false));
+
+// Close modal when clicking outside of it
+document.getElementById('settingsModal').addEventListener('click', (e) => {
+  if (e.target.id === 'settingsModal') {
+    toggleSettingsModal(false);
+  }
+});
+
 // Settings change handlers
 document.getElementById('theme-select').addEventListener('change', (e) => {
     changeTheme(e.target.value);
