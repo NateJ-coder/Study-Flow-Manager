@@ -34,13 +34,13 @@
 
       // THEME_DATA is exposed by core.js
       this.themeData = window.THEME_DATA || {};
+      
+      // Load saved settings from localStorage first
+      this._loadSavedSettings();
+      
       // settings come from timer.html (updated via Settings modal)
       this.settings = window.timerSettings || {};
-      // fallbacks
-      this.settings.theme = this.settings.theme || 'summer';
-      this.settings.timezone = this.settings.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
-      this.settings.slideshowTime = clamp(parseInt(this.settings.slideshowTime || 20, 10), 20, 3600);
-
+      
       // slideshow state
       this.season = this.settings.theme;          // 'summer' | 'autumn' | 'winter'
       this.timeOfDay = 'day';                     // 'day' | 'night'
@@ -54,16 +54,37 @@
 
       this._init();
     }
+    
+    _loadSavedSettings() {
+      try {
+        const saved = localStorage.getItem('studyflow-timer-settings');
+        if (saved) {
+          const savedSettings = JSON.parse(saved);
+          // Merge saved settings into timerSettings
+          Object.assign(window.timerSettings, savedSettings);
+          console.log('🔄 Loaded saved theme:', window.timerSettings.theme);
+        }
+      } catch (e) {
+        console.warn('Could not load saved settings:', e);
+      }
+    }
 
     // ---------- public API ----------
     setSeason(season) {
+      console.log(`🔄 setSeason called with: ${season}`);
       if (!this.themeData[season]) {
         console.warn(`SmartBackgroundManager: unknown season "${season}"`);
         return;
       }
+      
+      const oldSeason = this.season;
       this.season = season;
+      console.log(`🌿 Season changed: ${oldSeason} → ${season}`);
+      
       document.body.classList.remove('summer-theme', 'autumn-theme', 'winter-theme');
       document.body.classList.add(`${season}-theme`);
+      console.log(`🎨 Applied CSS theme: ${season}-theme`);
+      
       this._rebuildImageOrder(true);
       this._applySeasonParticles();
     }
@@ -82,6 +103,11 @@
 
     // ---------- internal ----------
     _init() {
+      // 0) Apply initial theme CSS class
+      console.log(`🎨 Applying initial theme: ${this.season}`);
+      document.body.classList.remove('summer-theme', 'autumn-theme', 'winter-theme');
+      document.body.classList.add(`${this.season}-theme`);
+      
       // 1) establish initial day/night by timezone
       this._checkTimeAndMaybeFlip(true);
 
@@ -134,6 +160,10 @@
       const seasonCfg = this.themeData[this.season] || {};
       const bucket = (this.timeOfDay === 'day' ? seasonCfg.day : seasonCfg.night) || {};
       const imgs = bucket.images || [];
+      console.log(`🖼️ Getting images for ${this.season} ${this.timeOfDay}: ${imgs.length} images found`);
+      if (imgs.length > 0) {
+        console.log(`📸 Sample images:`, imgs.slice(0, 3).map(img => img.split('/').pop()));
+      }
       return imgs.slice();
     }
 
@@ -208,14 +238,22 @@
 
     _applySeasonParticles() {
       // stop previous loop if any
-      if (this.particles && this.particles.stop) this.particles.stop();
+      if (this.particles && this.particles.stop) {
+        this.particles.stop();
+        console.log('🛑 Stopped previous particles');
+      }
 
+      console.log(`🎨 Applying particles for season: ${this.season}`);
+      
       if (this.season === 'winter') {
         this.particles = snowSystem(this.canvas, this.ctx);
+        console.log('❄️ Winter snow particles activated');
       } else if (this.season === 'summer') {
         this.particles = leavesSystem(this.canvas, this.ctx, { hue: 110, sat: 45, light: 55, size: [2, 4] }); // green small leaves
+        console.log('🌿 Summer green leaves activated');
       } else {
         this.particles = leavesSystem(this.canvas, this.ctx, { hue: 30, sat: 60, light: 55, size: [3, 6] });   // autumn leaves
+        console.log('🍂 Autumn leaves activated');
       }
       this.particles.start();
     }
@@ -310,6 +348,10 @@
     };
   }
 
-  // boot on DOM ready
-  document.addEventListener('DOMContentLoaded', () => new SmartBackgroundManager());
+  // boot on DOM ready, with a slight delay to ensure timerSettings are loaded
+  document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+      new SmartBackgroundManager();
+    }, 100); // Small delay to ensure settings are loaded
+  });
 })();
