@@ -4,7 +4,7 @@
   --primary-bg: #0f1419;
   --text-color: #e7eaee;
   --accent-color: #64ffda;
-  --card-bg: rgba(15, 20, 25, 0.85); /* Semi-transparent dark background */
+  --card-bg: rgba(15, 20, 25, 0.40); /* More transparent for better background visibility */
   --btn-bg: #1c232d;
   --btn-hover: #293440;
   --timer-text-size: 5rem;
@@ -51,7 +51,7 @@ body {
   height: 100%;
   object-fit: cover;
   opacity: 0.9;
-  transition: opacity 1.5s ease-in-out;
+  transition: opacity 0.8s ease-in-out;
 }
 
 #particle-canvas {
