@@ -776,8 +776,8 @@
 
   <!-- Performance-Optimized Scripts -->
   <script src="assets/js/core.js" defer></script>
-  <script src="assets/js/background-manager.js" defer></script>
   <script src="assets/js/settings.js" defer></script>
+  <script src="assets/js/background-manager.js" defer></script>
   <script src="assets/js/timer.js" defer></script>
   
   <script>
@@ -870,10 +870,13 @@
       // Update settings first
       window.timerSettings.theme = theme;
       
-      // Theme application now handled by SmartBackgroundManager.setSeason()
-      // which applies both body className and background images
-      
-      console.log(`✅ Theme will be applied by background manager: ${theme}`);
+      // Apply theme to background manager if available
+      if (window.backgroundManager) {
+        window.backgroundManager.setTheme(theme);
+        console.log(`✅ Theme applied to background manager: ${theme}`);
+      } else {
+        console.log(`⏳ Background manager not ready, theme will be applied on initialization: ${theme}`);
+      }
     }
     
     // ============================================
@@ -1026,27 +1029,21 @@
         window.pomodoroTimer.updateSettings(window.timerSettings);
       }
       
-      // NEW: tell the background manager
-      console.log('🔧 Applying settings to background manager...');
-      console.log('📋 Current pendingTheme:', window.pendingTheme);
-      console.log('🌍 Current timezone:', window.timerSettings.timezone);
-      console.log('⏱️ Current slideshow time:', window.timerSettings.slideshowTime);
-      
-      if (window.backgroundManager) {
-        window.backgroundManager.setTimezone(window.timerSettings.timezone);
-        window.backgroundManager.setIntervalSeconds(window.timerSettings.slideshowTime);
-        if (window.pendingTheme) {
-          console.log(`🎨 Calling setSeason with: ${window.pendingTheme}`);
-          window.backgroundManager.setSeason(window.pendingTheme);
-          window.pendingTheme = null; // Clear after applying
-        } else {
-          console.warn('⚠️ No pending theme to apply');
-        }
-      } else {
-        console.error('❌ window.backgroundManager not found!');
+      // Apply theme to background manager if available
+      if (window.pendingTheme && window.backgroundManager) {
+        window.backgroundManager.setTheme(window.pendingTheme);
+        window.pendingTheme = null; // Clear after applying
+        console.log('🎨 Theme applied to background manager');
       }
       
-      console.log('💾 Settings saved and applied to background manager');
+      // Update background rotation settings if manager is available
+      if (window.backgroundManager) {
+        if (window.timerSettings.slideshowTime) {
+          window.backgroundManager.setInterval(window.timerSettings.slideshowTime * 1000);
+        }
+      }
+      
+      console.log('💾 Settings saved and applied to background system');
     }
     
     // ============================================
@@ -1064,48 +1061,33 @@
         console.log('Could not load saved settings');
       }
       
-      // Initialize Smart Background Manager for seasonal images
-      console.log('🚀 Checking SmartBackgroundManager availability...');
-      console.log('SmartBackgroundManager available:', typeof SmartBackgroundManager !== 'undefined');
-      console.log('THEME_DATA available:', typeof THEME_DATA !== 'undefined');
+      // Initialize new StudyFlow Background Manager
+      console.log('🚀 Waiting for StudyFlow Background Manager...');
       
-      // SmartBackgroundManager auto-initializes via DOMContentLoaded - just configure it
-      if (window.backgroundManager) {
-        console.log('✅ Using auto-initialized SmartBackgroundManager');
-        
-        // Configure the existing instance
-        window.backgroundManager.setSeason(window.timerSettings.theme);
-        if (window.timerSettings.timezone) {
-          window.backgroundManager.setTimezone(window.timerSettings.timezone);
-        }
-        
-        // Set rotation interval
-        const requestedInterval = window.timerSettings.slideshowTime * 1000;
-        const minInterval = 20000; // 20 seconds minimum
-        const safeInterval = Math.max(requestedInterval, minInterval);
-        
-        if (requestedInterval < minInterval) {
-          console.warn(`🚫 Settings slideshow time ${requestedInterval/1000}s below minimum. Using ${minInterval/1000}s.`);
-          window.timerSettings.slideshowTime = 20;
-        }
-        
-        window.backgroundManager.setRotationInterval(safeInterval);
-        console.log(`🔄 Background manager configured for ${window.timerSettings.theme} theme`);
-        
-        // Store the safe interval back to settings
-        localStorage.setItem('studyflow-timer-settings', JSON.stringify(window.timerSettings));
-      } else {
-        console.warn('❌ SmartBackgroundManager not available - will retry in 500ms');
-        setTimeout(() => {
-          if (window.backgroundManager) {
-            window.backgroundManager.setSeason(window.timerSettings.theme);
-            if (window.timerSettings.timezone) {
-              window.backgroundManager.setTimezone(window.timerSettings.timezone);
-            }
-            console.log('✅ Configured background manager on retry');
+      // Wait for background manager to initialize, then sync settings
+      const waitForBackgroundManager = () => {
+        if (window.backgroundManager) {
+          console.log('✅ Background manager detected, syncing settings...');
+          
+          // Apply saved theme
+          if (window.timerSettings.theme) {
+            window.backgroundManager.setTheme(window.timerSettings.theme);
           }
-        }, 500);
-      }
+          
+          // Sync rotation settings
+          if (window.timerSettings.slideshowTime) {
+            window.backgroundManager.setInterval(window.timerSettings.slideshowTime * 1000);
+          }
+          
+          console.log('🎨 Background system synchronized with timer settings');
+        } else {
+          // Retry in 100ms
+          setTimeout(waitForBackgroundManager, 100);
+        }
+      };
+      
+      // Start waiting for background manager
+      setTimeout(waitForBackgroundManager, 150);
       
       // Apply saved theme and update UI to match
       selectTheme(window.timerSettings.theme);

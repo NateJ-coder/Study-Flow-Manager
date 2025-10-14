@@ -528,11 +528,7 @@
         // Simulate auth ready (since we removed Firebase for now)
         isAuthReady = true;
         
-        // Initialize background manager for intelligent preloading
-        if (typeof BackgroundManager !== 'undefined') {
-          window.backgroundManager = new BackgroundManager();
-          window.backgroundManager.init();
-        }
+        // Background system removed - clean slate for new implementation
         
         // Keep loading state for smooth transition (reduced for LCP)
         setTimeout(() => {

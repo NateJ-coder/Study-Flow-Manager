@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StudyFlow Background Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: system-ui, sans-serif;
+            color: white;
+            min-height: 100vh;
+            background: #0b0f14;
+        }
+        .test-panel {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.8);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.2);
+            z-index: 1000;
+        }
+        .test-panel button {
+            display: block;
+            width: 100%;
+            margin: 5px 0;
+            padding: 8px 12px;
+            background: rgba(64,146,255,0.3);
+            border: 1px solid rgba(64,146,255,0.5);
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .test-panel button:hover {
+            background: rgba(64,146,255,0.5);
+        }
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 5px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-panel">
+        <h3>Background System Test</h3>
+        <button onclick="testTheme('summer')">Summer Theme</button>
+        <button onclick="testTheme('autumn')">Autumn Theme</button>
+        <button onclick="testTheme('winter')">Winter Theme</button>
+        <button onclick="testNextBackground()">Next Background</button>
+        <button onclick="testToggleRotation()">Toggle Rotation</button>
+        <div class="status" id="status">Loading...</div>
+    </div>
+
+    <!-- Include the background manager -->
+    <script src="assets/js/core.js"></script>
+    <script src="assets/js/background-manager.js"></script>
+
+    <script>
+        // Wait for the background manager to initialize
+        function waitForBackgroundManager() {
+            if (window.backgroundManager) {
+                document.getElementById('status').textContent = 'Background manager ready!';
+                updateStatus();
+            } else {
+                setTimeout(waitForBackgroundManager, 100);
+            }
+        }
+
+        function testTheme(theme) {
+            if (window.backgroundManager) {
+                window.backgroundManager.setTheme(theme);
+                updateStatus();
+            }
+        }
+
+        function testNextBackground() {
+            if (window.backgroundManager) {
+                window.backgroundManager.nextBackground();
+                updateStatus();
+            }
+        }
+
+        function testToggleRotation() {
+            if (window.backgroundManager) {
+                const currentState = window.backgroundManager.getCurrentState();
+                window.backgroundManager.setRotationEnabled(!currentState.rotationEnabled);
+                updateStatus();
+            }
+        }
+
+        function updateStatus() {
+            if (window.backgroundManager) {
+                const state = window.backgroundManager.getCurrentState();
+                document.getElementById('status').innerHTML = `
+                    Theme: ${state.theme}<br>
+                    Phase: ${state.phase}<br>
+                    Image: ${state.index}/${state.total}<br>
+                    Rotation: ${state.rotationEnabled ? 'ON' : 'OFF'}<br>
+                    Interval: ${state.interval}ms
+                `;
+            }
+        }
+
+        // Start waiting for background manager
+        setTimeout(waitForBackgroundManager, 200);
+
+        // Update status every second
+        setInterval(updateStatus, 1000);
+    </script>
+</body>
+</html>
