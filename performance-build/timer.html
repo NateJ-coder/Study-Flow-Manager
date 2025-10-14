@@ -864,23 +864,13 @@
     }
     
     function applyTheme(theme) {
-      // Apply theme to body
-      document.body.className = theme + '-theme';
-      
-      // Update settings
+      // Update settings first
       window.timerSettings.theme = theme;
       
-      // Apply theme to smart background manager if available
-      if (window.backgroundManager && window.backgroundManager.setSeason) {
-        console.log(`🎨 Applying season: ${theme}`);
-        window.backgroundManager.setSeason(theme);
-      } else if (window.backgroundManager) {
-        // Fallback for old background manager
-        window.backgroundManager.currentTheme = theme.toUpperCase();
-        window.backgroundManager.loadInitialBackground();
-      }
+      // Theme application now handled by SmartBackgroundManager.setSeason()
+      // which applies both body className and background images
       
-      console.log(`✅ Theme applied: ${theme}`);
+      console.log(`✅ Theme will be applied by background manager: ${theme}`);
     }
     
     // ============================================
@@ -1018,22 +1008,16 @@
         window.pomodoroTimer.updateSettings(window.timerSettings);
       }
       
-      // Update background slideshow timing and timezone
+      // NEW: tell the background manager
       if (window.backgroundManager) {
-        // Update rotation interval
-        if (window.backgroundManager.setRotationInterval) {
-          window.backgroundManager.setRotationInterval(window.timerSettings.slideshowTime * 1000);
-        } else if (window.backgroundManager.updateSlideshowTiming) {
-          // Fallback for legacy manager
-          const actualInterval = window.backgroundManager.updateSlideshowTiming(window.timerSettings.slideshowTime * 1000);
-          window.timerSettings.slideshowTime = actualInterval / 1000;
-        }
-        
-        // Update timezone
-        if (window.backgroundManager.setTimezone) {
-          window.backgroundManager.setTimezone(window.timerSettings.timezone);
+        window.backgroundManager.setTimezone(window.timerSettings.timezone);
+        window.backgroundManager.setIntervalSeconds(window.timerSettings.slideshowTime);
+        if (window.pendingTheme) {
+          window.backgroundManager.setSeason(window.pendingTheme);
         }
       }
+      
+      console.log('💾 Settings saved and applied to background manager');
     }
     
     // ============================================
