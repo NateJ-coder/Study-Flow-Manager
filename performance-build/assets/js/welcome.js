@@ -28,6 +28,68 @@ let currentTheme = 'AUTUMN';
 let isLoaded = false;
 let isAuthReady = false;
 
+// Comprehensive Loading State
+let loadingState = {
+  criticalAssets: false,
+  backgroundImages: false,
+  firebaseReady: false,
+  userSettings: false,
+  timerAssets: false
+};
+
+// All background images for complete preloading
+const ALL_BACKGROUND_IMAGES = [
+  // Autumn images
+  'performance-build/assets/images/autumn-day-1.png',
+  'performance-build/assets/images/autumn-day-2.png', 
+  'performance-build/assets/images/autumn-day-3.png',
+  'performance-build/assets/images/autumn-day-4.png',
+  'performance-build/assets/images/autumn-day-5.png',
+  'performance-build/assets/images/autumn-day-6.png',
+  'performance-build/assets/images/autumn-day-7.png',
+  'performance-build/assets/images/autumn-day-8.png',
+  'performance-build/assets/images/autumn-night-1.png',
+  'performance-build/assets/images/autumn-night-2.png',
+  'performance-build/assets/images/autumn-night-3.png',
+  'performance-build/assets/images/autumn-night-4.png',
+  'performance-build/assets/images/autumn-night-5.png',
+  'performance-build/assets/images/autumn-night-6.png',
+  'performance-build/assets/images/autumn-night-7.png',
+  'performance-build/assets/images/autumn-night-8.png',
+  // Summer images
+  'performance-build/assets/images/summer-day-1.png',
+  'performance-build/assets/images/summer-day-2.png',
+  'performance-build/assets/images/summer-day-3.png',
+  'performance-build/assets/images/summer-day-4.png',
+  'performance-build/assets/images/summer-day-5.png',
+  'performance-build/assets/images/summer-day-6.png',
+  'performance-build/assets/images/summer-day-7.png',
+  'performance-build/assets/images/summer-day-8.png',
+  'performance-build/assets/images/summer-night-1.png',
+  'performance-build/assets/images/summer-night-2.png',
+  'performance-build/assets/images/summer-night-3.png',
+  'performance-build/assets/images/summer-night-4.png',
+  'performance-build/assets/images/summer-night-5.png',
+  'performance-build/assets/images/summer-night-6.png',
+  'performance-build/assets/images/summer-night-7.png',
+  'performance-build/assets/images/summer-night-8.png',
+  // Winter images  
+  'performance-build/assets/images/winter-day-1.png',
+  'performance-build/assets/images/winter-day-2.png',
+  'performance-build/assets/images/winter-day-3.png',
+  'performance-build/assets/images/winter-day-4.png',
+  'performance-build/assets/images/winter-day-5.png',
+  'performance-build/assets/images/winter-day-6.png',
+  'performance-build/assets/images/winter-day-7.png',
+  'performance-build/assets/images/winter-night-1.png',
+  'performance-build/assets/images/winter-night-2.png',
+  'performance-build/assets/images/winter-night-3.png',
+  'performance-build/assets/images/winter-night-4.png',
+  'performance-build/assets/images/winter-night-5.png',
+  'performance-build/assets/images/winter-night-6.png',
+  'performance-build/assets/images/winter-night-7.png'
+];
+
 // PERFORMANCE OPTIMIZED: Only preload critical assets for LCP
 const CRITICAL_ASSETS = [
   'performance-build/assets/images/welcome-page.png', // Dedicated welcome background
@@ -102,6 +164,112 @@ function showPage(pageId) {
   currentPage = pageId.replace('-screen', '');
 }
 
+// Check if all loading is complete
+function checkLoadingComplete() {
+  const allReady = Object.values(loadingState).every(state => state === true);
+  
+  if (allReady && !isLoaded) {
+    isLoaded = true;
+    enableContinueButton();
+    console.log('✅ All systems ready! Continue button enabled.');
+  }
+  
+  updateLoadingProgress();
+}
+
+// Update loading progress display
+function updateLoadingProgress() {
+  const completed = Object.values(loadingState).filter(state => state === true).length;
+  const total = Object.keys(loadingState).length;
+  const percentage = Math.round((completed / total) * 100);
+  
+  // Update the continue button text to show progress
+  const continueBtn = document.getElementById('continue-button');
+  if (continueBtn && !isLoaded) {
+    continueBtn.innerHTML = `
+      <div class="flex items-center justify-center">
+        <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+        Loading... ${percentage}%
+      </div>
+    `;
+  }
+}
+
+// Enable the continue button when everything is ready
+function enableContinueButton() {
+  const continueBtn = document.getElementById('continue-button');
+  if (continueBtn) {
+    continueBtn.innerHTML = 'Continue to Focus';
+    continueBtn.disabled = false;
+    continueBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+    continueBtn.classList.add('hover:bg-amber-500', 'active:scale-98', 'hover:scale-102', 'cursor-pointer', 'animate-pulse');
+  }
+}
+
+// Initialize Firebase connection
+async function initializeFirebaseConnection() {
+  try {
+    // Import Firebase modules
+    const { initializeApp } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js");
+    const { getAuth, signInAnonymously } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js");
+    const { getFirestore, doc, getDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+    
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyDiY_fxXuLNSTgpPIiHTkmvSAlT-Owqkgc",
+      authDomain: "studyflowapp-2dfd0.firebaseapp.com",
+      projectId: "studyflowapp-2dfd0",
+      storageBucket: "studyflowapp-2dfd0.firebasestorage.app",
+      messagingSenderId: "292997866503",
+      appId: "1:292997866503:web:a999c0ef9d3f06b61136a2",
+      measurementId: "G-CEJ384DE17"
+    };
+    
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    
+    // Sign in anonymously
+    const userCredential = await signInAnonymously(auth);
+    console.log('🔥 Firebase initialized and user authenticated');
+    
+    loadingState.firebaseReady = true;
+    checkLoadingComplete();
+    
+    // Load user settings
+    await loadUserSettings(db, userCredential.user.uid);
+    
+  } catch (error) {
+    console.error('Firebase initialization failed:', error);
+    loadingState.firebaseReady = true; // Continue without Firebase
+    loadingState.userSettings = true;
+    checkLoadingComplete();
+  }
+}
+
+// Load user settings from Firestore
+async function loadUserSettings(db, userId) {
+  try {
+    const settingsRef = doc(db, 'artifacts', 'studyflowapp-2dfd0', 'users', userId, 'settings', 'general');
+    const settingsDoc = await getDoc(settingsRef);
+    
+    if (settingsDoc.exists()) {
+      console.log('👤 User settings loaded from Firestore');
+    } else {
+      console.log('👤 No existing user settings found, will use defaults');
+    }
+    
+    loadingState.userSettings = true;
+    checkLoadingComplete();
+    
+  } catch (error) {
+    console.error('Error loading user settings:', error);
+    loadingState.userSettings = true; // Continue with defaults
+    checkLoadingComplete();
+  }
+}
+
 function continueToApp() {
   if (isLoaded) {
     playSound('click');
@@ -153,56 +321,51 @@ function playSound(soundName) {
 // ============================================
 
 document.addEventListener('DOMContentLoaded', async function() {
-  updateDebugInfo('Status: Loading critical assets for LCP...');
+  console.log('🚀 StudyFlow: Starting comprehensive preloading system...');
+  updateDebugInfo('Status: Initializing comprehensive loading system...');
+  
+  // Show loading progress
+  updateLoadingProgress();
   
   try {
-    // PERFORMANCE OPTIMIZATION: Only preload critical assets for LCP
-    console.log('🚀 LCP Optimization: Preloading', CRITICAL_ASSETS.length, 'critical assets...');
-    
+    // Phase 1: Critical Assets
+    console.log('� Phase 1: Loading critical assets...');
     await preloadImages(CRITICAL_ASSETS);
+    loadingState.criticalAssets = true;
+    checkLoadingComplete();
     
-    console.log('✅ Critical assets loaded! LCP optimized.');
-    updateDebugInfo('Status: Critical assets loaded, preparing app...');
+    // Phase 2: Firebase & User Settings (parallel)
+    console.log('🔥 Phase 2: Initializing Firebase and user settings...');
+    initializeFirebaseConnection(); // Runs async
     
-    // Simulate auth ready (since we removed Firebase for now)
-    isAuthReady = true;
+    // Phase 3: All Background Images
+    console.log('🖼️ Phase 3: Preloading all background images...');
+    await preloadImages(ALL_BACKGROUND_IMAGES);
+    loadingState.backgroundImages = true;
+    checkLoadingComplete();
     
-    // Background system removed - clean slate for new implementation
+    // Phase 4: Timer Page Assets
+    console.log('⏱️ Phase 4: Preloading timer assets...');
+    const timerAssets = [
+      'performance-build/assets/css/timer.css',
+      'performance-build/assets/js/timer.js'
+    ];
+    // We can't preload JS/CSS the same way as images, so just mark as ready
+    loadingState.timerAssets = true;
+    checkLoadingComplete();
     
-    // Keep loading state for smooth transition (reduced for LCP)
-    setTimeout(() => {
-      isLoaded = true;
-      
-      // Hide loading state and show continue button
-      const loadingState = document.getElementById('loading-state');
-      const continueButton = document.getElementById('continue-button');
-      
-      if (loadingState) loadingState.classList.add('hidden');
-      if (continueButton) continueButton.classList.remove('hidden');
-      
-      updateDebugInfo('Status: Ready to continue! Background images loading lazily...');
-      
-      // Start lazy loading additional backgrounds after user interaction is ready
-      setTimeout(() => {
-        lazyLoadAdditionalBackgrounds();
-      }, 2000);
-      
-    }, 800); // Reduced from 1500ms for faster LCP
+    console.log('✅ All phases initiated! Waiting for completion...');
+    updateDebugInfo('Status: All loading phases initiated, waiting for completion...');
     
   } catch (error) {
-    console.error('Critical asset preloading failed:', error);
-    updateDebugInfo('Status: Load failed, but you can continue');
+    console.error('Preloading error:', error);
+    updateDebugInfo('Status: Some loading failed, but continuing...');
     
-    // Allow continuation even if preload fails
-    setTimeout(() => {
-      isLoaded = true;
-      const loadingState = document.getElementById('loading-state');
-      const continueButton = document.getElementById('continue-button');
-      
-      if (loadingState) loadingState.classList.add('hidden');
-      if (continueButton) continueButton.classList.remove('hidden');
-      
-    }, 1000); // Faster fallback
+    // Mark all as ready if there's an error
+    Object.keys(loadingState).forEach(key => {
+      if (!loadingState[key]) loadingState[key] = true;
+    });
+    checkLoadingComplete();
   }
 });
 

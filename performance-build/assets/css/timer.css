@@ -205,12 +205,13 @@ body {
 }
 
 .control-btn {
-  background: none;
+  background: transparent;
   border: none;
   cursor: pointer;
   padding: 0;
   margin: 0 0.5rem;
   transition: transform 0.2s, opacity 0.2s;
+  outline: none;
 }
 
 .control-btn:hover {
@@ -222,13 +223,9 @@ body {
 }
 
 .control-btn:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
   transform: none;
-}
-
-.control-btn svg {
-  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
 }
 
 /* Loading Indicator */
