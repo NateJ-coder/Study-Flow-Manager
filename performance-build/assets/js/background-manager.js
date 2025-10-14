@@ -1,762 +1,450 @@
-/**// assets/js/background-manager.js
-
- * StudyFlow Background System/**
-
- * Implements: theme selection, day/night cycling, sequential image rotation, * SmartBackgroundManager
-
- * preloading, cross-fade transitions, seasonal particle system, persistence, and * Season-aware, time-of-day aware slideshow + theme particles
-
- * robust error handling. * - Season selected in UI (summer | autumn | winter)
-
- */ * - Shuffles within that season
-
- * - Day ↔ Night auto-switch at 06:00 / 18:00 in the user's chosen timezone
-
-// ---- Configuration ---- * - Uses THEME_DATA (declared in core.js) for image lists
-
-const STORAGE_KEY = 'studyflow-settings'; * - Respects window.timerSettings.slideshowTime (min 20s)
-
-const ASSET_BASE = 'assets/images/'; * - Lightweight canvas particles (snow / leaves)
-
+/**
+ * StudyFlow Background System
+ * Implements: theme selection, day/night cycling, sequential image rotation,
+ * preloading, cross-fade transitions, seasonal particle system, persistence, and
+ * robust error handling.
  */
 
+// ---- Configuration ----
+const STORAGE_KEY = 'studyflow-settings';
+const ASSET_BASE = 'assets/images/';
+
 // Build file lists by rule, matching the spec's counts
+const THEME_COUNTS = {
+  summer: { day: 8, night: 8 },
+  autumn: { day: 8, night: 8 },
+  winter: { day: 7, night: 7 },
+};
 
-const THEME_COUNTS = {(function () {
-
-  summer: { day: 8, night: 8 },  // ---------- tiny helpers ----------
-
-  autumn: { day: 8, night: 8 },  const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
-
-  winter: { day: 7, night: 7 },  const shuffle = (arr) => {
-
-};    const a = arr.slice();
-
-    for (let i = a.length - 1; i > 0; i--) {
-
-function buildImageList(theme, phase, count) {      const j = (Math.random() * (i + 1)) | 0;
-
-  const files = [];      [a[i], a[j]] = [a[j], a[i]];
-
-  for (let i = 1; i <= count; i++) {    }
-
-    files.push(`${theme}-${phase}-${i}.png`);    return a;
-
-  }  };
-
-  return files;  const nowInTZ = (tz) => new Date(new Date().toLocaleString("en-US", { timeZone: tz }));
-
+function buildImageList(theme, phase, count) {
+  const files = [];
+  for (let i = 1; i <= count; i++) {
+    files.push(`${theme}-${phase}-${i}.png`);
+  }
+  return files;
 }
 
-  class SmartBackgroundManager {
-
-const THEME_DATA = Object.fromEntries(    constructor() {
-
-  Object.entries(THEME_COUNTS).map(([theme, c]) => [      // required DOM
-
-    theme,      this.bgEl = document.getElementById('bg-container');
-
-    {      if (!this.bgEl) {
-
-      day: { images: buildImageList(theme, 'day', c.day) },        console.error('SmartBackgroundManager: #bg-container not found.');
-
-      night: { images: buildImageList(theme, 'night', c.night) },        return;
-
-    },      }
-
+const THEME_DATA = Object.fromEntries(
+  Object.entries(THEME_COUNTS).map(([theme, c]) => [
+    theme,
+    {
+      day: { images: buildImageList(theme, 'day', c.day) },
+      night: { images: buildImageList(theme, 'night', c.night) },
+    },
   ])
+);
 
-);      // THEME_DATA is exposed by core.js
+// ---- State ----
+let settings = loadSettings();
+let activeTheme = sanitizeTheme(settings.theme || 'autumn');
+let rotationTimer = null;
+let currentIndex = 0; // within current phase list
+let isNight = isNightTime();
+let lastPhaseKey = isNight ? 'night' : 'day';
+let activeLayer = 'a'; // which bg DIV is currently visible
+let retryMap = new Map(); // filename -> retryCount
 
-      this.themeData = window.THEME_DATA || {};
+// ---- Elements ----
+let bgA, bgB, particleCanvas, stateChip;
 
-// ---- State ----      
-
-let settings = loadSettings();      // Load saved settings from localStorage first
-
-let activeTheme = sanitizeTheme(settings.theme || 'autumn');      this._loadSavedSettings();
-
-let rotationTimer = null;      
-
-let currentIndex = 0; // within current phase list      // settings come from timer.html (updated via Settings modal)
-
-let isNight = isNightTime();      this.settings = window.timerSettings || {};
-
-let lastPhaseKey = isNight ? 'night' : 'day';      
-
-let activeLayer = 'a'; // which bg DIV is currently visible      // slideshow state
-
-let retryMap = new Map(); // filename -> retryCount      this.season = this.settings.theme || 'autumn'; // BUG FIX: Add fallback to prevent undefined
-
-      this.timeOfDay = 'day';                     // 'day' | 'night'
-
-// ---- Elements ----      this.indices = [];                          // shuffled index order for current image set
-
-let bgA, bgB, particleCanvas, stateChip;      this.cursor = 0;                            // current position in indices
-
-      this.rotationTimer = null;
-
-// ---- Background System Class ----      this.timeCheckTimer = null;
-
+// ---- Background System Class ----
 class StudyFlowBackgroundManager {
-
-  constructor() {      // particles
-
-    this.initialized = false;      this.particles = null;
-
+  constructor() {
+    this.initialized = false;
     this.boundMethods = {};
+  }
 
-  }      this._init();
-
+  init() {
+    if (this.initialized) return;
+    
+    console.log('🎨 Initializing StudyFlow Background Manager...');
+    
+    // Create background elements
+    this.createBackgroundElements();
+    
+    // Cache elements
+    bgA = document.getElementById('bg-a');
+    bgB = document.getElementById('bg-b');
+    particleCanvas = document.getElementById('particle-canvas');
+    
+    if (!bgA || !bgB) {
+      console.error('❌ Background elements not found after creation');
+      return;
     }
-
-  init() {    
-
-    if (this.initialized) return;    _loadSavedSettings() {
-
-          try {
-
-    // Create background elements        const saved = localStorage.getItem('studyflow-timer-settings');
-
-    this.createBackgroundElements();        if (saved) {
-
-              const savedSettings = JSON.parse(saved);
-
-    // Cache elements          // Merge saved settings into timerSettings
-
-    bgA = document.getElementById('bg-a');          Object.assign(window.timerSettings, savedSettings);
-
-    bgB = document.getElementById('bg-b');          console.log('🔄 Loaded saved theme:', window.timerSettings.theme);
-
-    particleCanvas = document.getElementById('particle-canvas');        }
-
-          } catch (e) {
-
-    // Initialize the system        console.warn('Could not load saved settings:', e);
-
-    this.initializeBackgroundSystem();      }
-
-        }
-
+    
+    // Initialize the system
+    this.initializeBackgroundSystem();
+    
     this.initialized = true;
-
-    console.log('✅ StudyFlow Background Manager initialized');    // ---------- public API ----------
-
-  }    setSeason(season) {
-
-      console.log(`🔄 setSeason called with: ${season}`);
-
-  createBackgroundElements() {      if (!this.themeData[season]) {
-
-    // Create background root if it doesn't exist        console.warn(`SmartBackgroundManager: unknown season "${season}"`);
-
-    if (!document.getElementById('background-root')) {        return;
-
-      const bgRoot = document.createElement('div');      }
-
-      bgRoot.id = 'background-root';      
-
-      bgRoot.setAttribute('aria-hidden', 'true');      const oldSeason = this.season;
-
-      bgRoot.style.cssText = `      this.season = season;
-
-        position: fixed;      console.log(`🌿 Season changed: ${oldSeason} → ${season}`);
-
-        inset: 0;      
-
-        overflow: hidden;      document.body.classList.remove('summer-theme', 'autumn-theme', 'winter-theme');
-
-        z-index: 1;      document.body.classList.add(`${season}-theme`);
-
-        pointer-events: none;      console.log(`🎨 Applied CSS theme: ${season}-theme`);
-
-        backface-visibility: hidden;      
-
-        transform: translateZ(0);      this._rebuildImageOrder(true);
-
-      `;      this._applySeasonParticles();
-
-          }
-
-      // Create two background layers for cross-fade
-
-      const bgA = document.createElement('div');    setTimezone(tz) {
-
-      bgA.className = 'bg-layer';      this.settings.timezone = tz;
-
-      bgA.id = 'bg-a';      // force a time check immediately
-
-      bgA.style.cssText = `      this._checkTimeAndMaybeFlip(true);
-
-        position: absolute;    }
-
-        inset: 0;
-
-        background-position: center center;    setIntervalSeconds(sec) {
-
-        background-repeat: no-repeat;      const safe = clamp(parseInt(sec || 20, 10), 20, 3600);
-
-        background-size: cover;      this.settings.slideshowTime = safe;
-
-        opacity: 0;      this._restartRotation();
-
-        transition: opacity 900ms ease;    }
-
-        will-change: opacity, background-image;
-
-        filter: saturate(1.05) contrast(1.03);    // ---------- internal ----------
-
-      `;    _init() {
-
-            // 0) Apply initial theme CSS class
-
-      const bgB = document.createElement('div');      console.log(`🎨 Applying initial theme: ${this.season}`);
-
-      bgB.className = 'bg-layer';      document.body.classList.remove('summer-theme', 'autumn-theme', 'winter-theme');
-
-      bgB.id = 'bg-b';      document.body.classList.add(`${this.season}-theme`);
-
-      bgB.style.cssText = bgA.style.cssText;      
-
-            // 1) establish initial day/night by timezone
-
-      bgRoot.appendChild(bgA);      this._checkTimeAndMaybeFlip(true);
-
-      bgRoot.appendChild(bgB);
-
-      document.body.appendChild(bgRoot);      // 2) build shuffled order and paint first background
-
-    }      this._rebuildImageOrder(true);
-
-
-
-    // Create particle canvas if it doesn't exist      // 3) start timers
-
-    if (!document.getElementById('particle-canvas')) {      this._restartRotation();
-
-      const canvas = document.createElement('canvas');      this._startTimeWatcher();
-
-      canvas.id = 'particle-canvas';
-
-      canvas.setAttribute('aria-hidden', 'true');      // 4) particles
-
-      canvas.style.cssText = `      this._installParticleCanvas();
-
-        position: fixed;      this._applySeasonParticles();
-
-        inset: 0;
-
-        z-index: 3;      // expose for integration
-
-        pointer-events: none;      window.backgroundManager = this;
-
-      `;      console.log('✅ SmartBackgroundManager ready:', {
-
-      document.body.appendChild(canvas);        season: this.season,
-
-    }        timeOfDay: this.timeOfDay,
-
-        tz: this.settings.timezone,
-
-    // Add active class styles        images: this._images().length
-
-    const style = document.createElement('style');      });
-
-    style.textContent = '.bg-layer.active { opacity: 1; }';    }
-
-    document.head.appendChild(style);
-
-  }    _restartRotation() {
-
-      if (this.rotationTimer) clearInterval(this.rotationTimer);
-
-  initializeBackgroundSystem() {      const ms = this.settings.slideshowTime * 1000;
-
-    // First paint immediately      this.rotationTimer = setInterval(() => this._next(), ms);
-
-    currentIndex = 0;    }
-
-    isNight = isNightTime();
-
-    lastPhaseKey = isNight ? 'night' : 'day';    _startTimeWatcher() {
-
-    setBackgroundImage(getImageSrc(activeTheme, lastPhaseKey, currentIndex), /*immediate*/true)      if (this.timeCheckTimer) clearInterval(this.timeCheckTimer);
-
-      .then(() => preloadNextImage())      // check once per minute to flip day/night exactly at 06:00 / 18:00
-
-      .catch(() => {/* handled in setBackgroundImage */});      this.timeCheckTimer = setInterval(() => this._checkTimeAndMaybeFlip(false), 60_000);
-
+    console.log('✅ StudyFlow Background Manager initialized');
+  }
+
+  createBackgroundElements() {
+    // Remove old bg-container if it exists
+    const oldBg = document.getElementById('bg-container');
+    if (oldBg) {
+      oldBg.remove();
+      console.log('🗑️ Removed old bg-container');
     }
+
+    // Create background root if it doesn't exist
+    if (!document.getElementById('background-root')) {
+      const bgRoot = document.createElement('div');
+      bgRoot.id = 'background-root';
+      bgRoot.setAttribute('aria-hidden', 'true');
+      bgRoot.style.cssText = `
+        position: fixed;
+        inset: 0;
+        overflow: hidden;
+        z-index: 1;
+        pointer-events: none;
+        backface-visibility: hidden;
+        transform: translateZ(0);
+      `;
+      
+      // Create two background layers for cross-fade
+      const bgA = document.createElement('div');
+      bgA.className = 'bg-layer';
+      bgA.id = 'bg-a';
+      bgA.style.cssText = `
+        position: absolute;
+        inset: 0;
+        background-position: center center;
+        background-repeat: no-repeat;
+        background-size: cover;
+        opacity: 0;
+        transition: opacity 900ms ease;
+        will-change: opacity, background-image;
+        filter: saturate(1.05) contrast(1.03);
+      `;
+      
+      const bgB = document.createElement('div');
+      bgB.className = 'bg-layer';
+      bgB.id = 'bg-b';
+      bgB.style.cssText = bgA.style.cssText;
+      
+      bgRoot.appendChild(bgA);
+      bgRoot.appendChild(bgB);
+      document.body.appendChild(bgRoot);
+      
+      console.log('🏗️ Created new background elements');
+    }
+
+    // Create particle canvas if it doesn't exist
+    if (!document.getElementById('particle-canvas')) {
+      const canvas = document.createElement('canvas');
+      canvas.id = 'particle-canvas';
+      canvas.setAttribute('aria-hidden', 'true');
+      canvas.style.cssText = `
+        position: fixed;
+        inset: 0;
+        z-index: 3;
+        pointer-events: none;
+      `;
+      document.body.appendChild(canvas);
+      console.log('🎨 Created particle canvas');
+    }
+
+    // Add active class styles
+    if (!document.getElementById('bg-styles')) {
+      const style = document.createElement('style');
+      style.id = 'bg-styles';
+      style.textContent = '.bg-layer.active { opacity: 1; }';
+      document.head.appendChild(style);
+    }
+  }
+
+  initializeBackgroundSystem() {
+    console.log(`🌍 Starting background system with theme: ${activeTheme}`);
+    
+    // First paint immediately
+    currentIndex = 0;
+    isNight = isNightTime();
+    lastPhaseKey = isNight ? 'night' : 'day';
+    
+    console.log(`📅 Time phase: ${lastPhaseKey} (${isNight ? 'night' : 'day'})`);
+    
+    setBackgroundImage(getImageSrc(activeTheme, lastPhaseKey, currentIndex), /*immediate*/true)
+      .then(() => {
+        console.log('🖼️ First background loaded');
+        preloadNextImage();
+      })
+      .catch((err) => {
+        console.error('❌ Failed to load first background:', err);
+      });
 
     // Particles
+    initializeParticles(activeTheme);
 
-    initializeParticles(activeTheme);    _checkTimeAndMaybeFlip(force) {
-
-      const t = nowInTZ(this.settings.timezone);
-
-    // Start timers      const hour = t.getHours();
-
-    scheduleRotation();      const newTOD = (hour >= 6 && hour < 18) ? 'day' : 'night';
-
-    scheduleDayNightWatcher();      if (force || newTOD !== this.timeOfDay) {
-
-        const old = this.timeOfDay;
-
-    console.log(`🎨 Background system ready: ${activeTheme} theme, ${lastPhaseKey} phase`);        this.timeOfDay = newTOD;
-
-  }        this._rebuildImageOrder(true);
-
-        if (!force) console.log(`🌗 Time-of-day changed: ${old} → ${newTOD} @ ${this.settings.timezone}`);
-
-  // Public API methods      }
-
-  setTheme(theme) {    }
-
-    const newTheme = sanitizeTheme(theme);
-
-    if (newTheme === activeTheme) return;    _images() {
-
-          const seasonCfg = this.themeData[this.season] || {};
-
-    settings.theme = newTheme;      const bucket = (this.timeOfDay === 'day' ? seasonCfg.day : seasonCfg.night) || {};
-
-    saveSettings();      const imgs = bucket.images || [];
-
-          console.log(`🖼️ Getting images for ${this.season} ${this.timeOfDay}: ${imgs.length} images found`);
-
-    activeTheme = newTheme;      if (imgs.length > 0) {
-
-    currentIndex = 0;        console.log(`📸 Sample images:`, imgs.slice(0, 3).map(img => img.split('/').pop()));
-
-    isNight = isNightTime();      }
-
-    lastPhaseKey = isNight ? 'night' : 'day';      return imgs.slice();
-
-        }
-
-    setBackgroundImage(getImageSrc(activeTheme, lastPhaseKey, currentIndex), true)
-
-      .then(() => preloadNextImage())    _rebuildImageOrder(paintFirst) {
-
-      .catch(() => {});      const imgs = this._images();
-
-          if (!imgs.length) return;
-
-    initializeParticles(activeTheme, true /* reset */);
-
-    console.log(`🔄 Theme changed to: ${activeTheme}`);      // shuffle new order; keep some variety by reshuffling fully
-
-  }      const order = shuffle(imgs.map((_, i) => i));
-
-      this.indices = order;
-
-  setRotationEnabled(enabled) {      this.cursor = 0;
-
-    settings.backgroundRotation = settings.backgroundRotation || {};
-
-    settings.backgroundRotation.enabled = Boolean(enabled);      if (paintFirst) {
-
-    saveSettings();        const first = imgs[this.indices[this.cursor]];
-
-            this._setBackground(first, true /* immediate */);
-
-    if (settings.backgroundRotation.enabled) {      }
-
-      scheduleRotation();    }
-
-    } else {
-
-      clearRotation();    _next() {
-
-    }      const imgs = this._images();
-
-  }      if (!imgs.length) return;
-
-
-
-  setInterval(intervalMs) {      this.cursor = (this.cursor + 1) % this.indices.length;
-
-    const interval = Math.max(5000, Number(intervalMs) || 20000);      if (this.cursor === 0) {
-
-    settings.backgroundRotation = settings.backgroundRotation || {};        // reshuffle each cycle for fresh order
-
-    settings.backgroundRotation.interval = interval;        this.indices = shuffle(this.indices);
-
-    saveSettings();      }
-
-          const next = imgs[this.indices[this.cursor]];
-
-    // Restart rotation with new interval      this._setBackground(next, false);
-
-    clearRotation();    }
-
+    // Start timers
     scheduleRotation();
-
-  }    _setBackground(url, immediate) {
-
-      if (!this.bgEl) return;
-
-  nextBackground() {      if (immediate) {
-
-    updateBackground();        this.bgEl.style.transition = 'none';
-
-  }        this.bgEl.style.opacity = '1';
-
-        this.bgEl.style.backgroundImage = `url('${url}')`;
-
-  getCurrentState() {        // restore transition after one tick
-
-    const phase = isNight ? 'night' : 'day';        requestAnimationFrame(() => {
-
-    const total = THEME_DATA[activeTheme][phase].images.length;          this.bgEl.style.transition = 'opacity 1s ease-in-out';
-
-    const idx = (currentIndex % total) + 1;        });
-
-    const enabled = Boolean(settings.backgroundRotation?.enabled ?? true);        return;
-
-          }
-
-    return {      // fade
-
-      theme: activeTheme,      this.bgEl.style.opacity = '0';
-
-      phase,      setTimeout(() => {
-
-      index: idx,        this.bgEl.style.backgroundImage = `url('${url}')`;
-
-      total,        this.bgEl.style.opacity = '1';
-
-      rotationEnabled: enabled,      }, 150);
-
-      interval: settings.backgroundRotation?.interval ?? 20000    }
-
-    };
-
-  }    // ---------- particles ----------
-
-}    _installParticleCanvas() {
-
-      this.canvas = document.createElement('canvas');
-
-// ---- Core Functions ----      this.canvas.id = 'theme-particles';
-
-function sanitizeTheme(name) {      Object.assign(this.canvas.style, {
-
-  const key = String(name || '').toLowerCase();        position: 'fixed',
-
-  if (key in THEME_DATA) return key;        inset: '0',
-
-  console.warn('[StudyFlow] Invalid theme; defaulting to autumn:', name);        zIndex: '1',          // above bg, below UI card
-
-  return 'autumn';        pointerEvents: 'none'
-
-}      });
-
-      document.body.appendChild(this.canvas);
-
-function scheduleRotation() {      this.ctx = this.canvas.getContext('2d');
-
-  const enabled = Boolean(settings.backgroundRotation?.enabled ?? true);
-
-  if (!enabled) return;      const onResize = () => {
-
-  const interval = Number(settings.backgroundRotation?.interval ?? 20000);        this.canvas.width = window.innerWidth;
-
-  clearRotation();        this.canvas.height = window.innerHeight;
-
-  rotationTimer = setInterval(() => {      };
-
-    updateBackground();      window.addEventListener('resize', onResize);
-
-  }, Math.max(5000, interval));      onResize();
-
-}    }
-
-
-
-function clearRotation() {     _applySeasonParticles() {
-
-  if (rotationTimer) {       // stop previous loop if any
-
-    clearInterval(rotationTimer);       if (this.particles && this.particles.stop) {
-
-    rotationTimer = null;         this.particles.stop();
-
-  }         console.log('🛑 Stopped previous particles');
-
-}      }
-
-
-
-function scheduleDayNightWatcher() {      console.log(`🎨 Applying particles for season: ${this.season}`);
-
-  // Check every minute if phase changed      
-
-  setInterval(() => {      if (this.season === 'winter') {
-
-    const nowNight = isNightTime();        this.particles = snowSystem(this.canvas, this.ctx);
-
-    if (nowNight !== isNight) {        console.log('❄️ Winter snow particles activated');
-
-      isNight = nowNight;      } else if (this.season === 'summer') {
-
-      lastPhaseKey = isNight ? 'night' : 'day';        this.particles = leavesSystem(this.canvas, this.ctx, { hue: 110, sat: 45, light: 55, size: [2, 4] }); // green small leaves
-
-      currentIndex = 0; // reset sequence for the new phase        console.log('🌿 Summer green leaves activated');
-
-      setBackgroundImage(getImageSrc(activeTheme, lastPhaseKey, currentIndex))      } else {
-
-        .then(() => preloadNextImage())        this.particles = leavesSystem(this.canvas, this.ctx, { hue: 30, sat: 60, light: 55, size: [3, 6] });   // autumn leaves
-
-        .catch(() => {});        console.log('🍂 Autumn leaves activated');
-
-      console.log(`🌗 Day/night switched to: ${lastPhaseKey}`);      }
-
-    }      this.particles.start();
-
-  }, 60_000);    }
-
-}  }
-
-
-
-function isNightTime() {  // -------- particle engines (low-poly dots/leaves) --------
-
-  const h = new Date().getHours();  function snowSystem(canvas, ctx) {
-
-  // Day: 06:00–17:59, Night: 18:00–05:59    let raf = 0;
-
-  return !(h >= 6 && h < 18);    const flakes = [];
-
-}    const density = Math.round((canvas.width * canvas.height) / 24000); // Slightly more snowflakes
-
-    for (let i = 0; i < density; i++) {
-
-function getImageSrc(theme, phase, index) {      flakes.push({
-
-  const list = THEME_DATA[theme][phase].images;        x: Math.random() * canvas.width,
-
-  const file = list[index % list.length];        y: Math.random() * canvas.height,
-
-  return ASSET_BASE + file;        r: 1.2 + Math.random() * 2.5, // Slightly larger
-
-}        vx: (Math.random() - 0.5) * 0.3,
-
-        vy: 0.4 + Math.random() * 0.9,
-
-async function updateBackground() {        drift: Math.random() * Math.PI * 2
-
-  const phase = isNight ? 'night' : 'day';      });
-
-  currentIndex = (currentIndex + 1) % THEME_DATA[activeTheme][phase].images.length;    }
-
-  const src = getImageSrc(activeTheme, phase, currentIndex);    const draw = () => {
-
-  try {      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    await setBackgroundImage(src);      ctx.globalAlpha = 0.95; // More visible
-
-    preloadNextImage();      for (const f of flakes) {
-
-  } catch (err) {        f.drift += 0.01;
-
-    console.warn('[StudyFlow] Failed to set bg; advancing', err);        f.x += f.vx + Math.sin(f.drift) * 0.2;
-
-    // skip to next image        f.y += f.vy;
-
-    currentIndex = (currentIndex + 1) % THEME_DATA[activeTheme][phase].images.length;        if (f.y > canvas.height + 5) { f.y = -5; f.x = Math.random() * canvas.width; }
-
-  }        if (f.x < -5) f.x = canvas.width + 5;
-
-}        if (f.x > canvas.width + 5) f.x = -5;
-
-        
-
-function preloadNextImage() {        // Higher poly snowflake: 6-pointed star instead of circle
-
-  const phase = isNight ? 'night' : 'day';        ctx.fillStyle = '#ffffff';
-
-  const nextIdx = (currentIndex + 1) % THEME_DATA[activeTheme][phase].images.length;        ctx.beginPath();
-
-  const src = getImageSrc(activeTheme, phase, nextIdx);        for (let i = 0; i < 6; i++) {
-
-  const img = new Image();          const angle = (i * Math.PI) / 3;
-
-  img.loading = 'eager';          const px = f.x + Math.cos(angle) * f.r;
-
-  img.decoding = 'async';          const py = f.y + Math.sin(angle) * f.r;
-
-  img.src = src;          if (i === 0) ctx.moveTo(px, py);
-
-  // No-op onload; browser caches for instant swap          else ctx.lineTo(px, py);
-
-}        }
-
-        ctx.closePath();
-
-async function setBackgroundImage(src, immediate = false) {        ctx.fill();
-
-  await ensureImageLoadedWithRetry(src);        
-
-  const showA = activeLayer === 'a';        // Add subtle center dot for more definition
-
-  const nextEl = showA ? bgB : bgA;        ctx.beginPath();
-
-  const curEl = showA ? bgA : bgB;        ctx.arc(f.x, f.y, f.r * 0.3, 0, Math.PI * 2);
-
-        ctx.fill();
-
-  nextEl.style.backgroundImage = `url('${cssUrl(src)}')`;      }
-
-      raf = requestAnimationFrame(draw);
-
-  if (immediate) {    };
-
-    curEl.classList.remove('active');    return {
-
-    nextEl.classList.add('active');      start() { cancelAnimationFrame(raf); draw(); },
-
-    activeLayer = showA ? 'b' : 'a';      stop() { cancelAnimationFrame(raf); }
-
-    // hint GC to release old image memory    };
-
-    queueMicrotask(() => { curEl.style.backgroundImage = 'none'; });  }
-
-    return;
-
-  }  function leavesSystem(canvas, ctx, opts) {
-
-    let raf = 0;
-
-  // Cross-fade    const hue = opts?.hue ?? 30;
-
-  nextEl.classList.add('active');    const sat = opts?.sat ?? 60;
-
-  curEl.classList.remove('active');    const light = opts?.light ?? 55;
-
-  activeLayer = showA ? 'b' : 'a';    const [minS, maxS] = opts?.size ?? [3, 6];
-
-
-
-  // After transition, clear the old background to free memory    const leaves = [];
-
-  const ms = 900; // transition duration    const density = Math.round((canvas.width * canvas.height) / 20000); // Slightly more particles
-
-  await new Promise(r => setTimeout(r, ms + 50));    for (let i = 0; i < density; i++) {
-
-  curEl.style.backgroundImage = 'none';      leaves.push({
-
-}        x: Math.random() * canvas.width,
-
-        y: Math.random() * canvas.height,
-
-function cssUrl(u) {        s: minS + Math.random() * (maxS - minS),
-
-  // Basic escape for quotes and parentheses in URLs        rx: Math.random() * Math.PI * 2,
-
-  return String(u).replace(/"/g, '\\"').replace(/\)/g, '\\)');        ry: Math.random() * Math.PI * 2,
-
-}        vx: -0.4 + Math.random() * 0.8,
-
-        vy: 0.5 + Math.random() * 1.0,
-
-async function ensureImageLoadedWithRetry(src) {        wob: Math.random() * Math.PI * 2
-
-  const maxRetries = 3;      });
-
-  const attempt = retryMap.get(src) || 0;    }
-
-  try {    const draw = () => {
-
-    await loadImage(src);      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    retryMap.delete(src);      ctx.globalAlpha = 0.95; // More visible
-
-  } catch (err) {      for (const L of leaves) {
-
-    if (attempt < maxRetries) {        L.wob += 0.02;
-
-      const backoff = Math.min(2000 * (attempt + 1), 4000);        L.x += L.vx + Math.sin(L.wob) * 0.6;
-
-      retryMap.set(src, attempt + 1);        L.y += L.vy;
-
-      console.warn(`[StudyFlow] Load failed for ${src}. Retry ${attempt+1}/${maxRetries} in ${backoff}ms`);        if (L.y > canvas.height + 8) { L.y = -8; L.x = Math.random() * canvas.width; }
-
-      await new Promise(r => setTimeout(r, backoff));        if (L.x < -8) L.x = canvas.width + 8;
-
-      return ensureImageLoadedWithRetry(src);        if (L.x > canvas.width + 8) L.x = -8;
-
+    scheduleDayNightWatcher();
+
+    console.log(`🎨 Background system ready: ${activeTheme} theme, ${lastPhaseKey} phase`);
+  }
+
+  // Public API methods
+  setTheme(theme) {
+    const newTheme = sanitizeTheme(theme);
+    console.log(`🔄 Setting theme from ${activeTheme} to ${newTheme}`);
+    
+    if (newTheme === activeTheme) {
+      console.log('⚠️ Theme unchanged, skipping');
+      return;
+    }
+    
+    settings.theme = newTheme;
+    saveSettings();
+    
+    activeTheme = newTheme;
+    currentIndex = 0;
+    isNight = isNightTime();
+    lastPhaseKey = isNight ? 'night' : 'day';
+    
+    console.log(`🎨 Applying new theme: ${activeTheme} (${lastPhaseKey})`);
+    
+    setBackgroundImage(getImageSrc(activeTheme, lastPhaseKey, currentIndex), true)
+      .then(() => {
+        preloadNextImage();
+        console.log(`✅ Theme successfully changed to: ${activeTheme}`);
+      })
+      .catch((err) => {
+        console.error('❌ Failed to apply theme:', err);
+      });
+    
+    initializeParticles(activeTheme, true /* reset */);
+  }
+
+  setRotationEnabled(enabled) {
+    settings.backgroundRotation = settings.backgroundRotation || {};
+    settings.backgroundRotation.enabled = Boolean(enabled);
+    saveSettings();
+    
+    console.log(`🔄 Rotation ${enabled ? 'enabled' : 'disabled'}`);
+    
+    if (settings.backgroundRotation.enabled) {
+      scheduleRotation();
     } else {
+      clearRotation();
+    }
+  }
 
-      console.error(`[StudyFlow] Giving up on ${src} after ${maxRetries} retries.`);        // Higher poly leaf: hexagonal shape instead of diamond
+  setInterval(intervalMs) {
+    const interval = Math.max(5000, Number(intervalMs) || 20000);
+    settings.backgroundRotation = settings.backgroundRotation || {};
+    settings.backgroundRotation.interval = interval;
+    saveSettings();
+    
+    console.log(`⏰ Rotation interval set to ${interval}ms`);
+    
+    // Restart rotation with new interval
+    clearRotation();
+    scheduleRotation();
+  }
 
-      // Gracefully skip by throwing to caller        const c = `hsl(${hue} ${sat}% ${light}%)`;
+  nextBackground() {
+    console.log('⏭️ Manual background advance requested');
+    updateBackground();
+  }
 
-      throw err;        ctx.fillStyle = c;
-
-    }        ctx.beginPath();
-
-  }        // Create a 6-sided leaf shape
-
-}        for (let i = 0; i < 6; i++) {
-
-          const angle = (i * Math.PI) / 3;
-
-function loadImage(src) {          const px = L.x + Math.cos(angle) * L.s;
-
-  return new Promise((resolve, reject) => {          const py = L.y + Math.sin(angle) * L.s * 0.7; // Slightly flattened
-
-    const img = new Image();          if (i === 0) ctx.moveTo(px, py);
-
-    img.onload = () => resolve();          else ctx.lineTo(px, py);
-
-    img.onerror = reject;        }
-
-    img.decoding = 'async';        ctx.closePath();
-
-    img.referrerPolicy = 'no-referrer';        ctx.fill();
-
-    img.src = src;        
-
-  });        // Add subtle outline for more definition
-
-}        ctx.strokeStyle = `hsl(${hue} ${sat + 10}% ${light - 15}%)`;
-
-        ctx.lineWidth = 0.5;
-
-function saveSettings() {        ctx.stroke();
-
-  try {      }
-
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));      raf = requestAnimationFrame(draw);
-
-  } catch (e) {    };
-
-    console.warn('[StudyFlow] Failed to persist settings', e);    return {
-
-  }      start() { cancelAnimationFrame(raf); draw(); },
-
-}      stop() { cancelAnimationFrame(raf); }
-
+  getCurrentState() {
+    const phase = isNight ? 'night' : 'day';
+    const total = THEME_DATA[activeTheme][phase].images.length;
+    const idx = (currentIndex % total) + 1;
+    const enabled = Boolean(settings.backgroundRotation?.enabled ?? true);
+    
+    return {
+      theme: activeTheme,
+      phase,
+      index: idx,
+      total,
+      rotationEnabled: enabled,
+      interval: settings.backgroundRotation?.interval ?? 20000
     };
+  }
+}
 
-function loadSettings() {  }
+// ---- Core Functions ----
+function sanitizeTheme(name) {
+  const key = String(name || '').toLowerCase();
+  if (key in THEME_DATA) return key;
+  console.warn('[StudyFlow] Invalid theme; defaulting to autumn:', name);
+  return 'autumn';
+}
 
+function scheduleRotation() {
+  const enabled = Boolean(settings.backgroundRotation?.enabled ?? true);
+  if (!enabled) {
+    console.log('⏸️ Rotation disabled, not scheduling');
+    return;
+  }
+  const interval = Number(settings.backgroundRotation?.interval ?? 20000);
+  clearRotation();
+  console.log(`⏰ Scheduling rotation every ${interval}ms`);
+  rotationTimer = setInterval(() => {
+    updateBackground();
+  }, Math.max(5000, interval));
+}
+
+function clearRotation() { 
+  if (rotationTimer) { 
+    clearInterval(rotationTimer); 
+    rotationTimer = null;
+    console.log('⏹️ Rotation timer cleared');
+  } 
+}
+
+function scheduleDayNightWatcher() {
+  // Check every minute if phase changed
+  setInterval(() => {
+    const nowNight = isNightTime();
+    if (nowNight !== isNight) {
+      isNight = nowNight;
+      lastPhaseKey = isNight ? 'night' : 'day';
+      currentIndex = 0; // reset sequence for the new phase
+      console.log(`🌗 Day/night switched to: ${lastPhaseKey}`);
+      setBackgroundImage(getImageSrc(activeTheme, lastPhaseKey, currentIndex))
+        .then(() => preloadNextImage())
+        .catch(() => {});
+    }
+  }, 60_000);
+}
+
+function isNightTime() {
+  const h = new Date().getHours();
+  // Day: 06:00–17:59, Night: 18:00–05:59
+  return !(h >= 6 && h < 18);
+}
+
+function getImageSrc(theme, phase, index) {
+  const list = THEME_DATA[theme][phase].images;
+  const file = list[index % list.length];
+  return ASSET_BASE + file;
+}
+
+async function updateBackground() {
+  const phase = isNight ? 'night' : 'day';
+  currentIndex = (currentIndex + 1) % THEME_DATA[activeTheme][phase].images.length;
+  const src = getImageSrc(activeTheme, phase, currentIndex);
+  
+  console.log(`🔄 Updating background: ${activeTheme} ${phase} image ${currentIndex + 1}`);
+  
   try {
+    await setBackgroundImage(src);
+    preloadNextImage();
+    console.log(`✅ Background updated successfully`);
+  } catch (err) {
+    console.warn('[StudyFlow] Failed to set bg; advancing', err);
+    // skip to next image
+    currentIndex = (currentIndex + 1) % THEME_DATA[activeTheme][phase].images.length;
+  }
+}
 
-    const raw = localStorage.getItem(STORAGE_KEY);  // boot on DOM ready, with a slight delay to ensure timerSettings are loaded
+function preloadNextImage() {
+  const phase = isNight ? 'night' : 'day';
+  const nextIdx = (currentIndex + 1) % THEME_DATA[activeTheme][phase].images.length;
+  const src = getImageSrc(activeTheme, phase, nextIdx);
+  const img = new Image();
+  img.loading = 'eager';
+  img.decoding = 'async';
+  img.src = src;
+  // No-op onload; browser caches for instant swap
+}
 
-    if (!raw) return {  document.addEventListener('DOMContentLoaded', () => {
+async function setBackgroundImage(src, immediate = false) {
+  console.log(`🖼️ Setting background image: ${src} (immediate: ${immediate})`);
+  
+  await ensureImageLoadedWithRetry(src);
+  
+  if (!bgA || !bgB) {
+    console.error('❌ Background elements not available');
+    return;
+  }
+  
+  const showA = activeLayer === 'a';
+  const nextEl = showA ? bgB : bgA;
+  const curEl = showA ? bgA : bgB;
 
-      theme: 'autumn',    setTimeout(() => {
+  nextEl.style.backgroundImage = `url('${cssUrl(src)}')`;
 
-      backgroundRotation: { enabled: true, interval: 20000 }      new SmartBackgroundManager();
+  if (immediate) {
+    curEl.classList.remove('active');
+    nextEl.classList.add('active');
+    activeLayer = showA ? 'b' : 'a';
+    // hint GC to release old image memory
+    queueMicrotask(() => { curEl.style.backgroundImage = 'none'; });
+    console.log(`✅ Background set immediately: ${activeLayer}`);
+    return;
+  }
 
-    };    }, 100); // Small delay to ensure settings are loaded
+  // Cross-fade
+  nextEl.classList.add('active');
+  curEl.classList.remove('active');
+  activeLayer = showA ? 'b' : 'a';
 
-    const parsed = JSON.parse(raw);  });
+  console.log(`🔄 Cross-fading to layer ${activeLayer}`);
 
-    // Ensure structure})();
+  // After transition, clear the old background to free memory
+  const ms = 900; // transition duration
+  await new Promise(r => setTimeout(r, ms + 50));
+  curEl.style.backgroundImage = 'none';
+}
+
+function cssUrl(u) {
+  // Basic escape for quotes and parentheses in URLs
+  return String(u).replace(/"/g, '\\"').replace(/\)/g, '\\)');
+}
+
+async function ensureImageLoadedWithRetry(src) {
+  const maxRetries = 3;
+  const attempt = retryMap.get(src) || 0;
+  try {
+    await loadImage(src);
+    retryMap.delete(src);
+  } catch (err) {
+    if (attempt < maxRetries) {
+      const backoff = Math.min(2000 * (attempt + 1), 4000);
+      retryMap.set(src, attempt + 1);
+      console.warn(`[StudyFlow] Load failed for ${src}. Retry ${attempt+1}/${maxRetries} in ${backoff}ms`);
+      await new Promise(r => setTimeout(r, backoff));
+      return ensureImageLoadedWithRetry(src);
+    } else {
+      console.error(`[StudyFlow] Giving up on ${src} after ${maxRetries} retries.`);
+      // Gracefully skip by throwing to caller
+      throw err;
+    }
+  }
+}
+
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve();
+    img.onerror = reject;
+    img.decoding = 'async';
+    img.referrerPolicy = 'no-referrer';
+    img.src = src;
+  });
+}
+
+function saveSettings() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+    console.log('💾 Settings saved to localStorage');
+  } catch (e) {
+    console.warn('[StudyFlow] Failed to persist settings', e);
+  }
+}
+
+function loadSettings() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return {
+      theme: 'autumn',
+      backgroundRotation: { enabled: true, interval: 20000 }
+    };
+    const parsed = JSON.parse(raw);
+    // Ensure structure
     return {
       theme: sanitizeTheme(parsed.theme ?? 'autumn'),
       backgroundRotation: {
@@ -775,8 +463,14 @@ let particles = [];
 let particleRAF = null;
 
 function initializeParticles(theme, reset = false) {
-  if (!particleCanvas) return;
+  if (!particleCanvas) {
+    console.warn('⚠️ Particle canvas not available');
+    return;
+  }
+  
   if (reset) cancelAnimationFrame(particleRAF);
+
+  console.log(`✨ Initializing ${theme} particles`);
 
   // Setup canvas size
   const dpr = window.devicePixelRatio || 1;
@@ -792,7 +486,12 @@ function initializeParticles(theme, reset = false) {
   const config = getParticleConfig(theme);
   particles = spawnParticles(config);
 
-  window.addEventListener('resize', () => initializeParticles(activeTheme, true));
+  // Remove old resize listener if it exists
+  window.removeEventListener('resize', window.particleResizeHandler);
+  
+  // Add new resize listener
+  window.particleResizeHandler = () => initializeParticles(activeTheme, true);
+  window.addEventListener('resize', window.particleResizeHandler);
 
   // Loop
   const loop = (t) => {
@@ -800,6 +499,8 @@ function initializeParticles(theme, reset = false) {
     particleRAF = requestAnimationFrame(loop);
   };
   particleRAF = requestAnimationFrame(loop);
+  
+  console.log(`✅ ${theme} particles initialized (${particles.length} particles)`);
 }
 
 function getParticleConfig(theme) {
@@ -915,6 +616,8 @@ function rand(min, max) { return Math.random() * (max - min) + min; }
 let backgroundManager = null;
 
 document.addEventListener('DOMContentLoaded', () => {
+  console.log('🚀 DOM loaded, initializing background system...');
+  
   // Small delay to ensure other scripts are loaded
   setTimeout(() => {
     backgroundManager = new StudyFlowBackgroundManager();
@@ -924,7 +627,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.backgroundManager = backgroundManager;
     
     console.log('🎨 StudyFlow Background System ready!');
-  }, 100);
+  }, 200);
 });
 
 // Export for module systems

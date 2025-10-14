@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StudyFlow Background Debug</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: monospace;
+            color: white;
+            min-height: 100vh;
+            background: #000;
+        }
+        .debug-panel {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.9);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #333;
+            z-index: 1000;
+            max-width: 350px;
+            font-size: 12px;
+        }
+        .debug-panel h3 {
+            margin: 0 0 10px 0;
+            color: #4CAF50;
+        }
+        .log {
+            max-height: 300px;
+            overflow-y: auto;
+            background: rgba(255,255,255,0.05);
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .log div {
+            margin: 2px 0;
+            padding: 2px 0;
+        }
+        .error { color: #ff6b6b; }
+        .success { color: #4CAF50; }
+        .info { color: #54a3ff; }
+        .warn { color: #ffd93d; }
+        button {
+            background: #333;
+            color: white;
+            border: 1px solid #666;
+            padding: 5px 10px;
+            margin: 2px;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+        button:hover { background: #555; }
+        .status {
+            background: rgba(255,255,255,0.1);
+            padding: 8px;
+            border-radius: 4px;
+            margin: 8px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="debug-panel">
+        <h3>🔍 Background System Debug</h3>
+        
+        <div class="status" id="status">
+            Status: Loading...
+        </div>
+        
+        <div>
+            <button onclick="testTheme('summer')">Summer</button>
+            <button onclick="testTheme('autumn')">Autumn</button>
+            <button onclick="testTheme('winter')">Winter</button>
+        </div>
+        
+        <div>
+            <button onclick="testNext()">Next Image</button>
+            <button onclick="testToggle()">Toggle Rotation</button>
+            <button onclick="clearLog()">Clear Log</button>
+        </div>
+        
+        <div class="log" id="log"></div>
+    </div>
+
+    <!-- Load the system -->
+    <script src="assets/js/core.js"></script>
+    <script src="assets/js/background-manager.js"></script>
+
+    <script>
+        const logEl = document.getElementById('log');
+        const statusEl = document.getElementById('status');
+        
+        // Intercept console logs
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        
+        function addLog(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = type;
+            div.textContent = new Date().toLocaleTimeString() + ': ' + message;
+            logEl.appendChild(div);
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addLog(args.join(' '), 'info');
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addLog(args.join(' '), 'error');
+        };
+        
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            addLog(args.join(' '), 'warn');
+        };
+        
+        function updateStatus() {
+            if (window.backgroundManager) {
+                try {
+                    const state = window.backgroundManager.getCurrentState();
+                    statusEl.innerHTML = `
+                        <strong>✅ System Ready</strong><br>
+                        Theme: ${state.theme}<br>
+                        Phase: ${state.phase}<br>
+                        Image: ${state.index}/${state.total}<br>
+                        Rotation: ${state.rotationEnabled ? 'ON' : 'OFF'}<br>
+                        Interval: ${state.interval}ms
+                    `;
+                    statusEl.className = 'status success';
+                } catch (e) {
+                    statusEl.innerHTML = `<strong>⚠️ System Error</strong><br>${e.message}`;
+                    statusEl.className = 'status error';
+                    addLog('Error getting system state: ' + e.message, 'error');
+                }
+            } else {
+                statusEl.innerHTML = '<strong>⏳ Waiting for system...</strong>';
+                statusEl.className = 'status warn';
+            }
+        }
+        
+        function testTheme(theme) {
+            if (window.backgroundManager) {
+                addLog(`Setting theme to: ${theme}`, 'info');
+                window.backgroundManager.setTheme(theme);
+                setTimeout(updateStatus, 100);
+            } else {
+                addLog('Background manager not available', 'error');
+            }
+        }
+        
+        function testNext() {
+            if (window.backgroundManager) {
+                addLog('Advancing to next background', 'info');
+                window.backgroundManager.nextBackground();
+                setTimeout(updateStatus, 100);
+            } else {
+                addLog('Background manager not available', 'error');
+            }
+        }
+        
+        function testToggle() {
+            if (window.backgroundManager) {
+                const current = window.backgroundManager.getCurrentState();
+                const newState = !current.rotationEnabled;
+                addLog(`Toggling rotation: ${newState ? 'ON' : 'OFF'}`, 'info');
+                window.backgroundManager.setRotationEnabled(newState);
+                setTimeout(updateStatus, 100);
+            } else {
+                addLog('Background manager not available', 'error');
+            }
+        }
+        
+        function clearLog() {
+            logEl.innerHTML = '';
+        }
+        
+        // Check system every second
+        setInterval(updateStatus, 1000);
+        
+        // Initial check
+        setTimeout(() => {
+            addLog('Debug page loaded', 'success');
+            updateStatus();
+        }, 500);
+    </script>
+</body>
+</html>
