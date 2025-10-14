@@ -18,7 +18,7 @@ class SmartBackgroundManager {
     console.log('🌟 SmartBackgroundManager initializing...');
     
     // Core state
-    this.currentSeason = 'autumn';
+    this.currentSeason = 'summer';
     this.currentTimeOfDay = 'day'; // 'day' or 'night'
     this.currentImageIndex = 0;
     this.userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone; // Default to system timezone
@@ -440,6 +440,7 @@ class SmartBackgroundManager {
       'Europe/London',
       'Europe/Paris',
       'Europe/Berlin',
+      'Africa/Johannesburg',
       'Asia/Tokyo',
       'Asia/Shanghai',
       'Australia/Sydney',
