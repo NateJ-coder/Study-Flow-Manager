@@ -13,8 +13,8 @@ const PAGE_STATE = {
 const THEME_DATA = {
   AUTUMN: {
     name: 'Autumn Flow',
-    bg_day: 'performance-build/assets/images/autumn-day-8.png',
-    bg_night: 'performance-build/assets/images/autumn-night-1.png',
+  bg_day: '/Study-Flow-Manager/performance-build/assets/images/autumn-day-8.png',
+  bg_night: '/Study-Flow-Manager/performance-build/assets/images/autumn-night-1.png',
     primary_color: 'text-amber-300',
     secondary_color: 'text-amber-500',
     button_bg: 'bg-amber-600/70',
@@ -42,28 +42,28 @@ let preloadState = {
 // Timer page critical resources for preloading
 const TIMER_RESOURCES = {
   css: [
-    'performance-build/assets/css/timer.css',
-    'performance-build/assets/css/particles.css'
+    '/Study-Flow-Manager/performance-build/assets/css/timer.css',
+    '/Study-Flow-Manager/performance-build/assets/css/particles.css'
   ],
   js: [
-    'performance-build/assets/js/timer.js',
-    'performance-build/assets/js/particle.js'
+    '/Study-Flow-Manager/performance-build/assets/js/timer.js',
+    '/Study-Flow-Manager/performance-build/assets/js/particle.js'
   ],
   // Preload at least one background per season per time-of-day
   backgrounds: [
-    'performance-build/assets/images/autumn-day-1.png',
-    'performance-build/assets/images/autumn-night-1.png',
-    'performance-build/assets/images/summer-day-1.png', 
-    'performance-build/assets/images/summer-night-1.png',
-    'performance-build/assets/images/winter-day-1.png',
-    'performance-build/assets/images/winter-night-1.png'
+    '/Study-Flow-Manager/performance-build/assets/images/autumn-day-1.png',
+    '/Study-Flow-Manager/performance-build/assets/images/autumn-night-1.png',
+    '/Study-Flow-Manager/performance-build/assets/images/summer-day-1.png', 
+    '/Study-Flow-Manager/performance-build/assets/images/summer-night-1.png',
+    '/Study-Flow-Manager/performance-build/assets/images/winter-day-1.png',
+    '/Study-Flow-Manager/performance-build/assets/images/winter-night-1.png'
   ]
 };
 
 // Performance optimization: Load only essential images first
 const CRITICAL_IMAGES = [
-  'performance-build/assets/images/autumn-day-8.png',
-  'performance-build/assets/images/autumn-night-1.png'
+  '/Study-Flow-Manager/performance-build/assets/images/autumn-day-8.png',
+  '/Study-Flow-Manager/performance-build/assets/images/autumn-night-1.png'
 ];
 
 // Load additional images in background after timer is accessible
@@ -72,78 +72,78 @@ const BACKGROUND_IMAGES_BATCH_SIZE = 8;
 // All background images for complete preloading
 const ALL_BACKGROUND_IMAGES = [
   // Autumn images
-  'performance-build/assets/images/autumn-day-1.png',
-  'performance-build/assets/images/autumn-day-2.png', 
-  'performance-build/assets/images/autumn-day-3.png',
-  'performance-build/assets/images/autumn-day-4.png',
-  'performance-build/assets/images/autumn-day-5.png',
-  'performance-build/assets/images/autumn-day-6.png',
-  'performance-build/assets/images/autumn-day-7.png',
-  'performance-build/assets/images/autumn-day-8.png',
-  'performance-build/assets/images/autumn-night-1.png',
-  'performance-build/assets/images/autumn-night-2.png',
-  'performance-build/assets/images/autumn-night-3.png',
-  'performance-build/assets/images/autumn-night-4.png',
-  'performance-build/assets/images/autumn-night-5.png',
-  'performance-build/assets/images/autumn-night-6.png',
-  'performance-build/assets/images/autumn-night-7.png',
-  'performance-build/assets/images/autumn-night-8.png',
+  '/Study-Flow-Manager/performance-build/assets/images/autumn-day-1.png',
+  '/Study-Flow-Manager/performance-build/assets/images/autumn-day-2.png', 
+  '/Study-Flow-Manager/performance-build/assets/images/autumn-day-3.png',
+  '/Study-Flow-Manager/performance-build/assets/images/autumn-day-4.png',
+  '/Study-Flow-Manager/performance-build/assets/images/autumn-day-5.png',
+  '/Study-Flow-Manager/performance-build/assets/images/autumn-day-6.png',
+  '/Study-Flow-Manager/performance-build/assets/images/autumn-day-7.png',
+  '/Study-Flow-Manager/performance-build/assets/images/autumn-day-8.png',
+  '/Study-Flow-Manager/performance-build/assets/images/autumn-night-1.png',
+  '/Study-Flow-Manager/performance-build/assets/images/autumn-night-2.png',
+  '/Study-Flow-Manager/performance-build/assets/images/autumn-night-3.png',
+  '/Study-Flow-Manager/performance-build/assets/images/autumn-night-4.png',
+  '/Study-Flow-Manager/performance-build/assets/images/autumn-night-5.png',
+  '/Study-Flow-Manager/performance-build/assets/images/autumn-night-6.png',
+  '/Study-Flow-Manager/performance-build/assets/images/autumn-night-7.png',
+  '/Study-Flow-Manager/performance-build/assets/images/autumn-night-8.png',
   // Summer images
-  'performance-build/assets/images/summer-day-1.png',
-  'performance-build/assets/images/summer-day-2.png',
-  'performance-build/assets/images/summer-day-3.png',
-  'performance-build/assets/images/summer-day-4.png',
-  'performance-build/assets/images/summer-day-5.png',
-  'performance-build/assets/images/summer-day-6.png',
-  'performance-build/assets/images/summer-day-7.png',
-  'performance-build/assets/images/summer-day-8.png',
-  'performance-build/assets/images/summer-night-1.png',
-  'performance-build/assets/images/summer-night-2.png',
-  'performance-build/assets/images/summer-night-3.png',
-  'performance-build/assets/images/summer-night-4.png',
-  'performance-build/assets/images/summer-night-5.png',
-  'performance-build/assets/images/summer-night-6.png',
-  'performance-build/assets/images/summer-night-7.png',
-  'performance-build/assets/images/summer-night-8.png',
+  '/Study-Flow-Manager/performance-build/assets/images/summer-day-1.png',
+  '/Study-Flow-Manager/performance-build/assets/images/summer-day-2.png',
+  '/Study-Flow-Manager/performance-build/assets/images/summer-day-3.png',
+  '/Study-Flow-Manager/performance-build/assets/images/summer-day-4.png',
+  '/Study-Flow-Manager/performance-build/assets/images/summer-day-5.png',
+  '/Study-Flow-Manager/performance-build/assets/images/summer-day-6.png',
+  '/Study-Flow-Manager/performance-build/assets/images/summer-day-7.png',
+  '/Study-Flow-Manager/performance-build/assets/images/summer-day-8.png',
+  '/Study-Flow-Manager/performance-build/assets/images/summer-night-1.png',
+  '/Study-Flow-Manager/performance-build/assets/images/summer-night-2.png',
+  '/Study-Flow-Manager/performance-build/assets/images/summer-night-3.png',
+  '/Study-Flow-Manager/performance-build/assets/images/summer-night-4.png',
+  '/Study-Flow-Manager/performance-build/assets/images/summer-night-5.png',
+  '/Study-Flow-Manager/performance-build/assets/images/summer-night-6.png',
+  '/Study-Flow-Manager/performance-build/assets/images/summer-night-7.png',
+  '/Study-Flow-Manager/performance-build/assets/images/summer-night-8.png',
   // Winter images  
-  'performance-build/assets/images/winter-day-1.png',
-  'performance-build/assets/images/winter-day-2.png',
-  'performance-build/assets/images/winter-day-3.png',
-  'performance-build/assets/images/winter-day-4.png',
-  'performance-build/assets/images/winter-day-5.png',
-  'performance-build/assets/images/winter-day-6.png',
-  'performance-build/assets/images/winter-day-7.png',
-  'performance-build/assets/images/winter-night-1.png',
-  'performance-build/assets/images/winter-night-2.png',
-  'performance-build/assets/images/winter-night-3.png',
-  'performance-build/assets/images/winter-night-4.png',
-  'performance-build/assets/images/winter-night-5.png',
-  'performance-build/assets/images/winter-night-6.png',
-  'performance-build/assets/images/winter-night-7.png'
+  '/Study-Flow-Manager/performance-build/assets/images/winter-day-1.png',
+  '/Study-Flow-Manager/performance-build/assets/images/winter-day-2.png',
+  '/Study-Flow-Manager/performance-build/assets/images/winter-day-3.png',
+  '/Study-Flow-Manager/performance-build/assets/images/winter-day-4.png',
+  '/Study-Flow-Manager/performance-build/assets/images/winter-day-5.png',
+  '/Study-Flow-Manager/performance-build/assets/images/winter-day-6.png',
+  '/Study-Flow-Manager/performance-build/assets/images/winter-day-7.png',
+  '/Study-Flow-Manager/performance-build/assets/images/winter-night-1.png',
+  '/Study-Flow-Manager/performance-build/assets/images/winter-night-2.png',
+  '/Study-Flow-Manager/performance-build/assets/images/winter-night-3.png',
+  '/Study-Flow-Manager/performance-build/assets/images/winter-night-4.png',
+  '/Study-Flow-Manager/performance-build/assets/images/winter-night-5.png',
+  '/Study-Flow-Manager/performance-build/assets/images/winter-night-6.png',
+  '/Study-Flow-Manager/performance-build/assets/images/winter-night-7.png'
 ];
 
 // PERFORMANCE OPTIMIZED: Only preload critical assets for LCP
 const CRITICAL_ASSETS = [
-  'performance-build/assets/images/welcome-page.png', // Dedicated welcome background
-  'performance-build/assets/audio/click.mp3',
-  'performance-build/assets/audio/splash.mp3'
+  '/Study-Flow-Manager/performance-build/assets/images/welcome-page.png', // Dedicated welcome background
+  '/Study-Flow-Manager/performance-build/assets/audio/click.mp3',
+  '/Study-Flow-Manager/performance-build/assets/audio/splash.mp3'
 ];
 
 // Background images for lazy loading (loaded by settings.js as needed)
 const BACKGROUND_IMAGES = [
-  'performance-build/assets/images/autumn-day-1.png',
-  'performance-build/assets/images/autumn-day-2.png',
-  'performance-build/assets/images/autumn-day-3.png',
-  'performance-build/assets/images/autumn-day-4.png',
-  'performance-build/assets/images/autumn-day-5.png',
-  'performance-build/assets/images/autumn-day-6.png',
-  'performance-build/assets/images/autumn-day-7.png',
-  'performance-build/assets/images/autumn-day-8.png',
-  'performance-build/assets/images/autumn-night-1.png',
-  'performance-build/assets/images/autumn-night-2.png',
-  'performance-build/assets/images/autumn-night-3.png',
-  'performance-build/assets/images/summer-day-1.png',
-  'performance-build/assets/images/winter-day-1.png'
+  '/Study-Flow-Manager/performance-build/assets/images/autumn-day-1.png',
+  '/Study-Flow-Manager/performance-build/assets/images/autumn-day-2.png',
+  '/Study-Flow-Manager/performance-build/assets/images/autumn-day-3.png',
+  '/Study-Flow-Manager/performance-build/assets/images/autumn-day-4.png',
+  '/Study-Flow-Manager/performance-build/assets/images/autumn-day-5.png',
+  '/Study-Flow-Manager/performance-build/assets/images/autumn-day-6.png',
+  '/Study-Flow-Manager/performance-build/assets/images/autumn-day-7.png',
+  '/Study-Flow-Manager/performance-build/assets/images/autumn-day-8.png',
+  '/Study-Flow-Manager/performance-build/assets/images/autumn-night-1.png',
+  '/Study-Flow-Manager/performance-build/assets/images/autumn-night-2.png',
+  '/Study-Flow-Manager/performance-build/assets/images/autumn-night-3.png',
+  '/Study-Flow-Manager/performance-build/assets/images/summer-day-1.png',
+  '/Study-Flow-Manager/performance-build/assets/images/winter-day-1.png'
 ];
 
 // ============================================
