@@ -49,7 +49,7 @@ const TIMER_RESOURCES = (window.SF_CONFIG && window.SF_CONFIG.TIMER_RESOURCES) |
     (window.SF_CONFIG && window.SF_CONFIG.JS && window.SF_CONFIG.JS.TIMER) || '/Study-Flow-Manager/performance-build/assets/js/timer.js',
     (window.SF_CONFIG && window.SF_CONFIG.JS && window.SF_CONFIG.JS.PARTICLE) || '/Study-Flow-Manager/performance-build/assets/js/particle.js'
   ],
-  backgrounds: (window.SF_CONFIG && window.SF_CONFIG.BACKGROUNDS && window.SF_CONFIG.BACKGROUNDS.TIMER) || [
+  backgrounds: (window.SF_CONFIG && window.SF_CONFIG.BACKGROUND_IMAGES) || [
     '/Study-Flow-Manager/performance-build/assets/images/autumn-day-1.png',
     '/Study-Flow-Manager/performance-build/assets/images/autumn-night-1.png',
     '/Study-Flow-Manager/performance-build/assets/images/summer-day-1.png', 
@@ -60,10 +60,11 @@ const TIMER_RESOURCES = (window.SF_CONFIG && window.SF_CONFIG.TIMER_RESOURCES) |
 };
 
 // Performance optimization: Load only essential images first
-const CRITICAL_IMAGES = (window.SF_CONFIG && window.SF_CONFIG.CRITICAL_IMAGES) || [
-  (window.SF_CONFIG && window.SF_CONFIG.IMAGES && window.SF_CONFIG.IMAGES.AUTUMN_DAY) || '/Study-Flow-Manager/performance-build/assets/images/autumn-day-8.png',
-  (window.SF_CONFIG && window.SF_CONFIG.IMAGES && window.SF_CONFIG.IMAGES.AUTUMN_NIGHT) || '/Study-Flow-Manager/performance-build/assets/images/autumn-night-1.png'
-];
+const CRITICAL_IMAGES = (window.SF_CONFIG && window.SF_CONFIG.CRITICAL_IMAGES) || (
+  (window.SF_CONFIG && window.SF_CONFIG.IMAGES && window.SF_CONFIG.IMAGES.AUTUMN_DAY) && (window.SF_CONFIG && window.SF_CONFIG.IMAGES && window.SF_CONFIG.IMAGES.AUTUMN_NIGHT) ?
+    [window.SF_CONFIG.IMAGES.AUTUMN_DAY, window.SF_CONFIG.IMAGES.AUTUMN_NIGHT] :
+    ['/Study-Flow-Manager/performance-build/assets/images/autumn-day-8.png','/Study-Flow-Manager/performance-build/assets/images/autumn-night-1.png']
+);
 
 // Load additional images in background after timer is accessible
 const BACKGROUND_IMAGES_BATCH_SIZE = 8;
@@ -75,7 +76,7 @@ const ALL_BACKGROUND_IMAGES = (window.SF_CONFIG && window.SF_CONFIG.ALL_BACKGROU
 const CRITICAL_ASSETS = (window.SF_CONFIG && window.SF_CONFIG.CRITICAL_ASSETS) || [];
 
 // Background images for lazy loading (loaded by settings.js as needed)
-const BACKGROUND_IMAGES = (window.SF_CONFIG && window.SF_CONFIG.BACKGROUND_IMAGES) || [];
+const BACKGROUND_IMAGES = (window.SF_CONFIG && window.SF_CONFIG.BACKGROUND_IMAGES) || ALL_BACKGROUND_IMAGES;
 
 // ============================================
 // UTILITY FUNCTIONS

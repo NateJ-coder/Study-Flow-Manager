@@ -67,6 +67,46 @@
         BASE + '/images/winter-night-1.png'
       ]
     }
+    ,
+    // Full background lists used across the app
+    ALL_BACKGROUND_IMAGES: [
+      BASE + '/images/autumn-day-1.png',
+      BASE + '/images/autumn-day-2.png',
+      BASE + '/images/autumn-day-3.png',
+      BASE + '/images/autumn-day-4.png',
+      BASE + '/images/autumn-day-5.png',
+      BASE + '/images/autumn-day-6.png',
+      BASE + '/images/autumn-day-7.png',
+      BASE + '/images/autumn-day-8.png',
+      BASE + '/images/autumn-night-1.png',
+      BASE + '/images/autumn-night-2.png',
+      BASE + '/images/autumn-night-3.png',
+      BASE + '/images/summer-day-1.png',
+      BASE + '/images/summer-day-2.png',
+      BASE + '/images/summer-day-3.png',
+      BASE + '/images/summer-day-4.png',
+      BASE + '/images/summer-day-5.png',
+      BASE + '/images/summer-day-6.png',
+      BASE + '/images/summer-day-7.png',
+      BASE + '/images/summer-day-8.png',
+      BASE + '/images/summer-night-1.png',
+      BASE + '/images/winter-day-1.png',
+      BASE + '/images/winter-day-2.png',
+      BASE + '/images/winter-day-3.png',
+      BASE + '/images/winter-day-4.png',
+      BASE + '/images/winter-day-5.png',
+      BASE + '/images/winter-day-6.png',
+      BASE + '/images/winter-day-7.png',
+      BASE + '/images/winter-night-1.png'
+    ],
+    BACKGROUND_IMAGES: [
+      BASE + '/images/autumn-day-8.png',
+      BASE + '/images/autumn-night-1.png',
+      BASE + '/images/summer-day-1.png',
+      BASE + '/images/summer-night-1.png',
+      BASE + '/images/winter-day-1.png',
+      BASE + '/images/winter-night-1.png'
+    ]
   };
 
   // expose globally
