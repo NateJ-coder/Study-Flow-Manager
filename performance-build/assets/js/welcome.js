@@ -28,6 +28,14 @@ let currentTheme = 'AUTUMN';
 let isLoaded = false;
 let isAuthReady = false;
 
+// Loading state used by the welcome flow (critical vs non-critical)
+const loadingState = {
+  criticalAssets: false,
+  firebaseReady: false,
+  userSettings: false,
+  timerReady: false
+};
+
 // Comprehensive Preloading System
 let preloadState = {
   timerCSS: false,
@@ -456,6 +464,8 @@ async function preloadTimerResources() {
     updatePreloadProgress();
     
     console.log('✅ Timer resources preloaded successfully!');
+  // Mark critical assets ready for welcome flow if someone relies on loadingState
+  if (typeof loadingState !== 'undefined') loadingState.criticalAssets = true;
     return true;
     
   } catch (error) {
@@ -474,74 +484,19 @@ async function preloadTimerResources() {
 // ============================================
 
 document.addEventListener('DOMContentLoaded', async function() {
-  console.log('🚀 StudyFlow: Starting comprehensive preloading system...');
-  
-  // Initialize progress display
-  updatePreloadProgress();
-  
+  console.log('🚀 Welcome: preloading only critical welcome assets...');
   try {
-    // Start comprehensive preloading of timer resources
-    console.log('⚡ Starting timer resource preloading...');
-    const preloadPromise = preloadTimerResources();
-    
-    // Start Firebase initialization in parallel (with timeout)
-    console.log('🔥 Initializing Firebase...');
-    const firebasePromise = initializeFirebaseConnection().catch(error => {
-      console.error('🚨 Firebase initialization failed:', error);
-      preloadState.firebaseReady = true;
-      updatePreloadProgress();
-      return null;
-    });
-    
-    // Wait for both preloading and Firebase
-    await Promise.all([preloadPromise, firebasePromise]);
-    
-    console.log('✅ All systems ready! Timer page fully preloaded.');
-    
-    // Add timeout fallback for Firebase
-    setTimeout(() => {
-      if (!loadingState.firebaseReady) {
-        console.log('⚠️ Firebase initialization timeout - proceeding without it');
-        loadingState.firebaseReady = true; // Mark as ready to unblock loading
-        checkLoadingComplete();
-      }
-    }, 3000); // 3 second timeout
-    
-    // Phase 3: Enable timer immediately (fast access)
-    console.log('⏱️ Phase 3: Timer ready for use...');
-    loadingState.timerReady = true;
-    checkLoadingComplete();
-    
-    // Fallback: Force completion after 5 seconds if something is stuck
-    setTimeout(() => {
-      if (!isLoaded) {
-        console.log('⚠️ Fallback: Forcing app to load after timeout');
-        Object.keys(loadingState).forEach(key => {
-          loadingState[key] = true;
-        });
-        checkLoadingComplete();
-      }
-    }, 5000);
-    
-    // Phase 4: Background loading of remaining assets (non-blocking)
-    console.log('🖼️ Phase 4: Background loading remaining assets...');
-    setTimeout(() => {
-      preloadRemainingAssets();
-    }, 100); // Load after timer is accessible
-    
-    console.log('✅ Critical loading complete! Timer accessible...');
-    updateDebugInfo('Status: Critical loading complete, timer accessible...');
-    
-  } catch (error) {
-    console.error('Preloading error:', error);
-    updateDebugInfo('Status: Some loading failed, but continuing...');
-    
-    // Mark all as ready if there's an error
-    Object.keys(loadingState).forEach(key => {
-      if (!loadingState[key]) loadingState[key] = true;
-    });
-    checkLoadingComplete();
+    // Preload only the welcome critical imagery so hero is crisp and button enables quickly
+    await preloadImages(CRITICAL_IMAGES);
+  } catch (e) {
+    console.warn('Non-blocking: welcome critical image preload failed', e);
   }
+
+  // Mark welcome as loaded and enable continue button quickly
+  isLoaded = true;
+  loadingState.criticalAssets = true;
+  enableContinueButton();
+  updateDebugInfo('Status: Welcome ready. Timer preloads deferred until navigation.');
 });
 
 // ============================================

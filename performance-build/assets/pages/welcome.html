@@ -133,21 +133,22 @@
 	</div>
 	<script src="/Study-Flow-Manager/performance-build/assets/js/config.js" defer></script>
 	<script src="/Study-Flow-Manager/performance-build/assets/js/welcome.js?v=2025101402" defer></script>
-	<script>
-	  // Dynamically load quotes.js using SF_CONFIG if present
-	  (function(){
-	    function injectScript(src){
-	      var s = document.createElement('script');
-	      s.src = src + (src.indexOf('?') === -1 ? '?v=' + Date.now() : '&v=' + Date.now());
-	      s.defer = false;
-	      document.head.appendChild(s);
-	    }
-	    if (window.SF_CONFIG && window.SF_CONFIG.JS && window.SF_CONFIG.JS.QUOTES) {
-	      injectScript(window.SF_CONFIG.JS.QUOTES);
-	    } else {
-	      injectScript('/Study-Flow-Manager/performance-build/assets/js/quotes.js');
-	    }
-	  })();
+		<script>
+		// Idle-load quotes.js so it doesn't compete with first paint
+		(function(){
+			function inject(src){
+				var s = document.createElement('script');
+				s.src = src;
+				s.defer = true;
+				document.head.appendChild(s);
+			}
+			var src = (window.SF_CONFIG && window.SF_CONFIG.JS && window.SF_CONFIG.JS.QUOTES) || '/Study-Flow-Manager/performance-build/assets/js/quotes.js';
+			if ('requestIdleCallback' in window) {
+				requestIdleCallback(function(){ inject(src); });
+			} else {
+				setTimeout(function(){ inject(src); }, 2000);
+			}
+		})();
 	</script>
 </body>
 </html>

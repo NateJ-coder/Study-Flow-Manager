@@ -15,7 +15,18 @@
     document.documentElement.style.setProperty('--rx', rx.toFixed(2) + 'deg');
     document.documentElement.style.setProperty('--ry', ry.toFixed(2) + 'deg');
   };
-  window.addEventListener('pointermove', (e) => applyTilt(e.clientX, e.clientY), { passive: true });
+  // Throttle pointer movement updates with rAF to avoid layout/paint churn on lower-end devices
+  let rafId = 0;
+  const onMove = (e) => {
+    if (rafId) return;
+    const { clientX: x, clientY: y } = e;
+    rafId = requestAnimationFrame(() => {
+      applyTilt(x, y);
+      rafId = 0;
+    });
+  };
+
+  window.addEventListener('pointermove', onMove, { passive: true });
   window.addEventListener('pointerleave', () => applyTilt(window.innerWidth/2, window.innerHeight/2), { passive: true });
 
   const setProgress = (n) => {
