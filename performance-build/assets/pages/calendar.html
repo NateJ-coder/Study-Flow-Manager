@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>StudyFlow — Calendar</title>
+
+  <!-- Reuse main styles -->
+  <link rel="stylesheet" href="/Study-Flow-Manager/performance-build/assets/css/timer.css">
+
+  <style>
+    :root { --glass: rgba(16,18,24,.55); }
+    body {
+      margin:0; min-height:100dvh; display:grid; place-items:center;
+      background: #0e1116;
+      color:#f3f4f6; -webkit-font-smoothing:antialiased; font-family: ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial;
+    }
+    .wrap { width:min(1100px, 94vw); display:grid; gap:16px; }
+    .card {
+      background: var(--glass); backdrop-filter: blur(10px);
+      border:1px solid rgba(255,255,255,.08); border-radius:18px; padding:18px 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.25);
+    }
+    h1 { margin:0 0 6px; font-size:clamp(22px, 3.4vw, 30px); letter-spacing:.2px; }
+    .row { display:grid; grid-template-columns: repeat(12, 1fr); gap:10px; }
+    .row > .f { display:flex; flex-direction:column; gap:6px; }
+    .f label { font-size:12px; opacity:.85 }
+    .f input, .f select, .f textarea {
+      background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1);
+      color:#f8fafc; padding:10px 12px; border-radius:10px; outline:none;
+    }
+    .muted { opacity:.8; font-size:12px }
+    .btn {
+      background:#5b9cff; color:white; border:0; border-radius:12px; padding:10px 14px;
+      font-weight:600; cursor:pointer;
+    }
+    .btn.secondary { background:transparent; border:1px solid rgba(255,255,255,.2) }
+    table { width:100%; border-collapse: collapse; }
+    th, td { padding:12px 10px; border-bottom:1px solid rgba(255,255,255,.08); font-size:14px; }
+    .tag { font-size:12px; padding:2px 8px; border-radius:999px; border:1px solid rgba(255,255,255,.25); }
+    .ok { border-color:#22c55e; color:#22c55e }
+    .err { border-color:#f87171; color:#f87171 }
+    .right { text-align:right }
+    .stack { display:flex; gap:8px; flex-wrap:wrap }
+    .hidden { display:none }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="card">
+      <h1>Calendar</h1>
+      <p class="muted">Create reminders that sync to your Google Calendar (and your phone). All fields with * are required.</p>
+      <form id="eventForm" class="row" autocomplete="off">
+        <div class="f" style="grid-column: span 6;">
+          <label>Title *</label>
+          <input name="title" required placeholder="Deep Work / Meeting / Reminder">
+        </div>
+
+        <div class="f" style="grid-column: span 3;">
+          <label>Date *</label>
+          <input type="date" name="date" required>
+        </div>
+
+        <div class="f" style="grid-column: span 3;">
+          <label>All-day</label>
+          <select name="allDay">
+            <option value="false" selected>No</option>
+            <option value="true">Yes</option>
+          </select>
+        </div>
+
+        <div class="f time-start" style="grid-column: span 3;">
+          <label>Start time *</label>
+          <input type="time" name="startTime" step="60">
+        </div>
+
+        <div class="f time-end" style="grid-column: span 3;">
+          <label>End time *</label>
+          <input type="time" name="endTime" step="60">
+        </div>
+
+        <div class="f" style="grid-column: span 6;">
+          <label>Reminders (minutes before, comma-separated)</label>
+          <input name="reminders" placeholder="10, 60">
+        </div>
+
+        <div class="f" style="grid-column: span 6;">
+          <label>Location</label>
+          <input name="location" placeholder="Home Office / Zoom / Address">
+        </div>
+
+        <div class="f" style="grid-column: span 12;">
+          <label>Notes / Description</label>
+          <textarea name="description" rows="3" placeholder=""></textarea>
+        </div>
+
+        <div class="f" style="grid-column: span 6;">
+          <label>Repeat</label>
+          <select name="repeat">
+            <option value="">No repeat</option>
+            <option value="DAILY">Daily</option>
+            <option value="WEEKLY">Weekly</option>
+            <option value="MONTHLY">Monthly</option>
+          </select>
+        </div>
+
+        <div class="f" style="grid-column: span 6;">
+          <label>Repeat details (optional)</label>
+          <input name="repeatDetails" placeholder="BYDAY=MO,WE;COUNT=8  (advanced)">
+        </div>
+
+        <div class="stack" style="grid-column: span 12; justify-content:flex-end;">
+          <button type="submit" class="btn">Create</button>
+          <button type="button" id="downloadICS" class="btn secondary">Download .ics</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2 style="margin:0 0 6px; font-size:18px">My Reminders</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Title</th><th>Date/Time</th><th>Reminders</th><th>Status</th><th class="right">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="eventsTbody">
+          <!-- rows injected -->
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <script src="/Study-Flow-Manager/performance-build/assets/js/config.js" defer></script>
+  <script src="/Study-Flow-Manager/performance-build/assets/js/calendar.js" type="module"></script>
+</body>
+</html>

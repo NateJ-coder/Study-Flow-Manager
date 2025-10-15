@@ -750,8 +750,17 @@ function toggleSettingsModal(show) {
 }
 
 function showCalendarModal() {
-    // Placeholder for future calendar page/modal
-    console.log('Calendar button clicked. Future navigation to calendar.html or modal logic here.');
+  // Navigate to the Calendar page. Use configured page path when available and
+  // fallback to the repo-absolute path so GitHub Pages under /Study-Flow-Manager/ works.
+  const cfg = window.SF_CONFIG || {};
+  const page = (cfg.PAGES && cfg.PAGES.CALENDAR) || '/Study-Flow-Manager/performance-build/assets/pages/calendar.html';
+  // Use location.assign so history/back behaves naturally
+  try {
+    window.location.assign(page);
+  } catch (e) {
+    // Last-resort fallback
+    window.location.href = page;
+  }
 }
 
 // Hook up button handlers
