@@ -1,6 +1,6 @@
 // StudyFlow Intro + Preloader (performance-tuned)
 (() => {
-  const WELCOME_URL = 'performance-build/assets/pages/welcome.html';
+  const WELCOME_URL = '/Study-Flow-Manager/performance-build/assets/pages/welcome.html';
   const OVERLAY_MS = 600;           // match CSS --fade-ms
   const SAFETY_TIMEOUT_MS = 2500;   // faster: don't wait forever
 
@@ -26,10 +26,10 @@
 
   // Keep the preload list tight — just what the first fold needs
   const assets = [
-    'performance-build/assets/images/optimized/studyflow-logo-768.webp',
-    'performance-build/assets/css/welcome.css',
-    'performance-build/assets/js/welcome.js',
-  'performance-build/assets/pages/welcome.html'
+    '/Study-Flow-Manager/performance-build/assets/images/optimized/studyflow-logo-768.webp',
+    '/Study-Flow-Manager/performance-build/assets/css/welcome.css',
+    '/Study-Flow-Manager/performance-build/assets/js/welcome.js',
+    '/Study-Flow-Manager/performance-build/assets/pages/welcome.html'
   ];
 
   let loaded = 0;
