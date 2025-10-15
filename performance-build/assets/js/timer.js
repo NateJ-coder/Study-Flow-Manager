@@ -409,7 +409,8 @@ async function updateBackground(forceUpdate = false) {
 
   // Find DOM targets at call time (ensure DOM is ready)
   const bgImgEl = document.getElementById('background-image');
-  const bgContainer = document.getElementById('background-container');
+  // HTML uses id="bg-container"; ensure we query the correct element
+  const bgContainer = document.getElementById('bg-container');
 
   if (backgroundImageElement.src.includes(nextImage) && !forceUpdate) {
       // Image hasn't changed (day/night boundary crossed or first run with correct image)

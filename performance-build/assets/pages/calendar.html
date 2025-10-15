@@ -1,49 +1,54 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="sf-calendar">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>StudyFlow — Calendar</title>
+  <title>StudyFlow  Calendar</title>
 
-  <!-- Reuse main styles -->
-  <link rel="stylesheet" href="/Study-Flow-Manager/performance-build/assets/css/timer.css">
+  <!-- If this causes style conflicts, remove the next line -->
+  <!-- <link rel="stylesheet" href="/Study-Flow-Manager/performance-build/assets/css/timer.css"> -->
+
   <link rel="stylesheet" href="/Study-Flow-Manager/performance-build/assets/css/calendar.css">
 </head>
 <body>
-  <header class="header">
-    <div class="header-left">
-      <div class="studyflow-logo">StudyFlow</div>
+  <header class="sf-header">
+    <div class="sf-header__left">
+      <div class="sf-logo">StudyFlow</div>
     </div>
-    <div class="header-right">
-      <button id="openCalendarSettings" class="icon-btn" title="Settings">⚙️</button>
+    <div class="sf-header__right">
+      <button id="openCalendarSettings" class="sf-btn sf-btn--ghost" title="Settings" aria-label="Settings">⚙️</button>
     </div>
   </header>
 
-  <main class="wrap">
-    <section class="card">
-      <div class="cal-head">
-        <button id="prevMonth" class="btn secondary">←</button>
-        <h2 id="monthLabel">October 2025</h2>
-        <button id="nextMonth" class="btn secondary">→</button>
+  <main class="sf-wrap">
+    <!-- Month view -->
+    <section class="sf-card" aria-labelledby="monthLabel">
+      <div class="sf-cal-head">
+        <button id="prevMonth" class="sf-btn sf-btn--ghost" aria-label="Previous month">←</button>
+        <h2 id="monthLabel" class="sf-cal-title">October 2025</h2>
+        <button id="nextMonth" class="sf-btn sf-btn--ghost" aria-label="Next month">→</button>
       </div>
-      <div id="calendarGrid" class="calendar-grid" aria-label="Monthly calendar"></div>
+
+      <div id="calendarGrid" class="sf-calendar-grid" aria-label="Monthly calendar"></div>
     </section>
 
-    <section class="card">
-      <h1>Calendar</h1>
-      <p class="muted">Create reminders that sync to your Google Calendar (and your phone). All fields with * are required.</p>
-      <form id="eventForm" class="row" autocomplete="off">
-        <div class="f" style="grid-column: span 6;">
+    <!-- Event form -->
+    <section class="sf-card">
+      <h1 class="sf-h1">Calendar</h1>
+      <p class="sf-muted">Create reminders that sync to your Google Calendar (and your phone). Fields with * are required.</p>
+
+      <form id="eventForm" class="sf-form" autocomplete="off">
+        <div class="sf-field sf-span-6">
           <label>Title *</label>
-          <input name="title" required placeholder="Deep Work / Meeting / Reminder">
+          <input name="title" required placeholder="Deep Work / Meeting / Reminder" />
         </div>
 
-        <div class="f" style="grid-column: span 3;">
+        <div class="sf-field sf-span-3">
           <label>Date *</label>
-          <input type="date" name="date" required>
+          <input type="date" name="date" required />
         </div>
 
-        <div class="f" style="grid-column: span 3;">
+        <div class="sf-field sf-span-3">
           <label>All-day</label>
           <select name="allDay">
             <option value="false" selected>No</option>
@@ -51,100 +56,92 @@
           </select>
         </div>
 
-        <div class="f time-start" style="grid-column: span 3;">
+        <div class="sf-field sf-span-3 time-start">
           <label>Start time *</label>
-          <input type="time" name="startTime" step="60">
+          <input type="time" name="startTime" step="60" />
         </div>
 
-        <div class="f time-end" style="grid-column: span 3;">
+        <div class="sf-field sf-span-3 time-end">
           <label>End time *</label>
-          <input type="time" name="endTime" step="60">
+          <input type="time" name="endTime" step="60" />
         </div>
 
-        <div class="f" style="grid-column: span 6;">
+        <div class="sf-field sf-span-6">
           <label>Reminders (minutes before, comma-separated)</label>
-          <input name="reminders" placeholder="10, 60">
+          <input name="reminders" placeholder="10, 60" />
         </div>
 
-        <div class="f" style="grid-column: span 6;">
+        <div class="sf-field sf-span-6">
           <label>Location</label>
-          <input name="location" placeholder="Home Office / Zoom / Address">
+          <input name="location" placeholder="Home Office / Zoom / Address" />
         </div>
 
-        <div class="f" style="grid-column: span 12;">
+        <div class="sf-field sf-span-12">
           <label>Notes / Description</label>
           <textarea name="description" rows="3" placeholder=""></textarea>
         </div>
 
-        <div class="f" style="grid-column: span 6;">
-          <label>Repeat</label>
-          <select name="repeat">
-            <option value="">No repeat</option>
-            <option value="DAILY">Daily</option>
-            <option value="WEEKLY">Weekly</option>
-            <option value="MONTHLY">Monthly</option>
-          </select>
-        </div>
-
-        <div class="f" style="grid-column: span 6;">
-          <label>Repeat details (optional)</label>
-          <input name="repeatDetails" placeholder="BYDAY=MO,WE;COUNT=8  (advanced)">
-        </div>
-
-        <div class="stack" style="grid-column: span 12; justify-content:flex-end;">
-          <button type="submit" class="btn">Create</button>
-          <button type="button" id="downloadICS" class="btn secondary">Download .ics</button>
+        <div class="sf-actions">
+          <button type="submit" class="sf-btn">Create</button>
+          <button type="button" id="downloadICS" class="sf-btn sf-btn--ghost">Download .ics</button>
         </div>
       </form>
     </section>
 
-    <section class="card">
-      <h2 style="margin:0 0 6px; font-size:18px">My Reminders</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Title</th><th>Date/Time</th><th>Reminders</th><th>Status</th><th class="right">Actions</th>
-          </tr>
-        </thead>
-        <tbody id="eventsTbody">
-          <!-- rows injected -->
-        </tbody>
-      </table>
+    <!-- Reminders table -->
+    <section class="sf-card">
+      <h2 class="sf-h2">My Reminders</h2>
+      <div class="sf-table-wrap">
+        <table class="sf-table" aria-label="Created reminders">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Date/Time</th>
+              <th>Reminders</th>
+              <th>Status</th>
+              <th class="sf-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="eventsTbody"><!-- rows injected --></tbody>
+        </table>
+      </div>
     </section>
   </main>
 
   <!-- Settings modal -->
-  <div class="settings-modal" id="calendarSettings" hidden>
-    <div class="settings-content">
-      <div class="settings-header">
-        <h3>Calendar Settings</h3>
-        <button class="close" id="closeCalendarSettings">✕</button>
+  <div class="sf-modal" id="calendarSettings" hidden>
+    <div class="sf-modal__content" role="dialog" aria-modal="true" aria-labelledby="sf-settings-title">
+      <div class="sf-modal__header">
+        <h3 id="sf-settings-title" class="sf-h3">Calendar Settings</h3>
+        <button class="sf-btn sf-btn--icon" id="closeCalendarSettings" aria-label="Close">✕</button>
       </div>
 
-      <div class="settings-group">
-        <label>Theme</label>
-        <select id="calTheme">
-          <option value="autumn">Autumn 🍂</option>
-          <option value="winter">Winter ❄️</option>
-          <option value="summer">Summer ☀️</option>
-        </select>
+      <div class="sf-form">
+        <div class="sf-field sf-span-12">
+          <label>Theme</label>
+          <select id="calTheme">
+            <option value="autumn">Autumn 🍂</option>
+            <option value="winter">Winter ❄️</option>
+            <option value="summer">Summer ☀️</option>
+          </select>
+        </div>
+
+        <div class="sf-field sf-span-12">
+          <label>Cross-out color</label>
+          <input type="color" id="crossColor" value="#f59e0b" />
+        </div>
+
+        <div class="sf-field sf-span-12">
+          <label>Week starts on</label>
+          <select id="weekStart">
+            <option value="0">Sunday</option>
+            <option value="1" selected>Monday</option>
+          </select>
+        </div>
       </div>
 
-      <div class="settings-group">
-        <label>Cross-out color</label>
-        <input type="color" id="crossColor" value="#f59e0b">
-      </div>
-
-      <div class="settings-group">
-        <label>Week starts on</label>
-        <select id="weekStart">
-          <option value="0">Sunday</option>
-          <option value="1" selected>Monday</option>
-        </select>
-      </div>
-
-      <div class="stack" style="justify-content:flex-end">
-        <button id="saveCalendarSettings" class="btn">Save</button>
+      <div class="sf-modal__footer">
+        <button id="saveCalendarSettings" class="sf-btn">Save</button>
       </div>
     </div>
   </div>

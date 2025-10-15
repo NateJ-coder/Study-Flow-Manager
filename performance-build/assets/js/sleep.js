@@ -379,11 +379,14 @@ class SleepModeManager {
         }
       };
 
-      // Identify unused images
-      const allPreloadedImages = document.querySelectorAll('img[src*="performance-build/assets/images"]');
+      // Identify unused preloaded images. Only target images explicitly tagged
+      // as background preloads (data-preload="bg") to avoid removing live page images.
+      const allPreloadedImages = document.querySelectorAll('img[data-preload="bg"]');
       allPreloadedImages.forEach(img => {
+        // Never remove the active background image element
+        if (img.id === 'background-image') return;
         const name = basename(img.src);
-        // If the image basename is not in current theme images, remove it
+        // If the image basename is not part of the current theme set, remove the preloaded node
         if (!currentImages.includes(name) && !currentImages.includes(img.src)) {
           try { img.src = ''; } catch (e) {}
           if (img.parentNode) img.parentNode.removeChild(img);
