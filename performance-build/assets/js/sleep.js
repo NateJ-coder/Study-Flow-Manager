@@ -7,10 +7,11 @@ class SleepModeManager {
   constructor() {
     this.isInSleepMode = false;
     this.inactivityTimer = null;
-    // Initialize inactivity delay from settings (or fall back to the same default used
-    // by the timer page). We call getSleepTimeout() so the manager uses the same
-    // units and defaults as the rest of the app.
-    this.inactivityDelay = this.getSleepTimeout(); // milliseconds
+    // Do not set a hard default here. Leave inactivityDelay null so we don't
+    // start a timer based on a fallback before the app's settings are available.
+    // The actual delay will be populated by updateSleepTimeout() when settings
+    // are applied (or after a short poll timeout when settings don't arrive).
+    this.inactivityDelay = null;
     this.lastActivity = Date.now();
     
     // Elements to manage
@@ -28,30 +29,36 @@ class SleepModeManager {
   init() {
     console.log('💤 Sleep Mode Manager starting initialization...');
     
-    // Update timeout from settings now that they're available
-    this.updateSleepTimeout();
-
-    // If appSettings isn't available yet (timing can vary across browsers because
-    // timer.js is loaded as a module and may defer), poll briefly and re-apply
-    // the timeout when settings arrive. This avoids missing a late-loaded
-    // preference without requiring cross-file events.
-    if (!window.appSettings) {
-      let tries = 0;
-      const maxTries = 25; // ~5 seconds at 200ms interval
-      const poll = setInterval(() => {
-        tries += 1;
-        if (window.appSettings || tries >= maxTries) {
-          clearInterval(poll);
-          try {
-            this.updateSleepTimeout();
-            console.log('💤 SleepModeManager applied sleep timeout after polling for appSettings');
-          } catch (e) { /* non-blocking */ }
+    // If appSettings is already present, apply it immediately and start tracking.
+    // Otherwise, poll briefly for settings and only start the activity listeners
+    // and inactivity timer once settings exist. This prevents a hardcoded or
+    // fallback default from starting a timer that could trigger sleep before the
+    // user's preference is applied.
+    if (window.appSettings) {
+      // Settings already present -> start immediately
+      this.updateSleepTimeout();
+      this.setupActivityListeners();
+      this.startInactivityTracking();
+    } else {
+      // Wait for the app to announce that settings have been applied. This avoids
+      // starting any timers based on a fallback default before the user's
+      // preferences are known.
+      const onSettings = () => {
+        try {
+          window.removeEventListener('studyflow:settingsApplied', onSettings);
+        } catch (e) {}
+        try {
+          this.updateSleepTimeout();
+          this.setupActivityListeners();
+          this.startInactivityTracking();
+          console.log('💤 SleepModeManager started after settingsApplied event');
+        } catch (err) {
+          console.warn('Error starting SleepModeManager after settingsApplied', err);
         }
-      }, 200);
+      };
+
+      window.addEventListener('studyflow:settingsApplied', onSettings, { once: true });
     }
-    
-    this.setupActivityListeners();
-    this.startInactivityTracking();
     console.log('💤 Sleep Mode Manager initialized - inactivity delay:', this.inactivityDelay, 'ms');
     console.log('💤 Activity listeners setup complete');
   }

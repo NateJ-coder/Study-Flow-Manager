@@ -288,6 +288,14 @@ function applySettings() {
   } catch (e) {
     console.warn('Failed to notify sleepManager of settings change', e);
   }
+
+  // Emit a short-lived event so subsystems (like SleepModeManager) can start
+  // only after settings are applied. This avoids race conditions where those
+  // systems start with fallback defaults before the user's preferences arrive.
+  try {
+    window.dispatchEvent(new Event('studyflow:settingsApplied'));
+    console.log('📣 studyflow:settingsApplied dispatched');
+  } catch (e) { /* non-blocking */ }
 }
 
 
