@@ -67,6 +67,137 @@ const MOLE_BOOK_QUOTES = [
   }
 ];
 
+// ----- Additional Philosophers -----
+const NIETZSCHE_QUOTES = [
+"Without music, life would be a mistake.",
+"He who has a why to live can bear almost any how.",
+"That which does not kill us makes us stronger.",
+"There are no facts, only interpretations.",
+"In every real man a child is hidden that wants to play.",
+"To live is to suffer, to survive is to find some meaning in the suffering.",
+"The higher we soar, the smaller we appear to those who cannot fly.",
+"Whoever fights monsters should see to it that in the process he does not become a monster.",
+"One must still have chaos in oneself to give birth to a dancing star.",
+"There is always some madness in love. But there is also always some reason in madness.",
+"Sometimes people don’t want to hear the truth because they don’t want their illusions destroyed.",
+"Love your fate, which is in fact your life.",
+"All truly great thoughts are conceived while walking.",
+"In individuals, insanity is rare; but in groups, parties, nations and epochs, it is the rule.",
+"The man of knowledge must be able not only to love his enemies but also to hate his friends.",
+"Whoever cannot command himself must obey.",
+"Convictions are more dangerous enemies of truth than lies.",
+"He who climbs upon the highest mountains laughs at all tragedies, real or imaginary.",
+"Become who you are.",
+"There is more wisdom in your body than in your deepest philosophy."
+];
+
+const KIERKEGAARD_QUOTES = [
+"Life can only be understood backwards; but it must be lived forwards.",
+"Anxiety is the dizziness of freedom.",
+"The function of prayer is not to influence God, but rather to change the nature of the one who prays.",
+"To dare is to lose one’s footing momentarily. Not to dare is to lose oneself.",
+"Faith is the highest passion in a human being.",
+"The most common form of despair is not being who you are.",
+"People demand freedom of speech as a compensation for the freedom of thought which they seldom use.",
+"Once you label me, you negate me.",
+"Subjectivity is truth.",
+"The tyrant dies and his rule is over; the martyr dies and his rule begins.",
+"Patience is necessary, and one cannot reap immediately where one has sown.",
+"Face the facts of being what you are, for that is what changes what you are.",
+"Most men pursue pleasure with such breathless haste that they hurry past it.",
+"The crowd is untruth.",
+"Purity of heart is to will one thing.",
+"It is so hard to believe because it is so hard to obey.",
+"To cheat oneself out of love is the most terrible deception.",
+"The door to happiness opens outward.",
+"The self is a relation that relates itself to itself.",
+"Hope is a passion for the possible."
+];
+
+const SCHOPENHAUER_QUOTES = [
+"All truth passes through three stages: ridicule, opposition, and acceptance.",
+"Compassion is the basis of morality.",
+"The world is my representation.",
+"Talent hits a target no one else can hit; genius hits a target no one else can see.",
+"We forfeit three-fourths of ourselves in order to be like other people.",
+"It is difficult to find happiness within oneself, but it is impossible to find it anywhere else.",
+"A man can be himself only so long as he is alone.",
+"The greatest of follies is to sacrifice health for any other kind of happiness.",
+"Every man takes the limits of his own field of vision for the limits of the world.",
+"Mostly it is loss which teaches us about the worth of things.",
+"The two enemies of human happiness are pain and boredom.",
+"Life swings like a pendulum backward and forward between pain and boredom.",
+"Politeness is to human nature what warmth is to wax.",
+"Compassion is the only genuine moral motive.",
+"The shortness of life, so often lamented, may be the best thing about it.",
+"Religion is the masterpiece of the art of animal training.",
+"The wise have always said the same things, and fools have always done just the opposite.",
+"It is the courage to make a clean breast of it in the face of every question that makes the philosopher.",
+"Buying books would be a good thing if one could also buy the time to read them.",
+"Hatred comes from the heart; contempt from the head; and neither feeling is quite within our control."
+];
+
+const PLATO_QUOTES = [
+"The beginning is the most important part of the work.",
+"Wise men speak because they have something to say; fools because they have to say something.",
+"The measure of a man is what he does with power.",
+"Opinion is the medium between knowledge and ignorance.",
+"At the touch of love everyone becomes a poet.",
+"Courage is knowing what not to fear.",
+"The greatest wealth is to live content with little.",
+"The price good men pay for indifference to public affairs is to be ruled by evil men.",
+"Music gives a soul to the universe, wings to the mind, flight to the imagination.",
+"An empty vessel makes the loudest sound, so they that have the least wit are the greatest babblers.",
+"Be kind, for everyone you meet is fighting a harder battle.",
+"Justice means minding your own business and not meddling with other men’s concerns.",
+"Necessity is the mother of invention.",
+"I am the wisest man alive, for I know one thing, and that is that I know nothing.",
+"Only the dead have seen the end of war.",
+"Good actions give strength to ourselves and inspire good actions in others.",
+"The heaviest penalty for declining to rule is to be ruled by someone inferior to yourself.",
+"Books give a soul to the universe.",
+"Man - a being in search of meaning.",
+"Love is a serious mental disease."
+];
+
+const KANT_QUOTES = [
+"Science is organized knowledge. Wisdom is organized life.",
+"Act only according to that maxim whereby you can at the same time will that it should become a universal law.",
+"We are not rich by what we possess but by what we can do without.",
+"Experience without theory is blind, but theory without experience is mere intellectual play.",
+"Two things fill the mind with ever new and increasing admiration: the starry heavens above me and the moral law within me.",
+"Immaturity is the inability to use one’s understanding without guidance from another.",
+"Dare to know! Have the courage to use your own understanding.",
+"In law, a man is guilty when he violates the rights of others. In ethics, he is guilty if he only thinks of doing so.",
+"Happiness is not an ideal of reason but of imagination.",
+"The hand is the visible part of the brain.",
+"Out of the crooked timber of humanity, no straight thing was ever made.",
+"Thoughts without content are empty; intuitions without concepts are blind.",
+"The only thing that is unconditionally good is a good will.",
+"Freedom is the precondition for moral responsibility.",
+"Reason is the faculty that gives us principles.",
+"Perpetual peace is not a natural state; it must be established.",
+"All our knowledge begins with the senses.",
+"Morality is not properly the doctrine of how we may make ourselves happy, but how we may make ourselves worthy of happiness.",
+"Education is the development in man of all perfection of which he is capable.",
+"Space and time are the framework within which the mind constructs reality."
+];
+
+// Combine pools into a single array of quote objects for the bouncer
+const PHILOSOPHER_POOLS = [
+  ...NIETZSCHE_QUOTES.map(t => ({ text: t, author: 'Friedrich Nietzsche' })),
+  ...KIERKEGAARD_QUOTES.map(t => ({ text: t, author: 'Søren Kierkegaard' })),
+  ...SCHOPENHAUER_QUOTES.map(t => ({ text: t, author: 'Arthur Schopenhauer' })),
+  ...PLATO_QUOTES.map(t => ({ text: t, author: 'Plato' })),
+  ...KANT_QUOTES.map(t => ({ text: t, author: 'Immanuel Kant' }))
+];
+
+// Expanded quotes pool (mole book + philosophers)
+const EXPANDED_QUOTES_POOL = [
+  ...MOLE_BOOK_QUOTES,
+  ...PHILOSOPHER_POOLS
+];
+
 // Quote management system
 class QuotesBouncer {
   constructor() {
@@ -85,8 +216,8 @@ class QuotesBouncer {
     this.width = 0;
     this.height = 0;
     
-    // Shuffle quotes on initialization
-    this.quotes = this.shuffleArray([...MOLE_BOOK_QUOTES]);
+  // Shuffle quotes on initialization (use expanded pool)
+  this.quotes = this.shuffleArray([...EXPANDED_QUOTES_POOL]);
     
     this.init();
   }

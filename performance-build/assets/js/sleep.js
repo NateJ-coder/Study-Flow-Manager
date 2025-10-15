@@ -340,16 +340,27 @@ class SleepModeManager {
   clearUnusedAssets() {
     try {
       // Clear unused preloaded images (keep current theme images)
-      const currentTheme = window.currentTheme || 'AUTUMN';
-      const currentImages = this.getCurrentThemeImages(currentTheme);
-      
+      const themeKey = (window.appSettings && window.appSettings.theme) ? window.appSettings.theme.toUpperCase() : 'AUTUMN';
+      const currentImages = this.getCurrentThemeImages(themeKey); // returns basenames like 'autumn-day-8.png'
+
+      // Helper to get basename from a URL
+      const basename = (url) => {
+        try {
+          const parts = url.split('/');
+          return parts[parts.length - 1];
+        } catch (e) {
+          return url;
+        }
+      };
+
       // Identify unused images
       const allPreloadedImages = document.querySelectorAll('img[src*="performance-build/assets/images"]');
       allPreloadedImages.forEach(img => {
-        if (!currentImages.includes(img.src)) {
-          // Remove from cache
-          img.src = '';
-          img.remove();
+        const name = basename(img.src);
+        // If the image basename is not in current theme images, remove it
+        if (!currentImages.includes(name) && !currentImages.includes(img.src)) {
+          try { img.src = ''; } catch (e) {}
+          if (img.parentNode) img.parentNode.removeChild(img);
         }
       });
       

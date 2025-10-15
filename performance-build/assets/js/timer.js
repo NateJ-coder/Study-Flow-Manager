@@ -252,9 +252,11 @@ function isNightTime() {
 }
 
 function getCurrentImageAssets() {
-  const themeConfig = BACKGROUND_CONFIG[appSettings.theme];
+  // Ensure theme key is valid and lowercase per spec
+  const themeKey = (appSettings.theme || 'autumn').toLowerCase();
+  const themeConfig = BACKGROUND_CONFIG[themeKey] || BACKGROUND_CONFIG['autumn'];
   const timeOfDay = isNight ? 'night' : 'day';
-  return themeConfig.images[timeOfDay];
+  return themeConfig.images[timeOfDay] || [];
 }
 
 // Particle config now handled by particle.js
@@ -285,6 +287,23 @@ function preloadImage(url) {
     img.onerror = () => reject(new Error(`Failed to load image: ${url}`));
     img.src = url;
   });
+}
+
+// Preload the next image in the sequence (nice to have for seamless transitions)
+function preloadNextImage() {
+  try {
+    const assets = getCurrentImageAssets();
+    if (!assets || assets.length === 0) return Promise.resolve(null);
+    const nextIndex = (appSettings.bgIndex + 1) % assets.length;
+    const nextUrl = assets[nextIndex];
+    return preloadImage(nextUrl).catch(err => {
+      console.warn('Preload next image failed:', err.message);
+      return null;
+    });
+  } catch (err) {
+    console.warn('preloadNextImage error:', err);
+    return Promise.resolve(null);
+  }
 }
 
 // Calculate minimum safe slideshow interval based on average preload time + buffer
@@ -366,6 +385,10 @@ async function updateBackground(forceUpdate = false) {
 
   const nextImage = assets[appSettings.bgIndex];
 
+  // Find DOM targets at call time (ensure DOM is ready)
+  const bgImgEl = document.getElementById('background-image');
+  const bgContainer = document.getElementById('background-container');
+
   if (backgroundImageElement.src.includes(nextImage) && !forceUpdate) {
       // Image hasn't changed (day/night boundary crossed or first run with correct image)
       console.log(`🖼️ Background skipped. Current: ${nextImage.split('/').pop()}`);
@@ -375,27 +398,43 @@ async function updateBackground(forceUpdate = false) {
   console.log(`🖼️ Loading background: ${nextImage.split('/').pop()} (Index: ${appSettings.bgIndex})`);
 
   try {
-    // Preload the next image before setting it
-    await preloadImage(nextImage);
+    // Preload the next image before setting it (with a safety race to avoid stalls)
+    const preloadPromise = preloadImage(nextImage);
+    const safety = new Promise(r => setTimeout(r, 3000));
+    await Promise.race([preloadPromise, safety]);
     
     // Start particle wipe transition
     if (window.ParticleSystem) {
       window.ParticleSystem.transition();
     }
-    
+
     // Enhanced smooth transition coordinated with particle effect
-    backgroundImageElement.style.opacity = '0.2';
-    
-    // Phase 1: Particles build up (600ms)
-    setTimeout(() => {
-      backgroundImageElement.style.opacity = '0.05';
-      backgroundImageElement.src = nextImage;
-    }, 600);
-    
-    // Phase 2: Image emerges through particles (400ms later)
-    setTimeout(() => {
-      backgroundImageElement.style.opacity = '0.9';
-    }, 1000); // Total transition time: 1000ms coordinated with particle fade
+    if (bgImgEl) {
+      bgImgEl.style.transition = 'opacity 1s ease';
+      bgImgEl.style.opacity = '0.2';
+
+      // Phase 1: prepare and swap the image after a short particle build-up
+      setTimeout(() => {
+        bgImgEl.style.opacity = '0.05';
+        bgImgEl.src = nextImage;
+      }, 600);
+
+      // Phase 2: fade image in
+      setTimeout(() => {
+        bgImgEl.style.opacity = '0.95';
+      }, 1000);
+    } else if (bgContainer) {
+      // Fallback: set background-image on container if img element not present
+      bgContainer.style.transition = 'background-image 1s ease, opacity 1s ease';
+      bgContainer.style.opacity = '0.2';
+      setTimeout(() => {
+        bgContainer.style.backgroundImage = `url('${nextImage}')`;
+      }, 600);
+      setTimeout(() => { bgContainer.style.opacity = '0.95'; }, 1000);
+    } else {
+      // Last resort: try to set document body background
+      document.body.style.backgroundImage = `url('${nextImage}')`;
+    }
     
     // Save the new index/theme
     if (oldIndex !== appSettings.bgIndex || forceUpdate) {
@@ -406,6 +445,9 @@ async function updateBackground(forceUpdate = false) {
     if (preloadTimes.length >= 3) {
       updateSlideshowIntervalOptions();
     }
+
+    // Preload the subsequent image in background (non-blocking)
+    preloadNextImage();
 
   } catch (error) {
     console.error(error.message);

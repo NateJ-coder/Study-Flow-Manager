@@ -25,13 +25,14 @@
   };
 
   // Keep the preload list tight — prefer values from central config with fallback
-  const assets = (window.SF_CONFIG && window.SF_CONFIG.PRELOAD && window.SF_CONFIG.PRELOAD.INTRO) || [
-    '/Study-Flow-Manager/performance-build/assets/images/optimized/studyflow-logo-768.webp',
-    '/Study-Flow-Manager/performance-build/assets/images/welcome-page.png',
-    '/Study-Flow-Manager/performance-build/assets/css/welcome.css',
-    '/Study-Flow-Manager/performance-build/assets/js/welcome.js',
-    '/Study-Flow-Manager/performance-build/assets/pages/welcome.html'
-  ];
+  const assets = (window.SF_CONFIG && window.SF_CONFIG.PRELOAD && window.SF_CONFIG.PRELOAD.INTRO)
+    || [
+      '/Study-Flow-Manager/performance-build/assets/images/optimized/studyflow-logo-768.webp',
+      '/Study-Flow-Manager/performance-build/assets/images/welcome-page.png',
+      '/Study-Flow-Manager/performance-build/assets/css/welcome.css',
+      '/Study-Flow-Manager/performance-build/assets/js/welcome.js',
+      '/Study-Flow-Manager/performance-build/assets/pages/welcome.html'
+    ];
 
   let loaded = 0;
   const bump = () => { loaded += 1; setProgress((loaded / assets.length) * 100); };
