@@ -23,60 +23,107 @@ html,body{
   font-family:"Segoe UI",sans-serif;
 }
 
-h1{
-  position:relative;
-  font-size:5rem;
-  font-weight:700;
-  color:rgba(90,45,0,0.25);           /* faint until hit */
-  text-shadow:0 0 8px rgba(0,0,0,0.2);
-  animation:revealZoom 12s ease-out forwards;
+
+:root{
+  --bg-1:#0f1a14;   /* deep forest */
+  --bg-2:#132219;   /* darker base */
+  --accent:#89a67c; /* muted moss */
+  --bar:#dfe9da;
+  --timing: cubic-bezier(.25,.9,.25,1);
+  --fade-ms: 600;
 }
 
-/* drop container */
-.drop{
-  position:absolute;
-  top:-120px;
-  left:50%;
-  transform:translateX(-50%);
-  width:40px;
-  height:60px;
-  animation:fall 3.5s cubic-bezier(.3,.7,.4,1) forwards;
+html,body{height:100%;margin:0}
+body{
+  background:
+    radial-gradient(1200px 800px at 50% 35%, #1a2b22 0%, transparent 60%),
+    radial-gradient(900px 700px at 60% 70%, #17261e 0%, transparent 55%),
+    linear-gradient(180deg, var(--bg-1), var(--bg-2));
+  display:grid;
+  place-items:center;
+  overflow:hidden;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
 }
 
-/* SVG drop fill */
-.drop svg path{
-  fill:#b45a1a;
+body::after{
+  content:"";
+  position:fixed; inset:0;
+  pointer-events:none;
+  opacity:.08;
+  mix-blend-mode:soft-light;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(255,255,255,.05) 0 1px, transparent 1px 2px),
+    repeating-linear-gradient(90deg, rgba(0,0,0,.07) 0 1px, transparent 1px 2px);
 }
 
-/* ripple splash */
-.splash{
-  position:absolute;
-  bottom:calc(50% - 0.4em); /* aligns to word baseline */
-  left:50%;
-  transform:translateX(-50%) scale(0);
-  width:200px;
-  height:200px;
-  border:4px solid rgba(180,90,26,0.4);
-  border-radius:50%;
+.stage{
+  display:grid;
+  place-items:center;
+  gap:2.2rem;
+  padding:2rem;
+  text-align:center;
+}
+
+#logo{
+  width:min(68vw, 420px);
+  height:auto;
+  image-rendering:-webkit-optimize-contrast;
+  filter: drop-shadow(0 14px 40px rgba(0,0,0,.35));
+  transform:translate3d(0,8px,0) scale(.96) rotate(-0.4deg);
   opacity:0;
-  animation:splash 1.8s ease-out 3.4s forwards;
+  animation:
+    popIn .9s var(--timing) forwards,
+    floaty 6s ease-in-out 1s infinite alternate;
 }
 
-/* Animations */
-@keyframes fall{
-  0%{ transform:translate(-50%,-200px) scale(1); opacity:1; }
-  85%{ transform:translate(-50%,calc(50vh - 40px)) scale(1); opacity:1;}
-  100%{ transform:translate(-50%,calc(50vh - 20px)) scale(0.5); opacity:0; }
+#logo::selection{background:transparent}
+#logo.shimmer{
+  mask-image: linear-gradient(110deg, transparent 35%, #000 50%, transparent 65%);
+  mask-size: 300% 100%;
+  animation: shimmer 1.9s ease-out .9s 2 both, floaty 6s ease-in-out 1s infinite alternate;
 }
 
-@keyframes splash{
-  0%{opacity:0;transform:translateX(-50%) scale(0);}
-  30%{opacity:1;transform:translateX(-50%) scale(1);}
-  100%{opacity:0;transform:translateX(-50%) scale(2);}
+.progress{
+  width:min(72vw, 460px);
+  height:10px;
+  background:rgba(255,255,255,.08);
+  border-radius:999px;
+  overflow:hidden;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.06);
+}
+.progress .bar{
+  width:0%;
+  height:100%;
+  background:linear-gradient(90deg, var(--bar), #b7c9b1);
+  transform-origin:left center;
+  transition:width 180ms var(--timing);
 }
 
-@keyframes revealZoom{
-  0%,30%{color:rgba(90,45,0,0.25);transform:scale(1);}
-  35%{color:#b45a1a;}
-  100%{color:#b45a1a;transform:scale(1.1);}
+#transition{
+  position:fixed; inset:0;
+  background:#000;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity var(--fade-ms) var(--timing);
+  z-index:10;
+}
+#transition.show{ opacity:1 }
+
+@keyframes popIn{
+  0%{ opacity:0; transform:translate3d(0,30px,0) scale(.9) rotate(-2deg); }
+  60%{ opacity:1; transform:translate3d(0,0,0) scale(1.04) rotate(.3deg); }
+  100%{ opacity:1; transform:translate3d(0,0,0) scale(1) rotate(0); }
+}
+@keyframes floaty{
+  0%{ transform:translate3d(0,6px,0) scale(1) rotate(.1deg); }
+  100%{ transform:translate3d(0,-6px,0) scale(1.005) rotate(-.1deg); }
+}
+@keyframes shimmer{
+  0%{ mask-position: 200% 0; }
+  100%{ mask-position: -100% 0; }
+}
+
+@media (prefers-reduced-motion: reduce){
+  #logo{ animation:none; opacity:1; transform:none }
+  .progress .bar{ transition:none }
 }

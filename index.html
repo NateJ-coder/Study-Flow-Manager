@@ -4,52 +4,52 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="StudyFlow Manager - Immersive Focus Timer">
-  
-  <!-- Performance-Critical Preloads -->
-  <link rel="preload" href="performance-build/assets/images/welcome-page.png" as="image" fetchpriority="high">
-  <link rel="preload" href="performance-build/assets/css/welcome.css" as="style">
-  <link rel="preload" href="performance-build/assets/js/welcome.js" as="script">
-  
-  <!-- External CSS -->
-  <link rel="stylesheet" href="performance-build/assets/css/welcome.css?v=2025101402">
-  
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>StudyFlow — Intro</title>
+    <meta name="description" content="StudyFlow Intro & Preloader" />
 
-  
-  <title>StudyFlow Manager - Welcome</title>
-</head>
-<body class="min-h-screen bg-gray-900 font-inter antialiased overflow-hidden">
-  <!-- Background Container -->
-  <div 
-    id="background-container"
-    class="fixed inset-0 bg-cover bg-center transition-opacity duration-1000 ease-in-out"
-    style="
-      background-image: url('performance-build/assets/images/welcome-page.png');
+    <!-- Preload critical assets for the welcome page -->
+    <link rel="preload" href="welcome.html" as="document" />
+    <link rel="preload" href="performance-build/assets/css/welcome.css" as="style" />
+    <link rel="preload" href="performance-build/assets/js/welcome.js" as="script" />
+    <link rel="preload" href="performance-build/assets/images/welcome-page.png" as="image" fetchpriority="high" />
 
+    <!-- Intro styles -->
+    <link rel="stylesheet" href="performance-build/assets/css/intro.css" />
+  </head>
+  <body>
+    <main class="stage" aria-label="StudyFlow loading screen">
+      <img
+        id="logo"
+        src="performance-build/assets/images/studyflow-logo-1024.png"
+        alt="StudyFlow"
+        width="1024" height="1024"
+        decoding="async"
+        fetchpriority="high"
+      />
 
-      <!DOCTYPE html>
-      <html lang="en">
-      <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>StudyFlow Animation</title>
-      <link rel="stylesheet" href="performance-build/assets/css/intro.css?v=20251015">
-
-        <!-- Preload welcome page and critical assets for instant transition -->
-        <link rel="preload" href="welcome.html?v=20251015" as="document">
-        <link rel="preload" href="performance-build/assets/css/welcome.css?v=2025101402" as="style">
-        <link rel="preload" href="performance-build/assets/js/welcome.js?v=2025101402" as="script">
-        <link rel="preload" href="performance-build/assets/images/welcome-page.png" as="image" fetchpriority="high">
-      </head>
-      <body>
-
-      <h1>StudyFlow</h1>
-
-      <div class="drop">
-        <!-- simple teardrop SVG -->
-        <svg viewBox="0 0 64 64" width="64" height="64">
-          <path d="M32 2 C20 22,8 34,8 46 a24 24 0 0 0 48 0 C56 34,44 22,32 2z"/>
-        </svg>
+      <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+        <div class="bar"></div>
       </div>
+
+      <noscript>
+        <p style="color:#d9ead3;margin-top:1rem;">
+          JavaScript is required. <a href="welcome.html">Continue to the site</a>.
+        </p>
+      </noscript>
+    </main>
+
+    <!-- Transition overlay -->
+    <div id="transition"></div>
+
+    <!-- Intro logic -->
+    <script src="performance-build/assets/js/intro.js" defer></script>
+  </body>
+  </html>
 
       <div class="splash"></div>
 
