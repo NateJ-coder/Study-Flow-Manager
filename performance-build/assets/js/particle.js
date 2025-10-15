@@ -50,8 +50,28 @@ function initializeParticleSystem() {
     }
     
     ctx = canvas.getContext('2d');
+    
+    // Set up resize handler for DPR scaling
+    window.addEventListener('resize', resizeParticleCanvas);
+    resizeParticleCanvas(); // Initial setup
+    
     console.log('✅ Particle system initialized');
     return true;
+}
+
+// Scale canvas for crisp, visible particles on HiDPI
+function resizeParticleCanvas() {
+    if (!canvas || !ctx) return;
+    
+    const dpr = window.devicePixelRatio || 1;
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    canvas.width = Math.floor(w * dpr);
+    canvas.height = Math.floor(h * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // keep drawing API in CSS pixels
 }
 
 // --- PARTICLE CONFIGURATION ACCESS ---
@@ -63,7 +83,18 @@ function getCurrentParticleConfig() {
     
     const theme = getCurrentTheme();
     const timeOfDay = getIsNight() ? 'night' : 'day';
-    return PARTICLE_CONFIG[theme]?.particles[timeOfDay] || PARTICLE_CONFIG.autumn.particles.day;
+    const baseConfig = PARTICLE_CONFIG[theme]?.particles[timeOfDay] || PARTICLE_CONFIG.autumn.particles.day;
+    
+    // Scale particle density based on screen size for performance
+    const screenArea = window.innerWidth * window.innerHeight;
+    const baseArea = 1920 * 1080; // Reference screen size
+    const scaleFactor = Math.sqrt(screenArea / baseArea);
+    const densityMultiplier = Math.max(0.3, Math.min(2.0, scaleFactor));
+    
+    return {
+        ...baseConfig,
+        count: Math.floor(baseConfig.count * densityMultiplier)
+    };
 }
 
 // --- PARTICLE MANAGEMENT ---
@@ -243,6 +274,10 @@ function drawTransitionParticles(config) {
             ctx.arc(p.x, p.y, p.size / 2, 0, Math.PI * 2);
         } else if (config.type === 'leaf' || config.type === 'green-leaf') {
             ctx.fillRect(p.x, p.y, p.size, p.size * 0.5);
+            // Add contrasting stroke for visibility
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.4)';
+            ctx.lineWidth = Math.max(0.5, p.size / 8);
+            ctx.strokeRect(p.x, p.y, p.size, p.size * 0.5);
         } else {
             // Enhanced transition glow
             ctx.globalAlpha = p.life * 0.8; // Fade based on life and increase visibility

@@ -1,0 +1,65 @@
+/**
+ * PARTICLE SYSTEM STYLES
+ * Dedicated CSS for particle effects and seasonal theming
+ * Used by: timer.html, particle.js
+ */
+
+/* ===== PARTICLE THEME COLORS ===== */
+/* High-contrast colors for particle visibility across all backgrounds */
+
+/* Base (autumn) theme particles */
+body.autumn-theme { 
+  --particle-color: #ffe29a; /* warm, visible on darker photos */
+}
+body.autumn-theme.night { 
+  --particle-color: #fff7b3; /* brighter for night */
+}
+
+/* Summer theme particles */
+body.summer-theme { 
+  --particle-color: #274e13; /* dark green on bright summer scenes */
+}
+body.summer-theme.night { 
+  --particle-color: #caff7a; /* pale lime glow at night */
+}
+
+/* Winter theme particles */
+body.winter-theme { 
+  --particle-color: #b3e0ff; /* icy blue on darker winter scenes */
+}
+body.winter-theme.night { 
+  --particle-color: #ffffff; /* pure white for night snow */
+}
+
+/* ===== PARTICLE CANVAS ===== */
+/* Fixed positioning canvas for particle rendering */
+#particle-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 2; /* bg:1, particles:2, UI:3+ */
+  pointer-events: none; /* don't block clicks */
+  width: 100%;
+  height: 100%;
+}
+
+/* ===== PARTICLE ANIMATIONS ===== */
+/* Smooth transitions when particles change themes */
+.particle-transition {
+  transition: all 0.3s ease-in-out;
+}
+
+/* ===== RESPONSIVE PARTICLE SCALING ===== */
+/* Optimize particle rendering for different screen sizes */
+@media (max-width: 768px) {
+  #particle-canvas {
+    /* Ensure good performance on mobile */
+    image-rendering: optimizeSpeed;
+  }
+}
+
+@media (min-width: 2560px) {
+  #particle-canvas {
+    /* Ensure crisp rendering on high-res displays */
+    image-rendering: optimizeQuality;
+  }
+}
