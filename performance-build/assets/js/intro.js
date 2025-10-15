@@ -1,72 +1,57 @@
-// StudyFlow Intro + Preloader
-// - Preloads welcome assets
-// - Shows a lightweight progress bar
-// - Smooth fade + redirect once ready (with a short safety timeout)
-
+// StudyFlow Intro + Preloader (performance-tuned)
 (() => {
   const WELCOME_URL = 'welcome.html';
-  const OVERLAY_MS = 600;           // keep in sync with --fade-ms in CSS
-  const SAFETY_TIMEOUT_MS = 4500;   // maximum time we’ll wait before continuing
+  const OVERLAY_MS = 600;           // match CSS --fade-ms
+  const SAFETY_TIMEOUT_MS = 2500;   // faster: don't wait forever
 
-  const bar = document.querySelector('.progress .bar');
+  const bar  = document.querySelector('.progress .bar');
   const logo = document.getElementById('logo');
-  if (logo) logo.classList.add('shimmer');
 
-  const assets = [
-    'performance-build/assets/images/welcome-page.png',
-    'performance-build/assets/css/welcome.css',
-    'performance-build/assets/js/welcome.js',
-    'welcome.html'
-  ];
+  // Gentle shimmer class removed to cut paint work during load.
+  // Add pointer tilt for more "life" without heavy DOM.
+  const applyTilt = (x, y) => {
+    const rx = ((y / window.innerHeight) - 0.5) * -6; // -3..3deg
+    const ry = ((x / window.innerWidth)  - 0.5) *  6; // -3..3deg
+    document.documentElement.style.setProperty('--rx', rx.toFixed(2) + 'deg');
+    document.documentElement.style.setProperty('--ry', ry.toFixed(2) + 'deg');
+  };
+  window.addEventListener('pointermove', (e) => applyTilt(e.clientX, e.clientY), { passive: true });
+  window.addEventListener('pointerleave', () => applyTilt(window.innerWidth/2, window.innerHeight/2), { passive: true });
 
-  let loaded = 0;
   const setProgress = (n) => {
     const pct = Math.max(0, Math.min(100, Math.round(n)));
     bar.style.width = pct + '%';
     bar.parentElement?.setAttribute('aria-valuenow', String(pct));
   };
 
+  // Keep the preload list tight — just what the first fold needs
+  const assets = [
+    'performance-build/assets/images/optimized/studyflow-logo-768.webp',
+    'performance-build/assets/css/welcome.css',
+    'performance-build/assets/js/welcome.js',
+    'welcome.html'
+  ];
+
+  let loaded = 0;
+  const bump = () => { loaded += 1; setProgress((loaded / assets.length) * 100); };
+
   const loadImage = (url) => new Promise((resolve, reject) => {
     const img = new Image();
-    img.onload = resolve;
-    img.onerror = reject;
-    img.src = url;
-    // give the browser a hint to cache aggressively
-    img.decoding = 'async';
-    img.fetchPriority = 'high';
+    img.onload = resolve; img.onerror = reject;
+    img.src = url; img.fetchPriority = 'high';
   });
 
-  const preload = (url) => {
-    // Decide strategy by file type
-    if (/\.(png|jpg|jpeg|webp|avif|gif|svg)(\?|$)/i.test(url)) {
-      return loadImage(url);
-    }
-    // CSS/JS/HTML: do a fetch to warm the cache
-    return fetch(url, { cache: 'force-cache' }).then(r => {
-      // treat 200–299 as success
-      if (!r.ok) throw new Error('Preload failed: ' + url);
-    });
-  };
+  const preload = (url) => /\.(webp|png|jpg|jpeg|gif|avif|svg)(\?|$)/i.test(url)
+    ? loadImage(url)
+    : fetch(url, { cache: 'force-cache' }).then(r => { if (!r.ok) throw new Error('Preload failed: '+url); });
 
-  const bump = () => {
-    loaded += 1;
-    setProgress((loaded / assets.length) * 100);
-  };
-
-  const preloadAll = Promise.all(
-    assets.map(u => preload(u).then(bump).catch((e) => { console.warn(e); bump(); }))
-  );
-
-  const safety = new Promise((resolve) => setTimeout(resolve, SAFETY_TIMEOUT_MS));
+  const preloadAll = Promise.all(assets.map(u => preload(u).then(bump).catch((e)=>{console.warn(e); bump();})));
+  const safety = new Promise((r) => setTimeout(r, SAFETY_TIMEOUT_MS));
 
   Promise.race([Promise.allSettled([preloadAll, safety])]).then(() => {
-    // brief hold so the bar can visually reach 100%
     setProgress(100);
     const overlay = document.getElementById('transition');
     overlay?.classList.add('show');
-    setTimeout(() => {
-      // Replace history so back button won't bounce to intro
-      window.location.replace(WELCOME_URL);
-    }, OVERLAY_MS);
+    setTimeout(() => window.location.replace(WELCOME_URL), OVERLAY_MS);
   });
 })();

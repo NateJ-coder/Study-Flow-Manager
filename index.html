@@ -44,23 +44,75 @@
     </main>
 
     <!-- Transition overlay -->
-    <div id="transition"></div>
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <title>StudyFlow — Intro</title>
+      <meta name="description" content="StudyFlow Intro & Preloader" />
 
-    <!-- Intro logic -->
-    <script src="performance-build/assets/js/intro.js" defer></script>
-  </body>
-  </html>
+      <!-- Preload your LCP image with srcset so the browser can pick the best size early -->
+      <link
+        rel="preload"
+        as="image"
+        imagesrcset="
+          performance-build/assets/images/optimized/studyflow-logo-512.webp 512w,
+          performance-build/assets/images/optimized/studyflow-logo-768.webp 768w,
+          performance-build/assets/images/optimized/studyflow-logo-1024.webp 1024w"
+        imagesizes="(min-width:1200px) 60vmin, (min-width:900px) 56vmin, 48vmin"
+        href="performance-build/assets/images/optimized/studyflow-logo-768.webp"
+        fetchpriority="high"
+      />
 
-      <div class="splash"></div>
+      <!-- Preload above-the-fold welcome assets (kept minimal) -->
+      <link rel="preload" href="welcome.html" as="document" />
+      <link rel="preload" href="performance-build/assets/css/welcome.css" as="style" />
+      <link rel="preload" href="performance-build/assets/js/welcome.js" as="script" />
 
-       <!-- Fade-out overlay for transition -->
-       <div id="fadeout-overlay"></div>
+      <link rel="stylesheet" href="performance-build/assets/css/intro.css" />
+    </head>
+    <body>
+      <main class="stage" aria-label="StudyFlow loading screen">
+        <!-- Ambient layers for "life" without adding literal imagery -->
+        <div class="layer rays" aria-hidden="true"></div>
+        <div class="layer motes" aria-hidden="true"></div>
 
-      <script src="performance-build/assets/js/intro.js?v=20251015" defer></script>
-      <script>
-        setTimeout(() => {
-          window.location.href = "welcome.html";
-        }, 12000);
-      </script>
-      </body>
-      </html>
+        <picture id="logo-wrap">
+          <source
+            type="image/webp"
+            srcset="
+              performance-build/assets/images/optimized/studyflow-logo-512.webp 512w,
+              performance-build/assets/images/optimized/studyflow-logo-768.webp 768w,
+              performance-build/assets/images/optimized/studyflow-logo-1024.webp 1024w"
+            sizes="(min-width:1400px) 62vmin, (min-width:1100px) 58vmin, (min-width:900px) 54vmin, 48vmin" />
+          <img
+            id="logo"
+            src="performance-build/assets/images/optimized/studyflow-logo-768.png"
+            srcset="
+              performance-build/assets/images/optimized/studyflow-logo-512.png 512w,
+              performance-build/assets/images/optimized/studyflow-logo-768.png 768w,
+              performance-build/assets/images/optimized/studyflow-logo-1024.png 1024w"
+            sizes="(min-width:1400px) 62vmin, (min-width:1100px) 58vmin, (min-width:900px) 54vmin, 48vmin"
+            alt="StudyFlow"
+            width="1024" height="1024"
+            fetchpriority="high"
+          />
+        </picture>
+
+        <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <div class="bar"></div>
+        </div>
+
+        <noscript>
+          <p style="color:#d9ead3;margin-top:1rem;">JavaScript is required.
+            <a href="welcome.html">Continue to the site</a>.</p>
+        </noscript>
+      </main>
+
+      <!-- Fade overlay for the page transition -->
+      <div id="transition"></div>
+
+      <script src="performance-build/assets/js/intro.js" defer></script>
+    </body>
+    </html>
