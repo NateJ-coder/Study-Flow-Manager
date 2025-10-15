@@ -33,23 +33,25 @@ let doc, getDoc, setDoc;
 // --- APPLICATION STATE AND CONFIGURATION ---
 
 // Theme and Background Config based on BACKGROUND_SYSTEM_SPEC.md
+// Use absolute asset URLs derived from SF_CONFIG.BASE so paths resolve correctly
+const ASSET_BASE = (window.SF_CONFIG && window.SF_CONFIG.BASE) || '/Study-Flow-Manager/performance-build/assets';
 const BACKGROUND_CONFIG = {
   summer: {
     images: {
-      day: Array.from({ length: 8 }, (_, i) => `assets/images/summer-day-${i + 1}.png`),
-      night: Array.from({ length: 8 }, (_, i) => `assets/images/summer-night-${i + 1}.png`),
+      day: Array.from({ length: 8 }, (_, i) => `${ASSET_BASE}/images/summer-day-${i + 1}.png`),
+      night: Array.from({ length: 8 }, (_, i) => `${ASSET_BASE}/images/summer-night-${i + 1}.png`),
     }
   },
   autumn: {
     images: {
-      day: Array.from({ length: 8 }, (_, i) => `assets/images/autumn-day-${i + 1}.png`),
-      night: Array.from({ length: 8 }, (_, i) => `assets/images/autumn-night-${i + 1}.png`),
+      day: Array.from({ length: 8 }, (_, i) => `${ASSET_BASE}/images/autumn-day-${i + 1}.png`),
+      night: Array.from({ length: 8 }, (_, i) => `${ASSET_BASE}/images/autumn-night-${i + 1}.png`),
     }
   },
   winter: {
     images: {
-      day: Array.from({ length: 7 }, (_, i) => `assets/images/winter-day-${i + 1}.png`),
-      night: Array.from({ length: 7 }, (_, i) => `assets/images/winter-night-${i + 1}.png`),
+      day: Array.from({ length: 7 }, (_, i) => `${ASSET_BASE}/images/winter-day-${i + 1}.png`),
+      night: Array.from({ length: 7 }, (_, i) => `${ASSET_BASE}/images/winter-night-${i + 1}.png`),
     }
   }
 };

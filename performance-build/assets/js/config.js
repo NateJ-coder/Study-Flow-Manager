@@ -1,0 +1,74 @@
+// Centralized runtime config for StudyFlow asset paths
+// Exposes window.SF_CONFIG for other scripts to consume.
+(function () {
+  const BASE = '/Study-Flow-Manager/performance-build/assets';
+
+  const SF_CONFIG = {
+    BASE,
+    PAGES: {
+      WELCOME: BASE + '/pages/welcome.html',
+      TIMER: BASE + '/pages/timer.html',
+      CALENDAR: BASE + '/pages/calendar.html',
+    },
+    CSS: {
+      WELCOME: BASE + '/css/welcome.css',
+      TIMER: BASE + '/css/timer.css',
+      PARTICLES: BASE + '/css/particles.css'
+    },
+    JS: {
+      WELCOME: BASE + '/js/welcome.js',
+      TIMER: BASE + '/js/timer.js',
+      PARTICLE: BASE + '/js/particle.js',
+      SLEEP: BASE + '/js/sleep.js',
+      QUOTES: BASE + '/js/quotes.js'
+    },
+    IMAGES: {
+      LOGO_768: BASE + '/images/optimized/studyflow-logo-768.webp',
+      WELCOME_BG: BASE + '/images/welcome-page.png'
+      ,
+      AUTUMN_DAY: BASE + '/images/autumn-day-8.png',
+      AUTUMN_NIGHT: BASE + '/images/autumn-night-1.png',
+      AUTUMN_DAY_1: BASE + '/images/autumn-day-1.png',
+      SUMMER_DAY: BASE + '/images/summer-day-1.png',
+      SUMMER_NIGHT: BASE + '/images/summer-night-1.png',
+      WINTER_DAY: BASE + '/images/winter-day-1.png',
+      WINTER_NIGHT: BASE + '/images/winter-night-1.png'
+    },
+    BACKGROUNDS: {
+      AUTUMN_DAY: BASE + '/images/autumn-day-8.png',
+      AUTUMN_NIGHT: BASE + '/images/autumn-night-1.png',
+      AUTUMN_DAY_1: BASE + '/images/autumn-day-1.png',
+      SUMMER_DAY: BASE + '/images/summer-day-1.png',
+      SUMMER_NIGHT: BASE + '/images/summer-night-1.png',
+      WINTER_DAY: BASE + '/images/winter-day-1.png',
+      WINTER_NIGHT: BASE + '/images/winter-night-1.png'
+    },
+    AUDIO: {
+      CLICK: BASE + '/audio/click.mp3',
+      SPLASH: BASE + '/audio/splash.mp3'
+    },
+    // helper arrays for preloads
+    PRELOAD: {
+      INTRO: [
+        BASE + '/images/optimized/studyflow-logo-768.webp',
+        BASE + '/images/welcome-page.png',
+        BASE + '/css/welcome.css',
+        BASE + '/js/welcome.js',
+        BASE + '/pages/welcome.html'
+      ]
+      ,
+      BACKGROUNDS: [
+        BASE + '/images/autumn-day-8.png',
+        BASE + '/images/autumn-day-1.png',
+        BASE + '/images/autumn-night-1.png',
+        BASE + '/images/summer-day-1.png',
+        BASE + '/images/summer-night-1.png',
+        BASE + '/images/winter-day-1.png',
+        BASE + '/images/winter-night-1.png'
+      ]
+    }
+  };
+
+  // expose globally
+  window.SF_CONFIG = Object.freeze(SF_CONFIG);
+})();

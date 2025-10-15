@@ -10,11 +10,11 @@ const PAGE_STATE = {
 };
 
 // Theme Configuration (matches your existing structure)
-const THEME_DATA = {
+const THEME_DATA = (window.SF_CONFIG && window.SF_CONFIG.THEME_DATA) || {
   AUTUMN: {
     name: 'Autumn Flow',
-  bg_day: '/Study-Flow-Manager/performance-build/assets/images/autumn-day-8.png',
-  bg_night: '/Study-Flow-Manager/performance-build/assets/images/autumn-night-1.png',
+    bg_day: (window.SF_CONFIG && window.SF_CONFIG.IMAGES && window.SF_CONFIG.IMAGES.AUTUMN_DAY) || '/Study-Flow-Manager/performance-build/assets/images/autumn-day-8.png',
+    bg_night: (window.SF_CONFIG && window.SF_CONFIG.IMAGES && window.SF_CONFIG.IMAGES.AUTUMN_NIGHT) || '/Study-Flow-Manager/performance-build/assets/images/autumn-night-1.png',
     primary_color: 'text-amber-300',
     secondary_color: 'text-amber-500',
     button_bg: 'bg-amber-600/70',
@@ -40,17 +40,16 @@ let preloadState = {
 };
 
 // Timer page critical resources for preloading
-const TIMER_RESOURCES = {
+const TIMER_RESOURCES = (window.SF_CONFIG && window.SF_CONFIG.TIMER_RESOURCES) || {
   css: [
-    '/Study-Flow-Manager/performance-build/assets/css/timer.css',
-    '/Study-Flow-Manager/performance-build/assets/css/particles.css'
+    (window.SF_CONFIG && window.SF_CONFIG.CSS && window.SF_CONFIG.CSS.TIMER) || '/Study-Flow-Manager/performance-build/assets/css/timer.css',
+    (window.SF_CONFIG && window.SF_CONFIG.CSS && window.SF_CONFIG.CSS.PARTICLES) || '/Study-Flow-Manager/performance-build/assets/css/particles.css'
   ],
   js: [
-    '/Study-Flow-Manager/performance-build/assets/js/timer.js',
-    '/Study-Flow-Manager/performance-build/assets/js/particle.js'
+    (window.SF_CONFIG && window.SF_CONFIG.JS && window.SF_CONFIG.JS.TIMER) || '/Study-Flow-Manager/performance-build/assets/js/timer.js',
+    (window.SF_CONFIG && window.SF_CONFIG.JS && window.SF_CONFIG.JS.PARTICLE) || '/Study-Flow-Manager/performance-build/assets/js/particle.js'
   ],
-  // Preload at least one background per season per time-of-day
-  backgrounds: [
+  backgrounds: (window.SF_CONFIG && window.SF_CONFIG.BACKGROUNDS && window.SF_CONFIG.BACKGROUNDS.TIMER) || [
     '/Study-Flow-Manager/performance-build/assets/images/autumn-day-1.png',
     '/Study-Flow-Manager/performance-build/assets/images/autumn-night-1.png',
     '/Study-Flow-Manager/performance-build/assets/images/summer-day-1.png', 
@@ -61,90 +60,22 @@ const TIMER_RESOURCES = {
 };
 
 // Performance optimization: Load only essential images first
-const CRITICAL_IMAGES = [
-  '/Study-Flow-Manager/performance-build/assets/images/autumn-day-8.png',
-  '/Study-Flow-Manager/performance-build/assets/images/autumn-night-1.png'
+const CRITICAL_IMAGES = (window.SF_CONFIG && window.SF_CONFIG.CRITICAL_IMAGES) || [
+  (window.SF_CONFIG && window.SF_CONFIG.IMAGES && window.SF_CONFIG.IMAGES.AUTUMN_DAY) || '/Study-Flow-Manager/performance-build/assets/images/autumn-day-8.png',
+  (window.SF_CONFIG && window.SF_CONFIG.IMAGES && window.SF_CONFIG.IMAGES.AUTUMN_NIGHT) || '/Study-Flow-Manager/performance-build/assets/images/autumn-night-1.png'
 ];
 
 // Load additional images in background after timer is accessible
 const BACKGROUND_IMAGES_BATCH_SIZE = 8;
 
-// All background images for complete preloading
-const ALL_BACKGROUND_IMAGES = [
-  // Autumn images
-  '/Study-Flow-Manager/performance-build/assets/images/autumn-day-1.png',
-  '/Study-Flow-Manager/performance-build/assets/images/autumn-day-2.png', 
-  '/Study-Flow-Manager/performance-build/assets/images/autumn-day-3.png',
-  '/Study-Flow-Manager/performance-build/assets/images/autumn-day-4.png',
-  '/Study-Flow-Manager/performance-build/assets/images/autumn-day-5.png',
-  '/Study-Flow-Manager/performance-build/assets/images/autumn-day-6.png',
-  '/Study-Flow-Manager/performance-build/assets/images/autumn-day-7.png',
-  '/Study-Flow-Manager/performance-build/assets/images/autumn-day-8.png',
-  '/Study-Flow-Manager/performance-build/assets/images/autumn-night-1.png',
-  '/Study-Flow-Manager/performance-build/assets/images/autumn-night-2.png',
-  '/Study-Flow-Manager/performance-build/assets/images/autumn-night-3.png',
-  '/Study-Flow-Manager/performance-build/assets/images/autumn-night-4.png',
-  '/Study-Flow-Manager/performance-build/assets/images/autumn-night-5.png',
-  '/Study-Flow-Manager/performance-build/assets/images/autumn-night-6.png',
-  '/Study-Flow-Manager/performance-build/assets/images/autumn-night-7.png',
-  '/Study-Flow-Manager/performance-build/assets/images/autumn-night-8.png',
-  // Summer images
-  '/Study-Flow-Manager/performance-build/assets/images/summer-day-1.png',
-  '/Study-Flow-Manager/performance-build/assets/images/summer-day-2.png',
-  '/Study-Flow-Manager/performance-build/assets/images/summer-day-3.png',
-  '/Study-Flow-Manager/performance-build/assets/images/summer-day-4.png',
-  '/Study-Flow-Manager/performance-build/assets/images/summer-day-5.png',
-  '/Study-Flow-Manager/performance-build/assets/images/summer-day-6.png',
-  '/Study-Flow-Manager/performance-build/assets/images/summer-day-7.png',
-  '/Study-Flow-Manager/performance-build/assets/images/summer-day-8.png',
-  '/Study-Flow-Manager/performance-build/assets/images/summer-night-1.png',
-  '/Study-Flow-Manager/performance-build/assets/images/summer-night-2.png',
-  '/Study-Flow-Manager/performance-build/assets/images/summer-night-3.png',
-  '/Study-Flow-Manager/performance-build/assets/images/summer-night-4.png',
-  '/Study-Flow-Manager/performance-build/assets/images/summer-night-5.png',
-  '/Study-Flow-Manager/performance-build/assets/images/summer-night-6.png',
-  '/Study-Flow-Manager/performance-build/assets/images/summer-night-7.png',
-  '/Study-Flow-Manager/performance-build/assets/images/summer-night-8.png',
-  // Winter images  
-  '/Study-Flow-Manager/performance-build/assets/images/winter-day-1.png',
-  '/Study-Flow-Manager/performance-build/assets/images/winter-day-2.png',
-  '/Study-Flow-Manager/performance-build/assets/images/winter-day-3.png',
-  '/Study-Flow-Manager/performance-build/assets/images/winter-day-4.png',
-  '/Study-Flow-Manager/performance-build/assets/images/winter-day-5.png',
-  '/Study-Flow-Manager/performance-build/assets/images/winter-day-6.png',
-  '/Study-Flow-Manager/performance-build/assets/images/winter-day-7.png',
-  '/Study-Flow-Manager/performance-build/assets/images/winter-night-1.png',
-  '/Study-Flow-Manager/performance-build/assets/images/winter-night-2.png',
-  '/Study-Flow-Manager/performance-build/assets/images/winter-night-3.png',
-  '/Study-Flow-Manager/performance-build/assets/images/winter-night-4.png',
-  '/Study-Flow-Manager/performance-build/assets/images/winter-night-5.png',
-  '/Study-Flow-Manager/performance-build/assets/images/winter-night-6.png',
-  '/Study-Flow-Manager/performance-build/assets/images/winter-night-7.png'
-];
+// All background images are centralized in config
+const ALL_BACKGROUND_IMAGES = (window.SF_CONFIG && window.SF_CONFIG.ALL_BACKGROUND_IMAGES) || [];
 
 // PERFORMANCE OPTIMIZED: Only preload critical assets for LCP
-const CRITICAL_ASSETS = [
-  '/Study-Flow-Manager/performance-build/assets/images/welcome-page.png', // Dedicated welcome background
-  '/Study-Flow-Manager/performance-build/assets/audio/click.mp3',
-  '/Study-Flow-Manager/performance-build/assets/audio/splash.mp3'
-];
+const CRITICAL_ASSETS = (window.SF_CONFIG && window.SF_CONFIG.CRITICAL_ASSETS) || [];
 
 // Background images for lazy loading (loaded by settings.js as needed)
-const BACKGROUND_IMAGES = [
-  '/Study-Flow-Manager/performance-build/assets/images/autumn-day-1.png',
-  '/Study-Flow-Manager/performance-build/assets/images/autumn-day-2.png',
-  '/Study-Flow-Manager/performance-build/assets/images/autumn-day-3.png',
-  '/Study-Flow-Manager/performance-build/assets/images/autumn-day-4.png',
-  '/Study-Flow-Manager/performance-build/assets/images/autumn-day-5.png',
-  '/Study-Flow-Manager/performance-build/assets/images/autumn-day-6.png',
-  '/Study-Flow-Manager/performance-build/assets/images/autumn-day-7.png',
-  '/Study-Flow-Manager/performance-build/assets/images/autumn-day-8.png',
-  '/Study-Flow-Manager/performance-build/assets/images/autumn-night-1.png',
-  '/Study-Flow-Manager/performance-build/assets/images/autumn-night-2.png',
-  '/Study-Flow-Manager/performance-build/assets/images/autumn-night-3.png',
-  '/Study-Flow-Manager/performance-build/assets/images/summer-day-1.png',
-  '/Study-Flow-Manager/performance-build/assets/images/winter-day-1.png'
-];
+const BACKGROUND_IMAGES = (window.SF_CONFIG && window.SF_CONFIG.BACKGROUND_IMAGES) || [];
 
 // ============================================
 // UTILITY FUNCTIONS
@@ -153,16 +84,10 @@ const BACKGROUND_IMAGES = [
 // Preload images for performance
 function preloadImages(urls) {
   // Bump up preload capacity: preload ALL images, CSS, JS, and audio assets for welcome page
-  const allAssets = [
-    ...urls,
-    '/Study-Flow-Manager/performance-build/assets/css/welcome.css',
-    '/Study-Flow-Manager/performance-build/assets/js/welcome.js',
-    '/Study-Flow-Manager/performance-build/assets/audio/click.mp3',
-    '/Study-Flow-Manager/performance-build/assets/audio/splash.mp3',
-    // Add all images from ALL_BACKGROUND_IMAGES
-    ...ALL_BACKGROUND_IMAGES.map(img => '/Study-Flow-Manager/' + img),
-    '/Study-Flow-Manager/performance-build/assets/images/welcome-page.png'
-  ];
+  // Compose a de-duplicated list: incoming urls + critical assets + all backgrounds
+  const configCritical = (window.SF_CONFIG && window.SF_CONFIG.CRITICAL_ASSETS) || [];
+  const configAll = (window.SF_CONFIG && window.SF_CONFIG.ALL_BACKGROUND_IMAGES) || [];
+  const allAssets = Array.from(new Set([...(urls || []), ...configCritical, ...configAll]));
   return Promise.all(allAssets.map(url => {
     if (/\.(webp|png|jpg|jpeg|gif|avif|svg)$/i.test(url)) {
       return new Promise((resolve, reject) => {
@@ -380,8 +305,8 @@ function continueToApp() {
   // Only allow navigation if preloading is complete
   if (preloadState.totalProgress === 100) {
     playSound('click');
-    console.log('🎯 Navigating to timer with fully preloaded resources');
-    window.location.href = '/Study-Flow-Manager/performance-build/assets/pages/timer.html';
+  console.log('🎯 Navigating to timer with fully preloaded resources');
+  window.location.href = (window.SF_CONFIG && window.SF_CONFIG.PAGES && window.SF_CONFIG.PAGES.TIMER) || '/Study-Flow-Manager/performance-build/assets/pages/timer.html';
   } else {
     console.log(`⏳ Still preloading... ${preloadState.totalProgress}% complete`);
   }
@@ -389,12 +314,12 @@ function continueToApp() {
 
 function goToTimer() {
   playSound('click');
-  window.location.href = '/Study-Flow-Manager/performance-build/assets/pages/timer.html';
+    window.location.href = (window.SF_CONFIG && window.SF_CONFIG.PAGES && window.SF_CONFIG.PAGES.TIMER) || '/Study-Flow-Manager/performance-build/assets/pages/timer.html';
 }
 
 function goToCalendar() {
   playSound('click');
-  window.location.href = '/Study-Flow-Manager/performance-build/assets/pages/calendar.html';
+    window.location.href = (window.SF_CONFIG && window.SF_CONFIG.PAGES && window.SF_CONFIG.PAGES.CALENDAR) || '/Study-Flow-Manager/performance-build/assets/pages/calendar.html';
 }
 
 function goToWelcome() {
@@ -410,8 +335,8 @@ function goToWelcome() {
 function playSound(soundName) {
   try {
     const soundMap = {
-      'click': '/Study-Flow-Manager/performance-build/assets/audio/click.mp3',
-      'splash': '/Study-Flow-Manager/performance-build/assets/audio/splash.mp3'
+  'click': (window.SF_CONFIG && window.SF_CONFIG.AUDIO && window.SF_CONFIG.AUDIO.CLICK) || '/Study-Flow-Manager/performance-build/assets/audio/click.mp3',
+  'splash': (window.SF_CONFIG && window.SF_CONFIG.AUDIO && window.SF_CONFIG.AUDIO.SPLASH) || '/Study-Flow-Manager/performance-build/assets/audio/splash.mp3'
     };
     
     if (soundMap[soundName]) {

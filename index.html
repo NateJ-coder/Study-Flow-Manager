@@ -8,8 +8,12 @@
   <title>StudyFlow — Intro</title>
   <meta name="description" content="StudyFlow Intro & Preloader" />
 
-  <!-- Tell JS where your welcome page lives (edit if needed) -->
-  <script>window.__WELCOME_PATH__ = '/Study-Flow-Manager/performance-build/assets/pages/welcome.html';</script>
+  <!-- Central config (generated) -->
+  <script src="/Study-Flow-Manager/performance-build/assets/js/config.js" defer></script>
+  <!-- Tell JS where your welcome page lives (prefer configured value) -->
+  <script>
+    window.__WELCOME_PATH__ = (window.SF_CONFIG && window.SF_CONFIG.PAGES && window.SF_CONFIG.PAGES.WELCOME) || '/Study-Flow-Manager/performance-build/assets/pages/welcome.html';
+  </script>
 
   <!-- Preload logo (faster LCP) -->
   <link
@@ -26,8 +30,8 @@
 
   <!-- Preload first-fold welcome assets -->
   <link rel="preload" href="/Study-Flow-Manager/performance-build/assets/pages/welcome.html" as="document" />
-  <link rel="preload" href="./performance-build/assets/css/welcome.css" as="style" />
-  <link rel="preload" href="./performance-build/assets/js/welcome.js" as="script" />
+  <link rel="preload" href="/Study-Flow-Manager/performance-build/assets/css/welcome.css" as="style" />
+  <link rel="preload" href="/Study-Flow-Manager/performance-build/assets/js/welcome.js" as="script" />
 
   <link rel="stylesheet" href="./performance-build/assets/css/intro.css" />
   <!-- Optional (Chromium): prerender for instant swap -->
@@ -74,7 +78,7 @@
   <!-- Transition overlay -->
   <div id="transition"></div>
 
-  <script src="./performance-build/assets/js/intro.js" defer></script>
+  <script src="/Study-Flow-Manager/performance-build/assets/js/intro.js" defer></script>
 </body>
 </html>
         <div class="layer motes" aria-hidden="true"></div>

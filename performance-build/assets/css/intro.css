@@ -125,23 +125,3 @@ body::after{
   #logo{ animation:none; opacity:1; transform:none }
   .progress .bar{ transition:none }
 }
-    100%{ transform: translate3d(0,-6px,0) rotateX(var(--rx)) rotateY(var(--ry)) scale(1.005) rotate(-.1deg); }
-  }
-  @keyframes breathe{
-    0%,100%{ filter: drop-shadow(0 14px 36px rgba(0,0,0,.30)) brightness(1); }
-    50%{    filter: drop-shadow(0 16px 42px rgba(0,0,0,.36)) brightness(1.03); }
-  }
-  @keyframes rays{
-    0%{ transform: translate3d(-2%,0,0) rotate(-4deg); opacity:.22; }
-    100%{ transform: translate3d(2%,0,0) rotate(4deg); opacity:.28; }
-  }
-  @keyframes motes{
-    0%{ background-position: 0% 0%, 15% 10%, 70% 0%, 0% 50%, 50% 50%; transform: translateY(0); }
-    100%{ background-position: 5% 6%, 60% 15%, 90% 8%, 4% 46%, 46% 44%; transform: translateY(-8px); }
-  }
-
-  @media (prefers-reduced-motion: reduce){
-    .layer.rays, .layer.motes{ animation:none }
-    #logo{ animation:none; opacity:1; transform:none }
-    .progress .bar{ transition:none }
-  }
