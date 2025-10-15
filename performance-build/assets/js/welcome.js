@@ -92,12 +92,9 @@ const BACKGROUND_IMAGES = (window.SF_CONFIG && window.SF_CONFIG.BACKGROUND_IMAGE
 
 // Preload images for performance
 function preloadImages(urls) {
-  // Bump up preload capacity: preload ALL images, CSS, JS, and audio assets for welcome page
-  // Compose a de-duplicated list: incoming urls + critical assets + all backgrounds
-  const configCritical = (window.SF_CONFIG && window.SF_CONFIG.CRITICAL_ASSETS) || [];
-  const configAll = (window.SF_CONFIG && window.SF_CONFIG.ALL_BACKGROUND_IMAGES) || [];
-  const allAssets = Array.from(new Set([...(urls || []), ...configCritical, ...configAll]));
-  return Promise.all(allAssets.map(url => {
+  // Respect the provided list only — batches should only preload what they're given
+  const list = Array.from(new Set(urls || []));
+  return Promise.all(list.map(url => {
     if (/\.(webp|png|jpg|jpeg|gif|avif|svg)$/i.test(url)) {
       return new Promise((resolve, reject) => {
         const img = new Image();
@@ -118,6 +115,14 @@ function preloadImages(urls) {
       return Promise.resolve(url);
     }
   }));
+}
+
+// Optional helper to preload the full configured set (use sparingly)
+function preloadAllAssets() {
+  const configCritical = (window.SF_CONFIG && window.SF_CONFIG.CRITICAL_ASSETS) || [];
+  const configAll = (window.SF_CONFIG && window.SF_CONFIG.ALL_BACKGROUND_IMAGES) || [];
+  const allAssets = Array.from(new Set([...configCritical, ...configAll]));
+  return preloadImages(allAssets);
 }
 
 // Update debug info

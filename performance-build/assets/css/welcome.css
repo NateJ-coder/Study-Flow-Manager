@@ -28,8 +28,8 @@ body {
 }
 
 @keyframes bounce-slow {
-  0%, 100% { transform: translateY(0); }  
-  50% { transform: translateY(-5%); }
+  0%, 100% { transform: translate3d(0,0,0); }
+  50%     { transform: translate3d(0,-12px,0); }
 }
 
 .animate-pulse-slow {
@@ -38,6 +38,8 @@ body {
 
 .animate-bounce-slow {
   animation: bounce-slow 3s ease-in-out infinite;
+  will-change: transform; /* GPU hint for smoother animation */
+  transform: translateZ(0);
 }
 
 /* Critical utility classes */
@@ -84,6 +86,9 @@ body {
 .max-w-4xl { max-width: 56rem; }
 .backdrop-blur-sm { backdrop-filter: blur(4px); }
 .bg-black { background-color: rgba(0, 0, 0, 0.4); }
+
+/* Allow Tailwind-like arithmetic class used in HTML: bg-black/40 */
+.bg-black\/40 { background-color: rgba(0, 0, 0, 0.4); }
 .rounded-3xl { border-radius: 1.5rem; }
 .shadow-2xl { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); }
 
