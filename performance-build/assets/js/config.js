@@ -45,6 +45,7 @@
     },
     AUDIO: {
       CLICK: BASE + '/audio/click.mp3',
+      DRAWING: BASE + '/audio/drawing.mp3',
       SPLASH: BASE + '/audio/splash.mp3'
     },
     INTEGRATIONS: {

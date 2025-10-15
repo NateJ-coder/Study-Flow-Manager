@@ -1,0 +1,65 @@
+:root{
+  --primary-bg:#0f1419; --text:#e7eaee;
+  --accent:#f59e0b; /* autumn default */
+  --glass: rgba(16,18,24,.55);
+  --line: var(--accent);
+}
+body{ background:#0e1116; color:var(--text); -webkit-font-smoothing:antialiased; }
+
+/* Theme hooks like Timer page */
+body.autumn-theme { --accent:#f59e0b; }
+body.summer-theme { --accent:#22c55e; }
+body.winter-theme { --accent:#60a5fa; }
+
+.wrap{ width:min(1100px,94vw); margin:80px auto 40px; display:grid; gap:16px; }
+.header{
+  position:fixed; inset:0 0 auto 0; height:56px; display:flex; align-items:center;
+  justify-content:space-between; padding:0 16px; background:linear-gradient(to bottom, rgba(0,0,0,.35), transparent);
+  backdrop-filter: blur(6px);
+}
+.studyflow-logo{ font-weight:800; letter-spacing:.3px; }
+.icon-btn{ background:transparent; border:1px solid rgba(255,255,255,.2); color:var(--text);
+  padding:6px 10px; border-radius:10px; cursor:pointer; }
+.card{
+  background:var(--glass); border:1px solid rgba(255,255,255,.08);
+  border-radius:18px; padding:18px 16px; box-shadow:0 10px 30px rgba(0,0,0,.25);
+}
+.btn{ background:var(--accent); color:#0b0f14; border:0; border-radius:12px; padding:10px 14px; font-weight:700; cursor:pointer; }
+.btn.secondary{ background:transparent; color:var(--text); border:1px solid rgba(255,255,255,.2); }
+.tag{ font-size:12px; padding:2px 8px; border-radius:999px; border:1px solid rgba(255,255,255,.25); }
+
+/* Month grid */
+.cal-head{ display:grid; grid-template-columns:auto 1fr auto; gap:10px; align-items:center; }
+.cal-head h2{ margin:0; text-align:center; font-size:18px; }
+.calendar-grid{ display:grid; grid-template-columns:repeat(7, minmax(0,1fr)); gap:8px; margin-top:12px; }
+.day{
+  position:relative; aspect-ratio:1/1; border:1px solid rgba(255,255,255,.08);
+  border-radius:12px; padding:8px; display:flex; align-items:flex-start; justify-content:flex-end;
+  background: rgba(255,255,255,.04);
+}
+.day .num{ font-size:12px; opacity:.9 }
+.day.other{ opacity:.45 }
+.day.today{ outline:2px solid var(--accent); }
+.day:hover{ box-shadow:0 0 0 2px rgba(255,255,255,.08) inset; cursor:pointer; }
+
+/* Cross-out animation: draw a line left->right */
+.day::after{
+  content:""; position:absolute; left:10px; right:10px; top:50%;
+  height:3px; border-radius:2px; background:var(--line); transform-origin:left center;
+  transform: scaleX(0); transition: transform .35s ease;
+}
+.day.crossed::after{ transform: scaleX(1); }
+
+/* Settings modal */
+.settings-modal{ position:fixed; inset:0; display:grid; place-items:center; background:rgba(0,0,0,.5); }
+.settings-content{
+  width:min(520px,92vw); background:var(--glass); border:1px solid rgba(255,255,255,.12);
+  border-radius:16px; padding:16px; backdrop-filter: blur(10px);
+}
+.settings-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+.settings-group{ display:grid; gap:6px; margin:12px 0; }
+.settings-group input, .settings-group select{
+  background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12);
+  color:var(--text); padding:10px 12px; border-radius:10px; outline:none;
+}
+.settings-content .close{ background:transparent; color:var(--text); border:0; font-size:18px; cursor:pointer; }

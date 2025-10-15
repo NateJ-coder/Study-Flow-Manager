@@ -237,3 +237,115 @@ function init() {
   render();
 }
 document.addEventListener("DOMContentLoaded", init);
+
+/* ====== ADD: SETTINGS STATE ====== */
+const CAL_STORE = "sf_calendar_settings_v1";
+const calState = {
+  view: { year: new Date().getFullYear(), month: new Date().getMonth() }, // 0-11
+  crossed: JSON.parse(localStorage.getItem("sf_crossed_days") || "{}"),    // {"2025-10-15": true}
+  settings: Object.assign({ theme: (localStorage.getItem('sf_theme')||'autumn'),
+                          crossColor: '#f59e0b',
+                          weekStart: 1 },  // 0=Sun,1=Mon
+           JSON.parse(localStorage.getItem(CAL_STORE) || "{}"))
+};
+
+function persistCalendar(){ localStorage.setItem(CAL_STORE, JSON.stringify(calState.settings)); }
+function saveCrossed(){ localStorage.setItem("sf_crossed_days", JSON.stringify(calState.crossed)); }
+
+function applyCalendarTheme(){
+  document.body.classList.remove('autumn-theme','summer-theme','winter-theme');
+  document.body.classList.add(`${calState.settings.theme}-theme`);
+  document.documentElement.style.setProperty('--line', calState.settings.crossColor);
+  try { localStorage.setItem('sf_theme', calState.settings.theme); } catch{}
+}
+
+/* ====== ADD: MONTH GRID RENDER ====== */
+const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const dow = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+
+function ymd(d){ return d.toISOString().slice(0,10); }
+function firstDayOfMonth(y,m){ return new Date(y, m, 1); }
+function lastDayOfMonth(y,m){ return new Date(y, m+1, 0); }
+
+function buildMonthGrid(){
+  const y = calState.view.year, m = calState.view.month;
+  const first = firstDayOfMonth(y,m);
+  const last  = lastDayOfMonth(y,m);
+  const startOffset = (first.getDay() - calState.settings.weekStart + 7) % 7;
+
+  const startDate = new Date(y, m, 1 - startOffset);
+  const cells = [];
+  for (let i=0;i<42;i++){
+    const d = new Date(startDate);
+    d.setDate(startDate.getDate()+i);
+    const iso = ymd(new Date(d.getTime() - d.getTimezoneOffset()*60000));
+    const isOther = d.getMonth() !== m;
+    const isToday = iso === ymd(new Date());
+    const crossed = !!calState.crossed[iso];
+    cells.push(`<div class="day${isOther?' other':''}${isToday?' today':''}${crossed?' crossed':''}" data-date="${iso}">
+      <div class="num" title="${dow[d.getDay()]}">${d.getDate()}</div>
+    </div>`);
+  }
+  document.getElementById('calendarGrid').innerHTML =
+    `<div class="dow" style="grid-column:1 / -1;display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:4px">
+      ${[...Array(7)].map((_,i)=>`<div class="muted" style="text-align:center;font-size:12px">${dow[(i+calState.settings.weekStart)%7]}</div>`).join('')}
+     </div>` + cells.join('');
+
+  document.getElementById('monthLabel').textContent = `${monthNames[m]} ${y}`;
+
+  document.querySelectorAll('.day').forEach(el=>{
+    el.addEventListener('click', async () => {
+      const date = el.getAttribute('data-date');
+      el.classList.toggle('crossed');
+      const nowCrossed = el.classList.contains('crossed');
+      calState.crossed[date] = nowCrossed; if (!nowCrossed) delete calState.crossed[date];
+      saveCrossed();
+
+      try {
+        const src = (window.SF_CONFIG?.AUDIO?.DRAWING) || (window.SF_CONFIG?.AUDIO?.CLICK);
+        if (src) { const a = new Audio(src); a.volume = 0.35; a.play().catch(()=>{}); }
+      } catch {}
+
+      const f = document.getElementById('eventForm');
+      if (f && f.date) {
+        f.date.value = date;
+      }
+    });
+  });
+}
+
+/* ====== ADD: SETTINGS UI WIRING ====== */
+function openCalSettings(){ document.getElementById('calendarSettings').hidden = false; }
+function closeCalSettings(){ document.getElementById('calendarSettings').hidden = true; }
+function loadSettingsUI(){
+  const elTheme = document.getElementById('calTheme');
+  if (elTheme) elTheme.value = calState.settings.theme;
+  const elCross = document.getElementById('crossColor'); if (elCross) elCross.value = calState.settings.crossColor;
+  const elWeek = document.getElementById('weekStart'); if (elWeek) elWeek.value = String(calState.settings.weekStart);
+}
+
+function saveSettings(){
+  const themeEl = document.getElementById('calTheme');
+  const colorEl = document.getElementById('crossColor');
+  const weekEl = document.getElementById('weekStart');
+  if (themeEl) calState.settings.theme = themeEl.value;
+  if (colorEl) calState.settings.crossColor = colorEl.value;
+  if (weekEl) calState.settings.weekStart = Number(weekEl.value);
+  persistCalendar(); applyCalendarTheme(); buildMonthGrid(); closeCalSettings();
+}
+
+/* ====== PATCH: init() — extend existing DOMContentLoaded init ====== */
+const _origInit = init; // keep the existing init (form, table, ICS)
+try { document.removeEventListener("DOMContentLoaded", init); } catch(e){}
+
+document.addEventListener("DOMContentLoaded", () => {
+  try { _origInit(); } catch(e) { console.warn('Calendar original init failed', e); }
+  applyCalendarTheme(); loadSettingsUI(); buildMonthGrid();
+
+  const openBtn = document.getElementById('openCalendarSettings'); if (openBtn) openBtn.addEventListener('click', openCalSettings);
+  const closeBtn = document.getElementById('closeCalendarSettings'); if (closeBtn) closeBtn.addEventListener('click', closeCalSettings);
+  const saveBtn = document.getElementById('saveCalendarSettings'); if (saveBtn) saveBtn.addEventListener('click', saveSettings);
+
+  const prev = document.getElementById('prevMonth'); if (prev) prev.addEventListener('click', () => { if(--calState.view.month < 0){ calState.view.month = 11; calState.view.year--; } buildMonthGrid(); });
+  const next = document.getElementById('nextMonth'); if (next) next.addEventListener('click', () => { if(++calState.view.month > 11){ calState.view.month = 0; calState.view.year++; } buildMonthGrid(); });
+});

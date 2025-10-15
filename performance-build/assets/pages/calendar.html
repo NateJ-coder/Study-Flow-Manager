@@ -7,46 +7,28 @@
 
   <!-- Reuse main styles -->
   <link rel="stylesheet" href="/Study-Flow-Manager/performance-build/assets/css/timer.css">
-
-  <style>
-    :root { --glass: rgba(16,18,24,.55); }
-    body {
-      margin:0; min-height:100dvh; display:grid; place-items:center;
-      background: #0e1116;
-      color:#f3f4f6; -webkit-font-smoothing:antialiased; font-family: ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial;
-    }
-    .wrap { width:min(1100px, 94vw); display:grid; gap:16px; }
-    .card {
-      background: var(--glass); backdrop-filter: blur(10px);
-      border:1px solid rgba(255,255,255,.08); border-radius:18px; padding:18px 16px;
-      box-shadow: 0 10px 30px rgba(0,0,0,.25);
-    }
-    h1 { margin:0 0 6px; font-size:clamp(22px, 3.4vw, 30px); letter-spacing:.2px; }
-    .row { display:grid; grid-template-columns: repeat(12, 1fr); gap:10px; }
-    .row > .f { display:flex; flex-direction:column; gap:6px; }
-    .f label { font-size:12px; opacity:.85 }
-    .f input, .f select, .f textarea {
-      background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1);
-      color:#f8fafc; padding:10px 12px; border-radius:10px; outline:none;
-    }
-    .muted { opacity:.8; font-size:12px }
-    .btn {
-      background:#5b9cff; color:white; border:0; border-radius:12px; padding:10px 14px;
-      font-weight:600; cursor:pointer;
-    }
-    .btn.secondary { background:transparent; border:1px solid rgba(255,255,255,.2) }
-    table { width:100%; border-collapse: collapse; }
-    th, td { padding:12px 10px; border-bottom:1px solid rgba(255,255,255,.08); font-size:14px; }
-    .tag { font-size:12px; padding:2px 8px; border-radius:999px; border:1px solid rgba(255,255,255,.25); }
-    .ok { border-color:#22c55e; color:#22c55e }
-    .err { border-color:#f87171; color:#f87171 }
-    .right { text-align:right }
-    .stack { display:flex; gap:8px; flex-wrap:wrap }
-    .hidden { display:none }
-  </style>
+  <link rel="stylesheet" href="/Study-Flow-Manager/performance-build/assets/css/calendar.css">
 </head>
 <body>
+  <header class="header">
+    <div class="header-left">
+      <div class="studyflow-logo">StudyFlow</div>
+    </div>
+    <div class="header-right">
+      <button id="openCalendarSettings" class="icon-btn" title="Settings">⚙️</button>
+    </div>
+  </header>
+
   <main class="wrap">
+    <section class="card">
+      <div class="cal-head">
+        <button id="prevMonth" class="btn secondary">←</button>
+        <h2 id="monthLabel">October 2025</h2>
+        <button id="nextMonth" class="btn secondary">→</button>
+      </div>
+      <div id="calendarGrid" class="calendar-grid" aria-label="Monthly calendar"></div>
+    </section>
+
     <section class="card">
       <h1>Calendar</h1>
       <p class="muted">Create reminders that sync to your Google Calendar (and your phone). All fields with * are required.</p>
@@ -130,6 +112,42 @@
       </table>
     </section>
   </main>
+
+  <!-- Settings modal -->
+  <div class="settings-modal" id="calendarSettings" hidden>
+    <div class="settings-content">
+      <div class="settings-header">
+        <h3>Calendar Settings</h3>
+        <button class="close" id="closeCalendarSettings">✕</button>
+      </div>
+
+      <div class="settings-group">
+        <label>Theme</label>
+        <select id="calTheme">
+          <option value="autumn">Autumn 🍂</option>
+          <option value="winter">Winter ❄️</option>
+          <option value="summer">Summer ☀️</option>
+        </select>
+      </div>
+
+      <div class="settings-group">
+        <label>Cross-out color</label>
+        <input type="color" id="crossColor" value="#f59e0b">
+      </div>
+
+      <div class="settings-group">
+        <label>Week starts on</label>
+        <select id="weekStart">
+          <option value="0">Sunday</option>
+          <option value="1" selected>Monday</option>
+        </select>
+      </div>
+
+      <div class="stack" style="justify-content:flex-end">
+        <button id="saveCalendarSettings" class="btn">Save</button>
+      </div>
+    </div>
+  </div>
 
   <script src="/Study-Flow-Manager/performance-build/assets/js/config.js" defer></script>
   <script src="/Study-Flow-Manager/performance-build/assets/js/calendar.js" type="module"></script>
