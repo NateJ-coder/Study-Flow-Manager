@@ -2,27 +2,6 @@
 // Firebase Imports
 // Firebase modules will be dynamically imported to prevent blocking
 
-// CRITICAL: Failsafe timeout to ensure app loads even if Firebase completely fails
-setTimeout(() => {
-    const loadingOverlay = document.getElementById('loading-overlay');
-    if (loadingOverlay && loadingOverlay.style.display !== 'none') {
-        console.log('⚠️ Failsafe timeout triggered - forcing app to load');
-        loadingOverlay.style.opacity = '0';
-        setTimeout(() => {
-            loadingOverlay.style.display = 'none';
-        }, 500);
-        
-        // Ensure app state is ready
-        if (!isAuthReady) {
-            userId = crypto.randomUUID();
-            isAuthReady = true;
-            if (typeof loadSettings === 'function') {
-                loadSettings();
-            }
-        }
-    }
-}, 5000); // 5 second absolute maximum wait time
-
 // Global Firebase Variables - HARDCODED CONFIGURATION
 // We are hardcoding the values since the environment variables are not available.
 const firebaseConfig = {
@@ -1001,6 +980,15 @@ document.getElementById('sleep-timeout').addEventListener('change', (e) => {
 window.onload = async () => {
     console.log('🚀 Timer page loading...');
     
+    // NOTE: This function is also defined inside initializeFirebase for successful loads.
+    const hideLoadingOverlay = () => {
+        const loadingOverlay = document.getElementById('loading-overlay');
+        if (loadingOverlay) {
+            loadingOverlay.style.opacity = '0';
+            setTimeout(() => loadingOverlay.style.display = 'none', 500);
+        }
+    };
+    
     // Set up Firebase timeout
     let firebaseCompleted = false;
     
@@ -1008,11 +996,7 @@ window.onload = async () => {
     const timeoutId = setTimeout(() => {
         if (!firebaseCompleted) {
             console.log('⚠️ Firebase initialization timeout - proceeding without it');
-            const loadingOverlay = document.getElementById('loading-overlay');
-            if (loadingOverlay && loadingOverlay.style.display !== 'none') {
-                loadingOverlay.style.opacity = '0';
-                setTimeout(() => loadingOverlay.style.display = 'none', 500);
-            }
+            hideLoadingOverlay();
             
             if (!isAuthReady) {
                 userId = crypto.randomUUID();
@@ -1029,8 +1013,12 @@ window.onload = async () => {
         firebaseCompleted = true;
         clearTimeout(timeoutId);
     } catch (error) {
+        // If the dynamic imports or other synchronous initialization fails:
         console.error('Firebase initialization failed:', error);
         firebaseCompleted = true;
         clearTimeout(timeoutId);
+        
+        // FIX: Guaranteed unlock in case initializeFirebase failed to reach its finally block.
+        hideLoadingOverlay();
     }
 };

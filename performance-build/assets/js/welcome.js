@@ -304,11 +304,20 @@ async function loadUserSettings(db, userId) {
     }
     
     loadingState.userSettings = true;
+    
+    // FIX: Add the missing 'timerReady' flag to complete the loading sequence (4/4 tasks)
+    loadingState.timerReady = true;
+    
+    console.log('✅ User settings and timer initialization complete');
     checkLoadingComplete();
     
   } catch (error) {
     console.error('Error loading user settings:', error);
     loadingState.userSettings = true; // Continue with defaults
+    
+    // FIX: Also set timerReady flag in error case
+    loadingState.timerReady = true;
+    
     checkLoadingComplete();
   }
 }
