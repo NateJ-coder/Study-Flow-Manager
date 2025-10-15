@@ -1,0 +1,82 @@
+/* Fade-out overlay styles */
+#fadeout-overlay {
+  position: fixed;
+  inset: 0;
+  background: #fff;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.7s cubic-bezier(.4,.0,.2,1);
+  z-index: 9999;
+}
+#fadeout-overlay.fadeout {
+  opacity: 1;
+}
+
+html,body{
+  height:100%;
+  margin:0;
+  background:linear-gradient(to bottom,#f8f5f0,#e7dfd4);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+  font-family:"Segoe UI",sans-serif;
+}
+
+h1{
+  position:relative;
+  font-size:5rem;
+  font-weight:700;
+  color:rgba(90,45,0,0.25);           /* faint until hit */
+  text-shadow:0 0 8px rgba(0,0,0,0.2);
+  animation:revealZoom 12s ease-out forwards;
+}
+
+/* drop container */
+.drop{
+  position:absolute;
+  top:-120px;
+  left:50%;
+  transform:translateX(-50%);
+  width:40px;
+  height:60px;
+  animation:fall 3.5s cubic-bezier(.3,.7,.4,1) forwards;
+}
+
+/* SVG drop fill */
+.drop svg path{
+  fill:#b45a1a;
+}
+
+/* ripple splash */
+.splash{
+  position:absolute;
+  bottom:calc(50% - 0.4em); /* aligns to word baseline */
+  left:50%;
+  transform:translateX(-50%) scale(0);
+  width:200px;
+  height:200px;
+  border:4px solid rgba(180,90,26,0.4);
+  border-radius:50%;
+  opacity:0;
+  animation:splash 1.8s ease-out 3.4s forwards;
+}
+
+/* Animations */
+@keyframes fall{
+  0%{ transform:translate(-50%,-200px) scale(1); opacity:1; }
+  85%{ transform:translate(-50%,calc(50vh - 40px)) scale(1); opacity:1;}
+  100%{ transform:translate(-50%,calc(50vh - 20px)) scale(0.5); opacity:0; }
+}
+
+@keyframes splash{
+  0%{opacity:0;transform:translateX(-50%) scale(0);}
+  30%{opacity:1;transform:translateX(-50%) scale(1);}
+  100%{opacity:0;transform:translateX(-50%) scale(2);}
+}
+
+@keyframes revealZoom{
+  0%,30%{color:rgba(90,45,0,0.25);transform:scale(1);}
+  35%{color:#b45a1a;}
+  100%{color:#b45a1a;transform:scale(1.1);}
+}

@@ -24,121 +24,43 @@
     class="fixed inset-0 bg-cover bg-center transition-opacity duration-1000 ease-in-out"
     style="
       background-image: url('performance-build/assets/images/welcome-page.png');
-      filter: brightness(0.7) blur(1px);
-      z-index: 0;
-    "
-  ></div>
-  
-  <!-- Content Area -->
-  <div class="relative z-10 min-h-screen flex flex-col justify-center items-center">
-    <div 
-      id="content-container"
-      class="w-full max-w-4xl p-8 md-p-12 backdrop-blur-sm bg-black/40 rounded-3xl shadow-2xl page-container page-visible"
-      style="min-height: 70vh;"
-    >
-      <!-- Welcome Screen -->
-      <div id="welcome-screen" class="flex flex-col items-center justify-center h-full w-full p-6">
-        <header class="mb-10 text-center">
-          <h1 
-            class="text-6xl md-text-8xl font-black text-amber-300 animate-bounce-slow"
-            style="text-shadow: 4px 4px 8px rgba(0,0,0,0.3);"
-          >
-            StudyFlow
-          </h1>
-          <p class="text-xl md-text-2xl mt-4 font-semibold text-amber-500 opacity-90">
-            Lofi focus for high-tier productivity.
-          </p>
-        </header>
 
-        <main class="text-center">
-          <div id="loading-state" class="flex flex-col items-center">
-            <p class="text-lg text-amber-300 font-medium">
-              Preparing your focus environment...
-            </p>
-          </div>
-          
-          <button 
-            id="continue-button"
-            class="bg-amber-600 text-white font-inter font-bold py-4 px-10 rounded-xl shadow-xl transition duration-200 border-b-4 border-r-2 border-amber-800 text-lg md-text-xl opacity-75 cursor-not-allowed"
-            onclick="continueToApp()"
-            disabled
-          >
-            <div class="flex items-center justify-center">
-              <span id="button-text">Preparing timer...</span>
-            </div>
-          </button>
-        </main>
 
-        <footer class="mt-12 opacity-70">
-          <p class="text-white text-sm">
-            <span class="inline-block animate-pulse-slow">🎧</span> 
-            <a href="https://www.youtube.com/live/jfKfPfyJRdk?si=WXDVOI2ouHrBMAcu" 
-               target="_blank" 
-               style="color: inherit; text-decoration: none; cursor: pointer;"
-               onclick="playSound('click')"
-               onmouseover="this.style.textDecoration='underline'"
-               onmouseout="this.style.textDecoration='none'">
-              Time to find your flow.
-            </a>
-          </p>
-        </footer>
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>StudyFlow Animation</title>
+      <link rel="stylesheet" href="performance-build/assets/css/intro.css?v=20251015">
+
+        <!-- Preload welcome page and critical assets for instant transition -->
+        <link rel="preload" href="welcome.html?v=20251015" as="document">
+        <link rel="preload" href="performance-build/assets/css/welcome.css?v=2025101402" as="style">
+        <link rel="preload" href="performance-build/assets/js/welcome.js?v=2025101402" as="script">
+        <link rel="preload" href="performance-build/assets/images/welcome-page.png" as="image" fetchpriority="high">
+      </head>
+      <body>
+
+      <h1>StudyFlow</h1>
+
+      <div class="drop">
+        <!-- simple teardrop SVG -->
+        <svg viewBox="0 0 64 64" width="64" height="64">
+          <path d="M32 2 C20 22,8 34,8 46 a24 24 0 0 0 48 0 C56 34,44 22,32 2z"/>
+        </svg>
       </div>
 
-      <!-- Timer Page (Hidden initially) -->
-      <div id="timer-screen" class="hidden flex flex-col items-center justify-center h-full w-full p-6 text-white">
-        <h2 class="text-5xl font-bold text-amber-300 mb-8">
-          ⏰ Pomodoro Timer
-        </h2>
-        <div class="text-2xl mb-8">
-          Ready to focus! (Timer functionality coming soon)
-        </div>
-        <div class="flex space-x-4">
-          <button 
-            onclick="goToCalendar()"
-            class="px-6 py-3 bg-indigo-500 rounded-lg hover-bg-indigo-600 transition duration-200"
-          >
-            📅 Go to Calendar
-          </button>
-          <button 
-            onclick="goToWelcome()"
-            class="px-6 py-3 bg-red-500 rounded-lg hover-bg-red-600 transition duration-200"
-          >
-            Go Back
-          </button>
-        </div>
-      </div>
+      <div class="splash"></div>
 
-      <!-- Calendar Page (Hidden initially) -->
-      <div id="calendar-screen" class="hidden flex flex-col items-center justify-center h-full w-full p-6 text-white">
-        <h2 class="text-5xl font-bold text-amber-300 mb-8">
-          📅 Flow Calendar
-        </h2>
-        <div class="text-2xl mb-8">
-          Visualize your focus blocks here.
-        </div>
-        <div class="flex space-x-4">
-          <button 
-            onclick="goToTimer()"
-            class="px-6 py-3 bg-green-500 rounded-lg hover-bg-green-600 transition duration-200"
-          >
-            ⏰ Go to Timer
-          </button>
-          <button 
-            onclick="goToWelcome()"
-            class="px-6 py-3 bg-red-500 rounded-lg hover-bg-red-600 transition duration-200"
-          >
-            Go Back
-          </button>
-        </div>
-      </div>
-    </div>
+       <!-- Fade-out overlay for transition -->
+       <div id="fadeout-overlay"></div>
 
-    <!-- Debug Info -->
-    <div class="absolute bottom-4 right-4 text-xs text-white/50" id="debug-info">
-      Status: Loading assets...
-    </div>
-  </div>
-
-  <script src="performance-build/assets/js/welcome.js?v=2025101402" defer></script>
-</body>
-</html>
+      <script src="performance-build/assets/js/intro.js?v=20251015" defer></script>
+      <script>
+        setTimeout(() => {
+          window.location.href = "welcome.html";
+        }, 12000);
+      </script>
+      </body>
+      </html>
