@@ -506,6 +506,8 @@ document.addEventListener('DOMContentLoaded', async function() {
   isLoaded = true;
   loadingState.criticalAssets = true;
   enableContinueButton();
+  // Ensure the button is wired even if inline handlers can't see local scope
+  try { wireButtonOnce(); } catch (e) { /* non-blocking */ }
   updateDebugInfo('Status: Welcome ready. Timer preloads deferred until navigation.');
 });
 
@@ -548,3 +550,19 @@ document.addEventListener('keydown', function(e) {
 });
 
 console.log('StudyFlow Welcome Page initialized successfully!');
+
+// Make inline onclick handlers work in all setups (CSP, bundlers, etc.)
+window.continueToApp = continueToApp;
+window.goToTimer     = goToTimer;
+window.goToCalendar  = goToCalendar;
+window.goToWelcome   = goToWelcome;
+
+// Wire the continue button with a safe listener so clicks work even when
+// the inline attribute isn't resolved to a global function (some bundlers/CSPs).
+function wireButtonOnce() {
+  const btn = document.getElementById('continue-button');
+  if (!btn) return;
+  btn.removeAttribute('disabled');
+  // Ensure the listener exists; using passive=false to allow default prevention later if needed
+  btn.addEventListener('click', continueToApp, { passive: true });
+}
