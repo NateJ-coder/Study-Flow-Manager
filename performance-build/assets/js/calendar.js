@@ -315,8 +315,24 @@ function buildMonthGrid(){
 }
 
 /* ====== ADD: SETTINGS UI WIRING ====== */
-function openCalSettings(){ document.getElementById('calendarSettings').hidden = false; }
-function closeCalSettings(){ document.getElementById('calendarSettings').hidden = true; }
+function openCalSettings(){
+  const m = document.getElementById('calendarSettings');
+  if (!m) return;
+  m.hidden = false;
+  m.style.display = 'grid';
+  m.setAttribute('aria-hidden', 'false');
+  // Prevent background scroll while modal open
+  try { document.body.style.overflow = 'hidden'; } catch(e){}
+}
+
+function closeCalSettings(){
+  const m = document.getElementById('calendarSettings');
+  if (!m) return;
+  m.hidden = true;
+  m.style.display = 'none';
+  m.setAttribute('aria-hidden', 'true');
+  try { document.body.style.overflow = ''; } catch(e){}
+}
 function loadSettingsUI(){
   const elTheme = document.getElementById('calTheme');
   if (elTheme) elTheme.value = calState.settings.theme;
