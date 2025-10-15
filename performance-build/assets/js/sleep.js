@@ -307,8 +307,8 @@ class SleepModeManager {
     console.log('🔧 Optimizing performance for sleep mode...');
     
     // Reduce particle system performance if active
-    if (window.particleSystem) {
-      window.particleSystem.setSleepMode(true);
+    if (window.ParticleSystem) {
+      window.ParticleSystem.setSleepMode(true);
     }
     
     // Clear unused image caches
@@ -328,8 +328,8 @@ class SleepModeManager {
     console.log('🚀 Restoring full performance...');
     
     // Restore particle system performance
-    if (window.particleSystem) {
-      window.particleSystem.setSleepMode(false);
+    if (window.ParticleSystem) {
+      window.ParticleSystem.setSleepMode(false);
     }
     
     // Restore animation frame rates
