@@ -192,13 +192,14 @@ function showPage(pageId) {
 
 // Check if all loading is complete
 function checkLoadingComplete() {
-  // Fast track: Enable timer when critical assets + Firebase are ready
-  const criticalReady = loadingState.criticalAssets && loadingState.firebaseReady && loadingState.timerReady;
+  // Fast track: Enable timer when critical assets are ready (Firebase is optional)
+  const criticalReady = loadingState.criticalAssets && loadingState.timerReady;
   
   if (criticalReady && !isLoaded) {
     isLoaded = true;
     enableContinueButton();
     console.log('✅ Critical systems ready! Timer accessible now.');
+    console.log('🔥 Firebase status:', loadingState.firebaseReady ? 'Ready' : 'Still loading...');
     updateDebugInfo('Status: Timer ready for use! Background loading continues...');
     return;
   }
@@ -375,9 +376,18 @@ document.addEventListener('DOMContentLoaded', async function() {
     await preloadImages(CRITICAL_IMAGES);
     loadingState.criticalAssets = true;
     
-    // Phase 2: Firebase initialization (parallel)
+    // Phase 2: Firebase initialization (parallel with timeout)
     console.log('🔥 Phase 2: Initializing Firebase...');
     initializeFirebaseConnection(); // Runs async
+    
+    // Add timeout fallback for Firebase
+    setTimeout(() => {
+      if (!loadingState.firebaseReady) {
+        console.log('⚠️ Firebase initialization timeout - proceeding without it');
+        loadingState.firebaseReady = true; // Mark as ready to unblock loading
+        checkLoadingComplete();
+      }
+    }, 3000); // 3 second timeout
     
     // Phase 3: Enable timer immediately (fast access)
     console.log('⏱️ Phase 3: Timer ready for use...');
