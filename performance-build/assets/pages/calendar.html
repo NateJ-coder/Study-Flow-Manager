@@ -11,6 +11,9 @@
   <link rel="stylesheet" href="/Study-Flow-Manager/performance-build/assets/css/calendar.css">
 </head>
 <body>
+  <!-- Background Layer (same structure as Timer page) -->
+  <div id="bg-container"><img id="background-image" src="" alt="Background" decoding="async" /></div>
+  <canvas id="particle-canvas" aria-hidden="true"></canvas>
   <header class="sf-header">
     <div class="sf-header__left">
         <button id="backToTimer" class="sf-btn sf-btn--ghost" aria-label="Back to timer">←</button>
@@ -22,6 +25,11 @@
   </header>
 
   <main class="sf-wrap">
+    <!-- Utility row -->
+    <div class="sf-util">
+      <button id="openTasks" class="sf-btn sf-btn--ghost">☰ Tasks</button>
+      <button id="openReminderForSelected" class="sf-btn">Set reminder</button>
+    </div>
     <!-- Month view -->
     <section class="sf-card" aria-labelledby="monthLabel">
       <div class="sf-cal-head">
@@ -147,7 +155,34 @@
     </div>
   </div>
 
+  <!-- Left Tasks Drawer -->
+  <aside id="taskDrawer" class="sf-drawer" hidden>
+    <div class="sf-drawer__head">
+      <div>
+        <div class="sf-h3">Tasks</div>
+        <div id="taskDateLabel" class="sf-muted" style="margin-top:2px;"></div>
+      </div>
+      <button id="closeTasks" class="sf-btn sf-btn--icon" aria-label="Close">✕</button>
+    </div>
+
+    <form id="taskForm" class="sf-drawer__add">
+      <input id="taskInput" placeholder="Add a task… (Enter)" />
+    </form>
+
+    <div class="sf-drawer__lists">
+      <div class="sf-drawer__group">
+        <div class="sf-h3">Active</div>
+        <ul id="tasksActive" class="sf-tasklist"></ul>
+      </div>
+      <div class="sf-drawer__group" style="margin-top:12px;">
+        <div class="sf-h3">Completed</div>
+        <ul id="tasksDone" class="sf-tasklist"></ul>
+      </div>
+    </div>
+  </aside>
+
   <script src="/Study-Flow-Manager/performance-build/assets/js/config.js" defer></script>
+  <script src="/Study-Flow-Manager/performance-build/assets/js/particle.js" defer></script>
   <script src="/Study-Flow-Manager/performance-build/assets/js/calendar.js" type="module"></script>
 </body>
 </html>

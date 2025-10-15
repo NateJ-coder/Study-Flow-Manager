@@ -255,7 +255,8 @@ function saveCrossed(){ localStorage.setItem("sf_crossed_days", JSON.stringify(c
 function applyCalendarTheme(){
   document.body.classList.remove('autumn-theme','summer-theme','winter-theme');
   document.body.classList.add(`${calState.settings.theme}-theme`);
-  document.documentElement.style.setProperty('--line', calState.settings.crossColor);
+  // fix: CSS uses --sf-line; set that so cross-out color updates
+  document.documentElement.style.setProperty('--sf-line', calState.settings.crossColor);
   try { localStorage.setItem('sf_theme', calState.settings.theme); } catch{}
 }
 
@@ -294,25 +295,94 @@ function buildMonthGrid(){
   document.getElementById('monthLabel').textContent = `${monthNames[m]} ${y}`;
 
   document.querySelectorAll('.day').forEach(el=>{
-    el.addEventListener('click', async () => {
+    // Left-click opens tasks drawer for the date; right-click toggles crossed
+    el.addEventListener('click', async (e) => {
+      const date = el.getAttribute('data-date');
+      openTasksDrawer(date);
+    });
+    el.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
       const date = el.getAttribute('data-date');
       el.classList.toggle('crossed');
       const nowCrossed = el.classList.contains('crossed');
       calState.crossed[date] = nowCrossed; if (!nowCrossed) delete calState.crossed[date];
       saveCrossed();
-
       try {
         const src = (window.SF_CONFIG?.AUDIO?.DRAWING) || (window.SF_CONFIG?.AUDIO?.CLICK);
         if (src) { const a = new Audio(src); a.volume = 0.35; a.play().catch(()=>{}); }
       } catch {}
-
-      const f = document.getElementById('eventForm');
-      if (f && f.date) {
-        f.date.value = date;
-      }
     });
   });
 }
+
+/* ===== TASKS (per-day) ===== */
+const TASKS_KEY = 'sf_tasks_v1';
+const tasksStore = {
+  all() { try { return JSON.parse(localStorage.getItem(TASKS_KEY)) || {}; } catch { return {}; } },
+  save(map) { localStorage.setItem(TASKS_KEY, JSON.stringify(map)); },
+  add(dateISO, text) {
+    const map = tasksStore.all();
+    const list = map[dateISO] || [];
+    list.unshift({ id: crypto.randomUUID(), text: text.trim(), done: false });
+    map[dateISO] = list; tasksStore.save(map);
+  },
+  toggle(dateISO, id) {
+    const map = tasksStore.all(); const list = map[dateISO] || [];
+    const t = list.find(x => x.id === id); if (t) t.done = !t.done;
+    tasksStore.save(map);
+  },
+  remove(dateISO, id) {
+    const map = tasksStore.all(); const list = map[dateISO] || [];
+    map[dateISO] = list.filter(x => x.id !== id); tasksStore.save(map);
+  },
+  byDate(dateISO) { return (tasksStore.all()[dateISO] || []); }
+};
+
+let selectedDateISO = null;
+
+function openTasksDrawer(dateISO){
+  selectedDateISO = dateISO;
+  const label = document.getElementById('taskDateLabel'); if (label) label.textContent = new Date(dateISO).toDateString();
+  renderTasks(dateISO);
+  const d = document.getElementById('taskDrawer'); if (d) d.hidden = false;
+}
+function closeTasksDrawer(){ const d = document.getElementById('taskDrawer'); if (d) d.hidden = true; }
+
+function renderTasks(dateISO){
+  const list = tasksStore.byDate(dateISO);
+  const active = list.filter(t => !t.done);
+  const done = list.filter(t => t.done);
+  document.getElementById('tasksActive').innerHTML = active.map(t => li(t,false)).join('') || `<li class="sf-muted">No tasks yet.</li>`;
+  document.getElementById('tasksDone').innerHTML = done.map(t => li(t,true)).join('') || `<li class="sf-muted">—</li>`;
+  function li(t,isDone){
+    return `<li class="sf-taskitem ${isDone?'done':''}" data-id="${t.id}">
+      <input type="checkbox" ${isDone?'checked':''} class="js-t-toggle" />
+      <div class="t">${escapeHtml(t.text)}</div>
+      <button class="sf-btn sf-btn--ghost js-t-del" aria-label="Delete">🗑</button>
+    </li>`;
+  }
+}
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])); }
+
+/* ===== Background + particles (reuse timer setup) ===== */
+(function initCalendarBackground(){
+  try {
+    const BASE = (window.SF_CONFIG && window.SF_CONFIG.BASE) || '/Study-Flow-Manager/performance-build/assets';
+    const theme = (localStorage.getItem('sf_theme') || calState.settings.theme || 'autumn');
+    const hour = new Date().getHours();
+    const night = (hour >= 18 || hour < 6);
+    const pick = (map) => map[`${theme.toUpperCase()}_${night ? 'NIGHT' : 'DAY'}`];
+
+    const src = pick(window.SF_CONFIG?.BACKGROUNDS || {});
+    const img = document.getElementById('background-image');
+    if (img && src) img.src = src;
+
+    // Start particle system if available
+    if (window.ParticleSystem && typeof window.ParticleSystem.start === 'function') {
+      window.ParticleSystem.start();
+    }
+  } catch(e) { console.warn('Calendar bg bootstrap failed', e); }
+})();
 
 /* ====== ADD: SETTINGS UI WIRING ====== */
 function openCalSettings(){
@@ -386,4 +456,34 @@ document.addEventListener("DOMContentLoaded", () => {
       if (e.key === 'Escape' && !modal.hidden) closeCalSettings();
     });
   }
+
+  // Tasks drawer wiring
+  const openTasksBtn = document.getElementById('openTasks'); if (openTasksBtn) openTasksBtn.addEventListener('click', () => {
+    const now = new Date(); const iso = now.toISOString().slice(0,10);
+    openTasksDrawer(selectedDateISO || iso);
+  });
+  const closeTasksBtn = document.getElementById('closeTasks'); if (closeTasksBtn) closeTasksBtn.addEventListener('click', closeTasksDrawer);
+
+  const taskForm = document.getElementById('taskForm'); if (taskForm) taskForm.addEventListener('submit', (e) => {
+    e.preventDefault(); const input = document.getElementById('taskInput'); if (!input) return;
+    const v = input.value.trim(); if (!v || !selectedDateISO) return; tasksStore.add(selectedDateISO, v); input.value = ''; renderTasks(selectedDateISO);
+  });
+
+  // Delegated controls inside drawer (toggle/delete)
+  const drawer = document.getElementById('taskDrawer'); if (drawer) {
+    drawer.addEventListener('click', (e) => {
+      const li = e.target.closest('.sf-taskitem'); if (!li || !selectedDateISO) return;
+      const id = li.getAttribute('data-id');
+      if (e.target.classList.contains('js-t-del')) { tasksStore.remove(selectedDateISO, id); renderTasks(selectedDateISO); }
+    });
+    drawer.addEventListener('change', (e) => {
+      if (!e.target.classList.contains('js-t-toggle')) return; const li = e.target.closest('.sf-taskitem'); if (!li || !selectedDateISO) return; tasksStore.toggle(selectedDateISO, li.getAttribute('data-id')); renderTasks(selectedDateISO);
+    });
+  }
+
+  // Set reminder button wiring: pre-fill event form date and focus
+  const setRemBtn = document.getElementById('openReminderForSelected'); if (setRemBtn) setRemBtn.addEventListener('click', () => {
+    const f = document.getElementById('eventForm'); const iso = selectedDateISO || new Date().toISOString().slice(0,10);
+    if (f && f.date) { f.date.value = iso; f.scrollIntoView({ behavior: 'smooth', block: 'start' }); setTimeout(()=>f.title?.focus(),250); }
+  });
 });

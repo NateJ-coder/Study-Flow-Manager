@@ -229,3 +229,49 @@ body.winter-theme { --sf-accent:#60a5fa; }
   /* let clicks pass through when hidden (belt & suspenders) */
   pointer-events: none !important;
 }
+
+/* Ensure modal/drawer hide when JS sets [hidden] */
+.sf-calendar .sf-drawer[hidden] { display: none !important; }
+
+/* Bring over the timer's full-screen background layering */
+#bg-container, #particle-canvas {
+  position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: -1;
+}
+#background-image { width: 100%; height: 100%; object-fit: cover; opacity: .92; }
+
+/* 50% opacity card look */
+.sf-calendar .sf-card{
+  background: rgba(15, 20, 25, 0.50); /* ~50% */
+  backdrop-filter: blur(10px);
+}
+
+/* Utility row */
+.sf-calendar .sf-util{
+  display:flex; gap:8px; align-items:center; justify-content:flex-end; margin-bottom:6px;
+}
+
+/* Left drawer */
+.sf-calendar .sf-drawer{
+  position: fixed; top: var(--sf-header-h); left: 0;
+  width: min(320px, 88vw);
+  height: calc(100vh - var(--sf-header-h));
+  background: rgba(15,20,25,.60);
+  border-right: 1px solid var(--sf-border);
+  backdrop-filter: blur(12px);
+  padding: 12px;
+  z-index: 12;
+  display: grid; grid-template-rows: auto auto 1fr;
+  gap: 10px;
+}
+.sf-calendar .sf-drawer__head{ display:flex; align-items:center; justify-content:space-between; }
+.sf-calendar .sf-drawer__add input{
+  width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--sf-border);
+  background: var(--sf-surface-2); color: var(--sf-text);
+}
+.sf-calendar .sf-tasklist{ list-style:none; margin:6px 0 0; padding:0; display:grid; gap:6px; }
+.sf-calendar .sf-taskitem{
+  display:flex; align-items:center; gap:8px; padding:8px; border:1px solid var(--sf-border);
+  border-radius:10px; background: var(--sf-surface-2);
+}
+.sf-calendar .sf-taskitem .t{ flex:1; }
+.sf-calendar .sf-taskitem.done .t{ opacity:.55; text-decoration: line-through; }
