@@ -236,6 +236,16 @@ function applySettings() {
   // 5. Initialize Pomodoro UI
   updateSessionUI();
   updateDisplay();
+
+  // Notify sleep manager (if available) so it can pick up the new sleepTimeout value
+  try {
+    if (window.sleepManager && typeof window.sleepManager.updateSleepTimeout === 'function') {
+      window.sleepManager.updateSleepTimeout();
+      console.log('💤 sleepManager updated with new settings');
+    }
+  } catch (e) {
+    console.warn('Failed to notify sleepManager of settings change', e);
+  }
 }
 
 

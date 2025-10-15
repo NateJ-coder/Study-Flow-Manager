@@ -7,7 +7,9 @@ class SleepModeManager {
   constructor() {
     this.isInSleepMode = false;
     this.inactivityTimer = null;
-    this.inactivityDelay = 10 * 1000; // TEMPORARY: 10 seconds for debugging
+    // Default inactivity delay: 15 minutes (in milliseconds)
+    // This provides a sensible default while the appSettings object may not yet be available
+    this.inactivityDelay = 15 * 60 * 1000; // 15 minutes
     this.lastActivity = Date.now();
     
     // Elements to manage
