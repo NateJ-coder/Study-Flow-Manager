@@ -783,6 +783,22 @@ document.getElementById('theme-select').addEventListener('change', (e) => {
     changeTheme(e.target.value);
 });
 
+// Expose showCalendarModal for inline onclick handlers and attach robust listener
+try {
+  window.showCalendarModal = showCalendarModal;
+} catch (e) { /* ignore */ }
+
+document.addEventListener('DOMContentLoaded', () => {
+  const calIcon = document.querySelector('.calendar-icon');
+  if (calIcon) {
+    calIcon.addEventListener('click', (e) => {
+      // Defensive: ensure we navigate using the config path
+      const page = (window.SF_CONFIG && window.SF_CONFIG.PAGES && window.SF_CONFIG.PAGES.CALENDAR) || '/Study-Flow-Manager/performance-build/assets/pages/calendar.html';
+      try { window.location.assign(page); } catch (err) { window.location.href = page; }
+    });
+  }
+});
+
 document.getElementById('focus-duration').addEventListener('change', (e) => {
     appSettings.focusDuration = parseInt(e.target.value);
     saveSettings();
