@@ -27,6 +27,9 @@ let auth;
 let userId = null;
 let isAuthReady = false;
 
+// Firebase functions - will be set after import
+let doc, getDoc, setDoc;
+
 // --- APPLICATION STATE AND CONFIGURATION ---
 
 // Theme and Background Config based on BACKGROUND_SYSTEM_SPEC.md
@@ -139,11 +142,16 @@ async function initializeFirebase() {
         // Dynamic imports to prevent blocking if Firebase CDN is slow
         const { initializeApp } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js");
         const { getAuth, signInAnonymously } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js");
-        const { getFirestore, doc, getDoc, setDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+        const firestoreFunctions = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+        
+        // Assign to global variables for use outside this function
+        doc = firestoreFunctions.doc;
+        getDoc = firestoreFunctions.getDoc;
+        setDoc = firestoreFunctions.setDoc;
         
         // We assume firebaseConfig is valid since it was just hardcoded.
         app = initializeApp(firebaseConfig);
-        db = getFirestore(app);
+        db = firestoreFunctions.getFirestore(app);
         auth = getAuth(app);
         
         // Use Anonymous Sign-in for persistent settings storage (user's ID is tied to the browser)
@@ -170,7 +178,7 @@ async function initializeFirebase() {
 // --- SETTINGS PERSISTENCE (Firestore) ---
 
 function getSettingsDocRef() {
-  if (!db || !userId) return null;
+  if (!db || !userId || !doc) return null;
   // Using private data path: /artifacts/{appId}/users/{userId}/settings/{documentId}
   return doc(db, 'artifacts', appId, 'users', userId, 'settings', 'user-prefs');
 }
@@ -1020,5 +1028,17 @@ window.onload = async () => {
         
         // FIX: Guaranteed unlock in case initializeFirebase failed to reach its finally block.
         hideLoadingOverlay();
+        
+        // Ensure background loads even if Firebase fails
+        if (typeof updateBackground === 'function') {
+            setTimeout(() => updateBackground(true), 100);
+        }
     }
+    
+    // Fallback: Always ensure background loads after 2 seconds
+    setTimeout(() => {
+        if (typeof updateBackground === 'function') {
+            updateBackground(true);
+        }
+    }, 2000);
 };

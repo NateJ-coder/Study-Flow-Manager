@@ -192,6 +192,15 @@ function showPage(pageId) {
 
 // Check if all loading is complete
 function checkLoadingComplete() {
+  // Debug current state
+  console.log('🔍 Loading state check:', {
+    criticalAssets: loadingState.criticalAssets,
+    firebaseReady: loadingState.firebaseReady,
+    userSettings: loadingState.userSettings,
+    timerReady: loadingState.timerReady,
+    isLoaded: isLoaded
+  });
+  
   // Fast track: Enable timer when critical assets are ready (Firebase is optional)
   const criticalReady = loadingState.criticalAssets && loadingState.timerReady;
   
@@ -387,7 +396,13 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     // Phase 2: Firebase initialization (parallel with timeout)
     console.log('🔥 Phase 2: Initializing Firebase...');
-    initializeFirebaseConnection(); // Runs async
+    initializeFirebaseConnection().catch(error => {
+      console.error('🚨 Firebase initialization failed completely:', error);
+      loadingState.firebaseReady = true;
+      loadingState.userSettings = true;
+      loadingState.timerReady = true;
+      checkLoadingComplete();
+    });
     
     // Add timeout fallback for Firebase
     setTimeout(() => {
@@ -402,6 +417,17 @@ document.addEventListener('DOMContentLoaded', async function() {
     console.log('⏱️ Phase 3: Timer ready for use...');
     loadingState.timerReady = true;
     checkLoadingComplete();
+    
+    // Fallback: Force completion after 5 seconds if something is stuck
+    setTimeout(() => {
+      if (!isLoaded) {
+        console.log('⚠️ Fallback: Forcing app to load after timeout');
+        Object.keys(loadingState).forEach(key => {
+          loadingState[key] = true;
+        });
+        checkLoadingComplete();
+      }
+    }, 5000);
     
     // Phase 4: Background loading of remaining assets (non-blocking)
     console.log('🖼️ Phase 4: Background loading remaining assets...');
