@@ -28,12 +28,36 @@ let currentTheme = 'AUTUMN';
 let isLoaded = false;
 let isAuthReady = false;
 
-// Optimized Loading State - Priority-based loading
-let loadingState = {
-  criticalAssets: false,
+// Comprehensive Preloading System
+let preloadState = {
+  timerCSS: false,
+  timerJS: false,
+  particleCSS: false,
+  particleJS: false,
+  seasonalBackgrounds: false,
   firebaseReady: false,
-  userSettings: false,
-  timerReady: false
+  totalProgress: 0
+};
+
+// Timer page critical resources for preloading
+const TIMER_RESOURCES = {
+  css: [
+    'performance-build/assets/css/timer.css',
+    'performance-build/assets/css/particles.css'
+  ],
+  js: [
+    'performance-build/assets/js/timer.js',
+    'performance-build/assets/js/particle.js'
+  ],
+  // Preload at least one background per season per time-of-day
+  backgrounds: [
+    'performance-build/assets/images/autumn-day-1.png',
+    'performance-build/assets/images/autumn-night-1.png',
+    'performance-build/assets/images/summer-day-1.png', 
+    'performance-build/assets/images/summer-night-1.png',
+    'performance-build/assets/images/winter-day-1.png',
+    'performance-build/assets/images/winter-night-1.png'
+  ]
 };
 
 // Performance optimization: Load only essential images first
@@ -286,8 +310,8 @@ async function initializeFirebaseConnection() {
     const userCredential = await signInAnonymously(auth);
     console.log('🔥 Firebase initialized and user authenticated');
     
-    loadingState.firebaseReady = true;
-    checkLoadingComplete();
+    preloadState.firebaseReady = true;
+    updatePreloadProgress();
     
     // Load user settings
     await loadUserSettings(db, userCredential.user.uid);
@@ -332,9 +356,13 @@ async function loadUserSettings(db, userId) {
 }
 
 function continueToApp() {
-  if (isLoaded) {
+  // Only allow navigation if preloading is complete
+  if (preloadState.totalProgress === 100) {
     playSound('click');
+    console.log('🎯 Navigating to timer with fully preloaded resources');
     window.location.href = 'performance-build/timer.html';
+  } else {
+    console.log(`⏳ Still preloading... ${preloadState.totalProgress}% complete`);
   }
 }
 
@@ -378,31 +406,150 @@ function playSound(soundName) {
 }
 
 // ============================================
+// PRELOADING SYSTEM
+// ============================================
+
+// Preload CSS files
+async function preloadCSS(urls) {
+  const promises = urls.map(url => {
+    return new Promise((resolve, reject) => {
+      const link = document.createElement('link');
+      link.rel = 'preload';
+      link.as = 'style';
+      link.href = url;
+      link.onload = () => resolve(url);
+      link.onerror = () => reject(new Error(`Failed to preload CSS: ${url}`));
+      document.head.appendChild(link);
+    });
+  });
+  
+  return Promise.all(promises);
+}
+
+// Preload JS files  
+async function preloadJS(urls) {
+  const promises = urls.map(url => {
+    return new Promise((resolve, reject) => {
+      const link = document.createElement('link');
+      link.rel = 'preload';
+      link.as = 'script';
+      link.href = url;
+      link.onload = () => resolve(url);
+      link.onerror = () => reject(new Error(`Failed to preload JS: ${url}`));
+      document.head.appendChild(link);
+    });
+  });
+  
+  return Promise.all(promises);
+}
+
+// Preload background images
+async function preloadBackgrounds(urls) {
+  const promises = urls.map(url => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(url);
+      img.onerror = () => reject(new Error(`Failed to preload image: ${url}`));
+      img.src = url;
+    });
+  });
+  
+  return Promise.all(promises);
+}
+
+// Update loading progress and button state
+function updatePreloadProgress() {
+  const totalSteps = Object.keys(preloadState).length - 1; // -1 for totalProgress
+  const completedSteps = Object.entries(preloadState)
+    .filter(([key, value]) => key !== 'totalProgress' && value === true)
+    .length;
+  
+  preloadState.totalProgress = Math.round((completedSteps / totalSteps) * 100);
+  
+  const buttonText = document.getElementById('button-text');
+  const continueButton = document.getElementById('continue-button');
+  
+  if (buttonText) {
+    if (preloadState.totalProgress < 100) {
+      buttonText.textContent = `Loading timer... ${preloadState.totalProgress}%`;
+    } else {
+      buttonText.textContent = 'Continue to Focus';
+      continueButton.classList.remove('opacity-75', 'cursor-not-allowed');
+      continueButton.classList.add('hover:bg-amber-500', 'hover:border-amber-700');
+      continueButton.disabled = false;
+    }
+  }
+  
+  console.log(`📊 Preload Progress: ${preloadState.totalProgress}% (${completedSteps}/${totalSteps} steps)`);
+}
+
+// Comprehensive preloading of timer page resources
+async function preloadTimerResources() {
+  console.log('🎯 Starting comprehensive timer resource preloading...');
+  
+  try {
+    // Step 1: CSS files
+    console.log('🎨 Preloading timer CSS files...');
+    await preloadCSS(TIMER_RESOURCES.css);
+    preloadState.timerCSS = true;
+    preloadState.particleCSS = true;
+    updatePreloadProgress();
+    
+    // Step 2: JavaScript files  
+    console.log('⚙️ Preloading timer JS files...');
+    await preloadJS(TIMER_RESOURCES.js);
+    preloadState.timerJS = true;
+    preloadState.particleJS = true;
+    updatePreloadProgress();
+    
+    // Step 3: Critical background images (one per season/time)
+    console.log('🖼️ Preloading seasonal backgrounds...');
+    await preloadBackgrounds(TIMER_RESOURCES.backgrounds);
+    preloadState.seasonalBackgrounds = true;
+    updatePreloadProgress();
+    
+    console.log('✅ Timer resources preloaded successfully!');
+    return true;
+    
+  } catch (error) {
+    console.error('❌ Timer preloading failed:', error);
+    // Continue anyway to avoid blocking the user
+    Object.keys(preloadState).forEach(key => {
+      if (key !== 'totalProgress') preloadState[key] = true;
+    });
+    updatePreloadProgress();
+    return false;
+  }
+}
+
+// ============================================
 // INITIALIZATION
 // ============================================
 
 document.addEventListener('DOMContentLoaded', async function() {
   console.log('🚀 StudyFlow: Starting comprehensive preloading system...');
-  updateDebugInfo('Status: Initializing comprehensive loading system...');
   
-  // Show loading progress
-  updateLoadingProgress();
+  // Initialize progress display
+  updatePreloadProgress();
   
   try {
-    // Phase 1: Critical assets only (for fast LCP)
-    console.log('🌟 Phase 1: Loading critical assets...');
-    await preloadImages(CRITICAL_IMAGES);
-    loadingState.criticalAssets = true;
+    // Start comprehensive preloading of timer resources
+    console.log('⚡ Starting timer resource preloading...');
+    const preloadPromise = preloadTimerResources();
     
-    // Phase 2: Firebase initialization (parallel with timeout)
-    console.log('🔥 Phase 2: Initializing Firebase...');
-    initializeFirebaseConnection().catch(error => {
-      console.error('🚨 Firebase initialization failed completely:', error);
-      loadingState.firebaseReady = true;
-      loadingState.userSettings = true;
-      loadingState.timerReady = true;
-      checkLoadingComplete();
+    // Start Firebase initialization in parallel (with timeout)
+    console.log('🔥 Initializing Firebase...');
+    const firebasePromise = initializeFirebaseConnection().catch(error => {
+      console.error('🚨 Firebase initialization failed:', error);
+      preloadState.firebaseReady = true;
+      updatePreloadProgress();
+      return null;
     });
+    
+    // Wait for both preloading and Firebase
+    await Promise.all([preloadPromise, firebasePromise]);
+    
+    console.log('✅ All systems ready! Timer page fully preloaded.');
     
     // Add timeout fallback for Firebase
     setTimeout(() => {
