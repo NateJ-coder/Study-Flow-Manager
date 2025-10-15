@@ -316,14 +316,17 @@ async function loadUserSettings(db, userId) {
 }
 
 function continueToApp() {
-  // Only allow navigation if preloading is complete
-  if (preloadState.totalProgress === 100) {
+  // Allow navigation when the welcome flow signals readiness (isLoaded)
+  // or when full timer preloads complete.
+  if (isLoaded || preloadState.totalProgress === 100 || (loadingState && loadingState.criticalAssets)) {
     playSound('click');
-  console.log('🎯 Navigating to timer with fully preloaded resources');
-  window.location.href = (window.SF_CONFIG && window.SF_CONFIG.PAGES && window.SF_CONFIG.PAGES.TIMER) || '/Study-Flow-Manager/performance-build/assets/pages/timer.html';
-  } else {
-    console.log(`⏳ Still preloading... ${preloadState.totalProgress}% complete`);
+    console.log('🎯 Navigating to timer (welcome flow ready)');
+    try { window.location.assign((window.SF_CONFIG && window.SF_CONFIG.PAGES && window.SF_CONFIG.PAGES.TIMER) || '/Study-Flow-Manager/performance-build/assets/pages/timer.html'); }
+    catch (e) { window.location.href = (window.SF_CONFIG && window.SF_CONFIG.PAGES && window.SF_CONFIG.PAGES.TIMER) || '/Study-Flow-Manager/performance-build/assets/pages/timer.html'; }
+    return;
   }
+
+  console.log(`⏳ Still preloading... ${preloadState.totalProgress}% complete`);
 }
 
 function goToTimer() {
@@ -437,6 +440,8 @@ function updatePreloadProgress() {
       continueButton.classList.remove('opacity-75', 'cursor-not-allowed');
       continueButton.classList.add('hover:bg-amber-500', 'hover:border-amber-700');
       continueButton.disabled = false;
+      // Make sure the progress metric reflects that the UI is ready
+      preloadState.totalProgress = 100;
     }
   }
   
