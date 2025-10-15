@@ -183,6 +183,8 @@ async function saveSettings() {
     try {
       await setDoc(docRef, appSettings, { merge: true });
       console.log('Settings saved to Firestore successfully.');
+      // Persist theme locally to help with head preloads and quick LCP guesses
+      try { localStorage.setItem('sf_theme', appSettings.theme); } catch (e) { /* ignore */ }
     } catch (error) {
       console.error('Error saving settings to Firestore:', error);
     }
@@ -236,6 +238,16 @@ function applySettings() {
   // 5. Initialize Pomodoro UI
   updateSessionUI();
   updateDisplay();
+
+  // Start the particle system after first paint/idle so it doesn't compete with LCP
+  try {
+    const schedule = (window.requestIdleCallback || function (fn) { return setTimeout(fn, 100); });
+    schedule(() => {
+      if (window.ParticleSystem && typeof window.ParticleSystem.start === 'function') {
+        window.ParticleSystem.start();
+      }
+    });
+  } catch (e) { /* non-blocking */ }
 
   // Notify sleep manager (if available) so it can pick up the new sleepTimeout value
   try {

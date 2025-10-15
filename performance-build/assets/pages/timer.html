@@ -8,9 +8,32 @@
   
   <!-- External CSS -->
   <link rel="stylesheet" href="/Study-Flow-Manager/performance-build/assets/css/timer.css?v=2025101401">
-  <link rel="stylesheet" href="/Study-Flow-Manager/performance-build/assets/css/particles.css?v=2025101501">
+  <!-- Defer decorative particles CSS to avoid blocking first paint -->
+  <link rel="preload" href="/Study-Flow-Manager/performance-build/assets/css/particles.css?v=2025101501" as="style">
+  <link rel="stylesheet" href="/Study-Flow-Manager/performance-build/assets/css/particles.css?v=2025101501" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="/Study-Flow-Manager/performance-build/assets/css/particles.css?v=2025101501"></noscript>
   <!-- Central config -->
   <script src="/Study-Flow-Manager/performance-build/assets/js/config.js" defer></script>
+
+  <!-- Preconnect to Firebase/CDN hosts to speed up dynamic imports -->
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+
+  <!-- Preload a best-guess first background image for LCP (based on stored theme + day/night) -->
+  <script>
+  (function(){
+    try {
+      const BASE = '/Study-Flow-Manager/performance-build/assets';
+      const hour = new Date().getHours();
+      const night = (hour >= 18 || hour < 6);
+      const theme = (localStorage.getItem('sf_theme') || 'autumn');
+      const first = `${BASE}/images/${theme}-${night ? 'night' : 'day'}-1.png`;
+      const l = document.createElement('link');
+      l.rel = 'preload'; l.as = 'image'; l.href = first; l.fetchPriority = 'high';
+      document.head.appendChild(l);
+    } catch(e) { /* non-blocking */ }
+  })();
+  </script>
 
 </head>
 <body>
@@ -20,7 +43,7 @@
 
   <!-- Background Layer -->
   <div id="bg-container">
-    <img id="background-image" src="" alt="Dynamic StudyFlow Background" />
+    <img id="background-image" src="" alt="Dynamic StudyFlow Background" decoding="async" />
   </div>
   
   <!-- Particle Layer -->
@@ -158,25 +181,20 @@
   <!-- Particle System -->
   <script src="/Study-Flow-Manager/performance-build/assets/js/particle.js?v=2025101401"></script>
   
-  <!-- Sleep Mode System -->
-  <script>
-    // Dynamically load quotes.js from SF_CONFIG if available
-    (function(){
-      function injectScript(src){
-        var s = document.createElement('script');
-        s.src = src + (src.indexOf('?') === -1 ? '?v=' + Date.now() : '&v=' + Date.now());
-        s.defer = false;
-        document.head.appendChild(s);
-      }
-      if (window.SF_CONFIG && window.SF_CONFIG.JS && window.SF_CONFIG.JS.QUOTES) {
-        injectScript(window.SF_CONFIG.JS.QUOTES);
-      } else {
-        injectScript('/Study-Flow-Manager/performance-build/assets/js/quotes.js');
-      }
-    })();
-  </script>
+  <!-- Sleep Mode System (quotes will be loaded dynamically by sleep.js when sleep starts) -->
   <script src="/Study-Flow-Manager/performance-build/assets/js/sleep.js?v=2025101401"></script>
   
+  <!-- Fade loading overlay quickly on DOMContentLoaded so first paint is not blocked -->
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const o = document.getElementById('loading-overlay');
+    if (!o) return;
+    o.style.transition = 'opacity .35s ease';
+    o.style.opacity = '0';
+    setTimeout(() => (o.style.display = 'none'), 400);
+  });
+  </script>
+
   <!-- Firebase and Core Logic -->
   <script type="module" src="/Study-Flow-Manager/performance-build/assets/js/timer.js?v=2025101401"></script>
 </body>

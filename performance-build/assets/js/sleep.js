@@ -292,9 +292,33 @@ class SleepModeManager {
   
   // Start quotes system
   startQuotesSystem() {
-    if (window.QuotesSystem) {
-      window.QuotesSystem.start();
-    }
+    // Load quotes bundle on-demand to avoid stealing bandwidth on initial load
+    (async () => {
+      try {
+        if (!window.QuotesSystem) {
+          const modulePath = (window.SF_CONFIG && window.SF_CONFIG.JS && window.SF_CONFIG.JS.QUOTES) || '/Study-Flow-Manager/performance-build/assets/js/quotes.js';
+          try {
+            // Try dynamic import first (works for ESM bundles)
+            const mod = await import(modulePath);
+            window.QuotesSystem = mod.default || window.QuotesSystem || mod.QuotesSystem;
+          } catch (e) {
+            // Fallback: inject script tag for non-module scripts
+            const script = document.createElement('script');
+            script.src = modulePath + (modulePath.indexOf('?') === -1 ? '?v=' + Date.now() : '&v=' + Date.now());
+            script.defer = true;
+            document.head.appendChild(script);
+            // Give it a moment to initialize
+            await new Promise(r => setTimeout(r, 300));
+          }
+        }
+
+        if (window.QuotesSystem && typeof window.QuotesSystem.start === 'function') {
+          window.QuotesSystem.start();
+        }
+      } catch (err) {
+        console.warn('Failed to start QuotesSystem dynamically', err);
+      }
+    })();
   }
   
   // Stop quotes system
