@@ -125,3 +125,9 @@ body::after{
   #logo{ animation:none; opacity:1; transform:none }
   .progress .bar{ transition:none }
 }
+
+/* Reduce heavy filter work for lower-end GPUs while keeping the look */
+@media (prefers-reduced-motion: no-preference) {
+  .layer.rays { filter: saturate(.9); /* drop intense blur */ }
+  .layer.motes { filter: none; }
+}

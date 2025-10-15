@@ -315,18 +315,32 @@ async function loadUserSettings(db, userId) {
   }
 }
 
-function continueToApp() {
-  // Allow navigation when the welcome flow signals readiness (isLoaded)
-  // or when full timer preloads complete.
-  if (isLoaded || preloadState.totalProgress === 100 || (loadingState && loadingState.criticalAssets)) {
-    playSound('click');
-    console.log('🎯 Navigating to timer (welcome flow ready)');
-    try { window.location.assign((window.SF_CONFIG && window.SF_CONFIG.PAGES && window.SF_CONFIG.PAGES.TIMER) || '/Study-Flow-Manager/performance-build/assets/pages/timer.html'); }
-    catch (e) { window.location.href = (window.SF_CONFIG && window.SF_CONFIG.PAGES && window.SF_CONFIG.PAGES.TIMER) || '/Study-Flow-Manager/performance-build/assets/pages/timer.html'; }
-    return;
-  }
+async function continueToApp() {
+  if (window.__navigating) return;
+  window.__navigating = true;
+  playSound('click');
 
-  console.log(`⏳ Still preloading... ${preloadState.totalProgress}% complete`);
+  // 1) Cross-fade overlay
+  const veil = document.createElement('div');
+  Object.assign(veil.style, {
+    position: 'fixed', inset: '0', background: '#000', opacity: '0', transition: 'opacity 300ms ease', zIndex: '9999'
+  });
+  document.body.appendChild(veil);
+  // Force style calc then fade in
+  veil.offsetHeight; veil.style.opacity = '1';
+
+  // 2) Warm the timer (race preloader vs cap)
+  const CAP_MS = 1200;
+  const MIN_MS = 300;
+  const cap = new Promise(r => setTimeout(r, CAP_MS));
+  const min = new Promise(r => setTimeout(r, MIN_MS));
+
+  try { await Promise.race([preloadTimerResources(), cap]); } catch (e) { /* non-blocking */ }
+  await min;
+
+  // 3) Navigate (use config path if present)
+  const url = (window.SF_CONFIG && window.SF_CONFIG.PAGES && window.SF_CONFIG.PAGES.TIMER) || '/Study-Flow-Manager/performance-build/assets/pages/timer.html';
+  try { window.location.assign(url); } catch (e) { window.location.href = url; }
 }
 
 function goToTimer() {

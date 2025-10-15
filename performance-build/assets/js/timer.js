@@ -128,6 +128,36 @@ async function initializeFirebase() {
         setTimeout(() => document.getElementById('loading-overlay').style.display = 'none', 500);
     };
 
+    // Helper to wait until app is ready to show (ensures first bg image + minimal UI)
+    window.showAppWhenReady = async function showAppWhenReady() {
+      try {
+        const overlay = document.getElementById('loading-overlay');
+        const bgImg = document.getElementById('background-image');
+
+        // Wait for background image to load if present
+        await new Promise((resolve) => {
+          if (!bgImg) return resolve();
+          if (bgImg.complete && bgImg.naturalWidth > 0) return resolve();
+          const t = setTimeout(() => { clearListeners(); resolve(); }, 3000); // safety
+          function clearListeners() { bgImg.removeEventListener('load', onload); bgImg.removeEventListener('error', onerr); clearTimeout(t); }
+          function onload() { clearListeners(); resolve(); }
+          function onerr() { clearListeners(); resolve(); }
+          bgImg.addEventListener('load', onload);
+          bgImg.addEventListener('error', onerr);
+        });
+
+        // (Optional) ensure minimal UI wiring is present — a short tick
+        await new Promise(r => setTimeout(r, 50));
+
+        // Fade out overlay
+        if (overlay) {
+          overlay.style.transition = 'opacity 250ms ease';
+          overlay.style.opacity = '0';
+          setTimeout(() => { try { overlay.remove(); } catch(e){} }, 260);
+        }
+      } catch (e) { console.warn('showAppWhenReady failed', e); }
+    };
+
     try {
         // Dynamic imports to prevent blocking if Firebase CDN is slow
         const { initializeApp } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js");
@@ -440,6 +470,14 @@ async function updateBackground(forceUpdate = false) {
       setTimeout(() => {
         bgImgEl.style.opacity = '0.05';
         bgImgEl.src = nextImage;
+        // Ensure the app overlay is hidden only after the first background image has loaded
+        if (!window._appReadyShown) {
+          bgImgEl.addEventListener('load', function _onFirstBg() {
+            bgImgEl.removeEventListener('load', _onFirstBg);
+            try { if (typeof showAppWhenReady === 'function') showAppWhenReady(); } catch(e){}
+            window._appReadyShown = true;
+          });
+        }
       }, 600);
 
       // Phase 2: fade image in
