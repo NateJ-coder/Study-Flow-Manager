@@ -481,9 +481,22 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Set reminder button wiring: pre-fill event form date and focus
-  const setRemBtn = document.getElementById('openReminderForSelected'); if (setRemBtn) setRemBtn.addEventListener('click', () => {
-    const f = document.getElementById('eventForm'); const iso = selectedDateISO || new Date().toISOString().slice(0,10);
-    if (f && f.date) { f.date.value = iso; f.scrollIntoView({ behavior: 'smooth', block: 'start' }); setTimeout(()=>f.title?.focus(),250); }
+  // Set reminder button wiring: open the modal pre-filled with the selected day
+  const setRemBtn = document.getElementById('openReminderForSelected');
+  if (setRemBtn) setRemBtn.addEventListener('click', () => {
+    const iso = selectedDateISO || new Date().toISOString().slice(0,10);
+    const f = document.getElementById('eventForm');
+    if (f && f.date) f.date.value = iso;
+    const modal = document.getElementById('reminderModal'); if (modal) modal.hidden = false;
+    setTimeout(() => document.querySelector('#eventForm input[name="title"]')?.focus(), 50);
   });
+
+  // Reminder modal close/backdrop/Escape
+  const reminderModal = document.getElementById('reminderModal');
+  const closeReminderBtn = document.getElementById('closeReminder');
+  if (closeReminderBtn) closeReminderBtn.addEventListener('click', () => { if (reminderModal) reminderModal.hidden = true; });
+  if (reminderModal) {
+    reminderModal.addEventListener('click', (e) => { if (e.target === reminderModal) reminderModal.hidden = true; });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !reminderModal.hidden) reminderModal.hidden = true; });
+  }
 });

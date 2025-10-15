@@ -275,3 +275,29 @@ body.winter-theme { --sf-accent:#60a5fa; }
 }
 .sf-calendar .sf-taskitem .t{ flex:1; }
 .sf-calendar .sf-taskitem.done .t{ opacity:.55; text-decoration: line-through; }
+
+/* Drawer containment & layout hygiene */
+.sf-calendar .sf-drawer {
+  box-sizing: border-box;
+  contain: layout paint;
+  overflow: hidden;
+}
+
+.sf-calendar .sf-drawer__add {    /* keep the input separated and tidy */
+  min-width: 0;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--sf-border);
+}
+
+.sf-calendar .sf-drawer__add input {
+  box-sizing: border-box;
+  width: 100%;
+  display: block;
+  margin: 0;
+}
+
+/* Make the lists area scroll independently so nothing overlaps */
+.sf-calendar .sf-drawer__lists { min-height: 0; overflow: auto; }
+
+/* Keep long task text from pushing layout */
+.sf-calendar .sf-taskitem .t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

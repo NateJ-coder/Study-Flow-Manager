@@ -41,80 +41,7 @@
       <div id="calendarGrid" class="sf-calendar-grid" aria-label="Monthly calendar"></div>
     </section>
 
-    <!-- Event form -->
-    <section class="sf-card">
-      <h1 class="sf-h1">Calendar</h1>
-      <p class="sf-muted">Create reminders that sync to your Google Calendar (and your phone). Fields with * are required.</p>
-
-      <form id="eventForm" class="sf-form" autocomplete="off">
-        <div class="sf-field sf-span-6">
-          <label>Title *</label>
-          <input name="title" required placeholder="Deep Work / Meeting / Reminder" />
-        </div>
-
-        <div class="sf-field sf-span-3">
-          <label>Date *</label>
-          <input type="date" name="date" required />
-        </div>
-
-        <div class="sf-field sf-span-3">
-          <label>All-day</label>
-          <select name="allDay">
-            <option value="false" selected>No</option>
-            <option value="true">Yes</option>
-          </select>
-        </div>
-
-        <div class="sf-field sf-span-3 time-start">
-          <label>Start time *</label>
-          <input type="time" name="startTime" step="60" />
-        </div>
-
-        <div class="sf-field sf-span-3 time-end">
-          <label>End time *</label>
-          <input type="time" name="endTime" step="60" />
-        </div>
-
-        <div class="sf-field sf-span-6">
-          <label>Reminders (minutes before, comma-separated)</label>
-          <input name="reminders" placeholder="10, 60" />
-        </div>
-
-        <div class="sf-field sf-span-6">
-          <label>Location</label>
-          <input name="location" placeholder="Home Office / Zoom / Address" />
-        </div>
-
-        <div class="sf-field sf-span-12">
-          <label>Notes / Description</label>
-          <textarea name="description" rows="3" placeholder=""></textarea>
-        </div>
-
-        <div class="sf-actions">
-          <button type="submit" class="sf-btn">Create</button>
-          <button type="button" id="downloadICS" class="sf-btn sf-btn--ghost">Download .ics</button>
-        </div>
-      </form>
-    </section>
-
-    <!-- Reminders table -->
-    <section class="sf-card">
-      <h2 class="sf-h2">My Reminders</h2>
-      <div class="sf-table-wrap">
-        <table class="sf-table" aria-label="Created reminders">
-          <thead>
-            <tr>
-              <th>Title</th>
-              <th>Date/Time</th>
-              <th>Reminders</th>
-              <th>Status</th>
-              <th class="sf-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody id="eventsTbody"><!-- rows injected --></tbody>
-        </table>
-      </div>
-    </section>
+    <!-- (Event form removed — now presented in a modal) -->
   </main>
 
   <!-- Settings modal -->
@@ -152,6 +79,66 @@
       <div class="sf-modal__footer">
         <button id="saveCalendarSettings" class="sf-btn">Save</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Reminder modal -->
+  <div class="sf-modal" id="reminderModal" hidden>
+    <div class="sf-modal__content" role="dialog" aria-modal="true" aria-labelledby="reminder-title">
+      <div class="sf-modal__header">
+        <h3 id="reminder-title" class="sf-h3">Set reminder</h3>
+        <button class="sf-btn sf-btn--icon" id="closeReminder" aria-label="Close">✕</button>
+      </div>
+
+      <!-- Moved the original event form INTO the modal -->
+      <form id="eventForm" class="sf-form" autocomplete="off">
+        <div class="sf-field sf-span-6">
+          <label>Title *</label>
+          <input name="title" required placeholder="Birthday / Meeting / Reminder" />
+        </div>
+
+        <div class="sf-field sf-span-3">
+          <label>Date *</label>
+          <input type="date" name="date" required />
+        </div>
+
+        <div class="sf-field sf-span-3">
+          <label>All-day</label>
+          <select name="allDay">
+            <option value="false" selected>No</option>
+            <option value="true">Yes</option>
+          </select>
+        </div>
+
+        <div class="sf-field sf-span-3 time-start">
+          <label>Start time *</label>
+          <input type="time" name="startTime" step="60" />
+        </div>
+
+        <div class="sf-field sf-span-3 time-end">
+          <label>End time *</label>
+          <input type="time" name="endTime" step="60" />
+        </div>
+
+        <div class="sf-field sf-span-6">
+          <label>Reminders (minutes before, comma-separated)</label>
+          <input name="reminders" placeholder="10, 60" />
+        </div>
+
+        <div class="sf-field sf-span-6">
+          <label>Location</label>
+          <input name="location" placeholder="Home Office / Zoom / Address" />
+        </div>
+
+        <div class="sf-field sf-span-12">
+          <label>Notes / Description</label>
+          <textarea name="description" rows="3"></textarea>
+        </div>
+
+        <div class="sf-modal__footer">
+          <button type="submit" class="sf-btn">Save reminder</button>
+        </div>
+      </form>
     </div>
   </div>
 
