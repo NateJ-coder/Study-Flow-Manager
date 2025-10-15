@@ -7,9 +7,10 @@ class SleepModeManager {
   constructor() {
     this.isInSleepMode = false;
     this.inactivityTimer = null;
-    // Default inactivity delay: 15 minutes (in milliseconds)
-    // This provides a sensible default while the appSettings object may not yet be available
-    this.inactivityDelay = 15 * 60 * 1000; // 15 minutes
+    // Initialize inactivity delay from settings (or fall back to the same default used
+    // by the timer page). We call getSleepTimeout() so the manager uses the same
+    // units and defaults as the rest of the app.
+    this.inactivityDelay = this.getSleepTimeout(); // milliseconds
     this.lastActivity = Date.now();
     
     // Elements to manage
@@ -29,6 +30,25 @@ class SleepModeManager {
     
     // Update timeout from settings now that they're available
     this.updateSleepTimeout();
+
+    // If appSettings isn't available yet (timing can vary across browsers because
+    // timer.js is loaded as a module and may defer), poll briefly and re-apply
+    // the timeout when settings arrive. This avoids missing a late-loaded
+    // preference without requiring cross-file events.
+    if (!window.appSettings) {
+      let tries = 0;
+      const maxTries = 25; // ~5 seconds at 200ms interval
+      const poll = setInterval(() => {
+        tries += 1;
+        if (window.appSettings || tries >= maxTries) {
+          clearInterval(poll);
+          try {
+            this.updateSleepTimeout();
+            console.log('💤 SleepModeManager applied sleep timeout after polling for appSettings');
+          } catch (e) { /* non-blocking */ }
+        }
+      }, 200);
+    }
     
     this.setupActivityListeners();
     this.startInactivityTracking();
