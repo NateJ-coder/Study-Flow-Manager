@@ -381,8 +381,8 @@ async function updateBackground(forceUpdate = false) {
     // Preload the next image before setting it
     await preloadImage(nextImage);
     
-    // Start particle wipe transition
-    startParticleTransition();
+    // Start firefly transition
+    startFireflyTransition();
     
     // Enhanced smooth transition coordinated with particle effect
     backgroundImageElement.style.opacity = '0.2';
@@ -474,214 +474,155 @@ function initializeBackgroundSystem(force = false) {
 }
 
 
-// --- PARTICLE SYSTEM (Canvas) ---
-const canvas = document.getElementById('particle-canvas');
-const ctx = canvas.getContext('2d');
-let particles = [];
-let animationFrameId;
-let transitionParticles = [];
-let isTransitioning = false;
-let transitionProgress = 0;
+// --- FIREFLY PARTICLE SYSTEM ---
+const particleContainer = document.getElementById('particle-container');
+let fireflyElements = [];
 let isSleepMode = false;
-let sleepModeFrameSkip = 0;
 
 function initializeParticles(config) {
-    // Stop any running animation
-    if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId);
-        particles = [];
-    }
-
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    // Clear existing fireflies
+    clearFireflies();
     
-    for (let i = 0; i < config.count; i++) {
-        particles.push(createParticle(config));
+    // Only create fireflies for glow type (night scenes)
+    if (config.type === 'glow') {
+        createFireflies(config.count);
     }
-
-    drawParticles(config);
 }
 
-function createParticle(config) {
-  return {
-    x: Math.random() * canvas.width,
-    y: Math.random() * canvas.height,
-    size: config.size + Math.random() * 2,
-    speed: config.speed * (0.5 + Math.random()),
-    // Angle only relevant for leaf/snow to give slight horizontal drift
-    angle: Math.random() * 360, 
-  };
-}
-
-// Create transition particles for smooth wipe effect
-function createTransitionParticles(config) {
-  transitionParticles = [];
-  const transitionCount = config.count * 3; // Triple the normal particle count for transition
-  
-  for (let i = 0; i < transitionCount; i++) {
-    transitionParticles.push({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
-      size: config.size + Math.random() * 4, // Slightly larger for transition
-      speed: config.speed * (2 + Math.random()), // Faster during transition
-      angle: Math.random() * 360,
-      opacity: 0.3 + Math.random() * 0.7, // Variable opacity for depth
-      life: 1.0 // Full life at start
+function clearFireflies() {
+    fireflyElements.forEach(firefly => {
+        if (firefly.parentNode) {
+            firefly.parentNode.removeChild(firefly);
+        }
     });
-  }
+    fireflyElements = [];
 }
 
-// Trigger smooth particle wipe transition
-function startParticleTransition() {
-  if (isTransitioning) return; // Don't start if already transitioning
-  
-  const config = getCurrentParticleConfig();
-  createTransitionParticles(config);
-  isTransitioning = true;
-  transitionProgress = 0;
-  
-  console.log(`🎭 Starting particle transition with ${transitionParticles.length} particles`);
+function createFireflies(fireflyCount = 50) {
+    console.log(`✨ Creating ${fireflyCount} fireflies for magical night ambiance`);
+    
+    for (let i = 0; i < fireflyCount; i++) {
+        const firefly = document.createElement('div');
+        firefly.className = 'firefly';
+
+        // Random size for firefly body (smaller than glow, for realism)
+        const size = Math.random() * 3 + 2; // 2px to 5px
+        firefly.style.width = `${size}px`;
+        firefly.style.height = `${size}px`;
+        
+        // Firefly body color (subtle, less important than the glow)
+        firefly.style.backgroundColor = 'rgba(255, 255, 0, 0.3)';
+
+        // Random start position anywhere on the screen
+        firefly.style.left = `${Math.random() * 100}vw`;
+        firefly.style.top = `${Math.random() * 100}vh`;
+
+        // Random duration for glow animation (2s to 5s)
+        const glowDuration = Math.random() * 3 + 2;
+        // Random duration for float animation (10s to 20s)
+        const floatDuration = Math.random() * 10 + 10;
+        // Random duration for sway animation (8s to 15s)
+        const swayDuration = Math.random() * 7 + 8;
+
+        firefly.style.animationDuration = 
+            `${glowDuration}s, ${floatDuration}s, ${swayDuration}s`;
+
+        // Random delays to stagger all animations
+        firefly.style.animationDelay = 
+            `-${Math.random() * glowDuration}s, -${Math.random() * floatDuration}s, -${Math.random() * swayDuration}s`;
+        
+        // Set initial opacity to be varied, so they don't all start glowing at once
+        firefly.style.opacity = Math.random() * 0.5 + 0.4; // 0.4 to 0.9
+
+        particleContainer.appendChild(firefly);
+        fireflyElements.push(firefly);
+    }
 }
 
-function drawParticles(config) {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  
-  // Draw normal particles
-  ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--particle-color').trim() || '#fff';
-  
-  particles.forEach(p => {
-    // Update position
-    p.y += p.speed;
-    
-    if (config.type === 'leaf' || config.type === 'green-leaf' || config.type === 'snow') {
-        // Add slight horizontal sway for snow/leaves
-        p.x += Math.sin(p.y / 100) * 0.5;
-    } else if (config.type === 'glow') {
-        // Subtle random drift for glow/fireflies
-        p.x += (Math.random() - 0.5) * 0.5;
+// Firefly transition effect for theme changes
+function startFireflyTransition() {
+    if (particleContainer) {
+        // Add temporary extra fireflies during transition
+        createFireflies(20); // Extra 20 fireflies for transition effect
+        
+        // Remove extra fireflies after transition
+        setTimeout(() => {
+            const extraFireflies = fireflyElements.slice(-20);
+            extraFireflies.forEach(firefly => {
+                firefly.style.opacity = '0';
+                setTimeout(() => {
+                    if (firefly.parentNode) {
+                        firefly.parentNode.removeChild(firefly);
+                    }
+                }, 1000);
+            });
+            fireflyElements = fireflyElements.slice(0, -20);
+        }, 2000);
     }
-
-    // Wrap around when it falls off screen
-    if (p.y > canvas.height) {
-      p.y = -p.size;
-      p.x = Math.random() * canvas.width; // Reset horizontal position too
-    }
-
-    // Draw particle with appropriate color and shape
-    ctx.beginPath();
-    
-    // Set particle color based on type
-    if (config.type === 'green-leaf') {
-        ctx.fillStyle = '#4ade80'; // Green color for summer leaves
-    } else if (config.type === 'leaf') {
-        ctx.fillStyle = '#f59e0b'; // Autumn orange/yellow for autumn leaves  
-    } else {
-        ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--particle-color').trim() || '#fff';
-    }
-    
-    if (config.type === 'snow') {
-        ctx.arc(p.x, p.y, p.size / 2, 0, Math.PI * 2); // Simple circles for snow
-    } else if (config.type === 'leaf' || config.type === 'green-leaf') {
-        ctx.fillRect(p.x, p.y, p.size, p.size * 0.5); // Rectangular shape for leaves
-    } else {
-        // Enhanced glow effect for fireflies
-        ctx.globalAlpha = 0.9; // Increase opacity
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        // Enhanced glow with multiple layers
-        ctx.shadowColor = '#ffff80'; // Warm yellow glow
-        ctx.shadowBlur = p.size * 5; // Larger glow radius
-        ctx.fillStyle = '#ffff99'; // Brighter firefly color
-    }
-    ctx.fill();
-    ctx.shadowBlur = 0; // Reset shadow for next draw
-    ctx.globalAlpha = 1; // Reset alpha for next draw
-  });
-  
-  // Draw transition particles if transitioning
-  if (isTransitioning && transitionParticles.length > 0) {
-    transitionParticles.forEach(p => {
-      // Update transition particle position and life
-      p.y += p.speed;
-      p.life -= 0.015; // Slower fade for longer transition (66 frames ≈ 1100ms at 60fps)
-      
-      if (config.type === 'leaf' || config.type === 'green-leaf' || config.type === 'snow') {
-        p.x += Math.sin(p.y / 80) * 1.5; // More dramatic sway
-      } else if (config.type === 'glow') {
-        p.x += (Math.random() - 0.5) * 2; // More movement
-        p.y += (Math.random() - 0.5) * 1;
-      }
-      
-      // Wrap around screen
-      if (p.y > canvas.height) {
-        p.y = -p.size;
-        p.x = Math.random() * canvas.width;
-      }
-      
-      // Draw with dynamic opacity - peak intensity mid-transition, then fade
-      const intensity = transitionProgress < 0.5 
-        ? transitionProgress * 2 // Build up intensity
-        : (1 - transitionProgress) * 2; // Fade out intensity
-      const alpha = Math.max(0, p.opacity * p.life * intensity * 1.2);
-      ctx.globalAlpha = alpha;
-      
-      // Set transition particle colors
-      if (config.type === 'green-leaf') {
-        ctx.fillStyle = '#4ade80'; // Green for summer leaves
-      } else if (config.type === 'leaf') {
-        ctx.fillStyle = '#f59e0b'; // Orange/yellow for autumn leaves
-      } else {
-        ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--particle-color').trim() || '#fff';
-      }
-      
-      ctx.beginPath();
-      if (config.type === 'snow') {
-        ctx.arc(p.x, p.y, p.size / 2, 0, Math.PI * 2);
-      } else if (config.type === 'leaf' || config.type === 'green-leaf') {
-        ctx.fillRect(p.x, p.y, p.size, p.size * 0.5);
-      } else {
-        // Enhanced transition glow
-        ctx.globalAlpha = p.life * 0.8; // Fade based on life and increase visibility
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.shadowColor = '#ffff80';
-        ctx.shadowBlur = p.size * 6; // Even more dramatic for transition
-        ctx.fillStyle = '#ffff99';
-      }
-      ctx.fill();
-      ctx.shadowBlur = 0;
-      ctx.globalAlpha = 1; // Reset alpha
-    });
-    
-    ctx.globalAlpha = 1.0; // Reset alpha
-    
-    // Update transition progress
-    transitionProgress += 0.015; // Slower progress to match longer transition
-    if (transitionProgress >= 1.0) {
-      // Transition complete
-      isTransitioning = false;
-      transitionProgress = 0;
-      transitionParticles = [];
-      console.log('🎭 Particle transition complete');
-    }
-  }
-
-  // Sleep mode optimization: Skip frames to reduce CPU usage
-  if (isSleepMode) {
-    sleepModeFrameSkip++;
-    if (sleepModeFrameSkip < 4) { // Only render every 4th frame in sleep mode
-      animationFrameId = requestAnimationFrame(() => drawParticles(config));
-      return;
-    }
-    sleepModeFrameSkip = 0;
-  }
-  
-  animationFrameId = requestAnimationFrame(() => drawParticles(config));
 }
 
-// Particle system sleep mode control
+// Create firefly transition effect
+function startFireflyTransition() {
+  console.log('🎭 Starting firefly transition');
+  const container = document.getElementById('particle-container');
+  if (!container) return;
+  
+  // Add more fireflies during transition
+  const currentFireflies = container.querySelectorAll('.firefly').length;
+  const transitionFireflies = 15; // Add extra fireflies during transition
+  
+  for (let i = 0; i < transitionFireflies; i++) {
+    setTimeout(() => {
+      createFirefly();
+    }, i * 100); // Stagger creation
+  }
+  
+  // Remove extra fireflies after transition
+  setTimeout(() => {
+    const allFireflies = container.querySelectorAll('.firefly');
+    const config = getCurrentParticleConfig();
+    const targetCount = config.count;
+    
+    // Remove excess fireflies
+    for (let i = targetCount; i < allFireflies.length; i++) {
+      if (allFireflies[i]) {
+        allFireflies[i].remove();
+      }
+    }
+    console.log('🎭 Firefly transition complete');
+  }, 3000);
+}
+
+// CSS-based firefly animation (no drawing needed)
+function animateFireflies() {
+  // Fireflies are animated via CSS keyframes
+  // This function can be used for any JavaScript-based updates if needed
+  console.log('🎭 Fireflies animating via CSS');
+}
+
+// Firefly system sleep mode control
 window.particleSystem = {
   setSleepMode: function(sleepMode) {
-    isSleepMode = sleepMode;
-    console.log(`🎭 Particle system ${sleepMode ? 'entering' : 'exiting'} sleep mode`);
+    const container = document.getElementById('particle-container');
+    if (!container) return;
+    
+    if (sleepMode) {
+      // Reduce firefly activity in sleep mode
+      container.style.animationDuration = '8s'; // Slower animations
+      const fireflies = container.querySelectorAll('.firefly');
+      fireflies.forEach(firefly => {
+        firefly.style.opacity = '0.3'; // Dimmer fireflies
+      });
+      console.log('🎭 Fireflies entering sleep mode');
+    } else {
+      // Restore normal firefly activity
+      container.style.animationDuration = '4s'; // Normal speed
+      const fireflies = container.querySelectorAll('.firefly');
+      fireflies.forEach(firefly => {
+        firefly.style.opacity = ''; // Reset opacity
+      });
+      console.log('🎭 Fireflies exiting sleep mode');
+    }
   }
 };
 
@@ -710,13 +651,13 @@ window.slideshowSystem = {
   }
 };
 
-// Handle canvas resize
+// Handle window resize for fireflies
 window.addEventListener('resize', () => {
-    if (canvas) {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        // Re-initialize particles to fit the new size
-        initializeParticles(BACKGROUND_CONFIG[appSettings.theme].particles);
+    // Fireflies automatically adapt to window size via CSS
+    // Re-initialize to ensure proper distribution
+    const config = getCurrentParticleConfig();
+    if (config) {
+        initializeParticles(config);
     }
 });
 

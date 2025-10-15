@@ -239,7 +239,7 @@ function enableContinueButton() {
     `;
     continueBtn.disabled = false;
     continueBtn.classList.remove('opacity-75', 'cursor-not-allowed');
-    continueBtn.classList.add('hover:bg-amber-500', 'active:scale-98', 'hover:scale-102', 'cursor-pointer');
+    continueBtn.classList.add('hover-bg-amber-500', 'active-scale-98', 'hover-scale-102', 'cursor-pointer');
     
     // Remove any spinning animation and add a subtle ready pulse
     setTimeout(() => {

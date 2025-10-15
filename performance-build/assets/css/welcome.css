@@ -87,17 +87,17 @@ body {
 .rounded-3xl { border-radius: 1.5rem; }
 .shadow-2xl { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); }
 
-/* Hover states */
-.hover\:bg-amber-500:hover { background-color: rgba(245, 158, 11, 0.8); }
-.active\:scale-\[0\.98\]:active { transform: scale(0.98); }
-.hover\:scale-\[1\.02\]:hover { transform: scale(1.02); }
+/* Hover states - Fixed CSS naming */
+.hover-bg-amber-500:hover { background-color: rgba(245, 158, 11, 0.8); }
+.active-scale-98:active { transform: scale(0.98); }
+.hover-scale-102:hover { transform: scale(1.02); }
 
-/* Responsive */
+/* Responsive - Fixed CSS naming */
 @media (min-width: 768px) {
-  .md\:text-8xl { font-size: 6rem; line-height: 1; }
-  .md\:text-2xl { font-size: 1.5rem; line-height: 2rem; }
-  .md\:text-xl { font-size: 1.25rem; line-height: 1.75rem; }
-  .md\:p-12 { padding: 3rem; }
+  .md-text-8xl { font-size: 6rem; line-height: 1; }
+  .md-text-2xl { font-size: 1.5rem; line-height: 2rem; }
+  .md-text-xl { font-size: 1.25rem; line-height: 1.75rem; }
+  .md-p-12 { padding: 3rem; }
 }
 
 /* Loading spinner */
@@ -168,10 +168,4 @@ body {
 .active-scale-98:active { transform: scale(0.98); }
 .hover-scale-102:hover { transform: scale(1.02); }
 
-/* Responsive */
-@media (min-width: 768px) {
-  .md\\:text-8xl { font-size: 6rem; line-height: 1; }
-  .md\\:text-2xl { font-size: 1.5rem; line-height: 2rem; }
-  .md\\:text-xl { font-size: 1.25rem; line-height: 1.75rem; }
-  .md\\:p-12 { padding: 3rem; }
-}
+/* Duplicate responsive block removed - using corrected version above */

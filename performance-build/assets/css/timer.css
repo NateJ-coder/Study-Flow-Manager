@@ -54,14 +54,54 @@ body {
   transition: opacity 0.8s ease-in-out;
 }
 
-#particle-canvas {
-  position: absolute;
+#particle-container {
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
   pointer-events: none;
   z-index: 1; /* Above background image but below UI elements */
+}
+
+/* Firefly particles for magical night ambiance */
+.firefly {
+  position: absolute;
+  border-radius: 50%; /* Circular glow */
+  box-shadow: 0 0 10px 5px rgba(255, 255, 0, 0.7); /* Initial glow */
+  animation: glow 3s ease-in-out infinite alternate, 
+             float 15s ease-in-out infinite,
+             sway 10s ease-in-out infinite alternate;
+}
+
+/* Keyframes for the glowing/pulsing effect */
+@keyframes glow {
+  0% {
+    box-shadow: 0 0 10px 5px rgba(255, 255, 0, 0.7); /* Brighter yellow */
+    opacity: 0.9;
+  }
+  50% {
+    box-shadow: 0 0 4px 2px rgba(255, 255, 0, 0.2); /* Dimmer */
+    opacity: 0.4;
+  }
+  100% {
+    box-shadow: 0 0 10px 5px rgba(255, 255, 0, 0.7); /* Back to bright */
+    opacity: 0.9;
+  }
+}
+
+/* Keyframes for gentle vertical floating */
+@keyframes float {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-30px); }
+  100% { transform: translateY(0); }
+}
+
+/* Keyframes for gentle horizontal swaying */
+@keyframes sway {
+  0% { transform: translateX(0); }
+  50% { transform: translateX(20px); }
+  100% { transform: translateX(0); }
 }
 
 /* Header (Logo and Clock) */
