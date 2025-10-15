@@ -100,30 +100,33 @@ async function createFromForm(e) {
   e.preventDefault();
   const f = e.target;
 
-  const allDay = f.allDay.value === "true";
-  const date = f.date.value;
-  const startISO = allDay ? `${date}T00:00:00${tzOffset()}` : toISO(date, f.startTime.value);
-  const endISO   = allDay ? `${date}T00:00:00${tzOffset()}` : toISO(date, f.endTime.value);
+  const allDay = f.allDay && f.allDay.value === "true";
+  const date = (f.date && f.date.value) || new Date().toISOString().slice(0,10);
+  const startISO = allDay ? `${date}T00:00:00${tzOffset()}` : toISO(date, (f.startTime && f.startTime.value) || "00:00");
+  const endISO   = allDay ? `${date}T00:00:00${tzOffset()}` : toISO(date, (f.endTime && f.endTime.value) || "00:00");
 
-  const repeatSel = f.repeat.value;
-  const rrule = repeatSel ? rruleFromSelect(repeatSel, f.repeatDetails.value.trim()) : "";
+  // Guard optional repeat fields which may not exist in the modal
+  const repeatSel = f.repeat ? f.repeat.value : "";
+  const adv = (f.repeatDetails && f.repeatDetails.value) ? f.repeatDetails.value.trim() : "";
+  const rrule = repeatSel ? rruleFromSelect(repeatSel, adv) : "";
 
   const payload = {
     action: "create",
-    title: f.title.value.trim(),
-    description: f.description.value.trim(),
-    location: f.location.value.trim(),
+    title: (f.title && f.title.value || "").trim(),
+    description: (f.description && f.description.value || "").trim(),
+    location: (f.location && f.location.value || "").trim(),
     start: startISO,
     end:   endISO,
     all_day: allDay,
-    reminders: parseReminders(f.reminders.value),
+    reminders: parseReminders((f.reminders && f.reminders.value) || ""),
     recurrence: rrule || null
   };
 
   const local = {
     local_id: crypto.randomUUID(),
     title: payload.title,
-    date, startTime: f.startTime.value, endTime: f.endTime.value,
+    date, startTime: (f.startTime && f.startTime.value) || "",
+    endTime: (f.endTime && f.endTime.value) || "",
     all_day: allDay,
     reminders: payload.reminders
   };
@@ -136,6 +139,9 @@ async function createFromForm(e) {
     store.upsert(local);
     render();
     f.reset();
+    // close the reminder modal after successful save
+    const modal = document.getElementById('reminderModal');
+    if (modal) modal.hidden = true;
   } catch (err) {
     console.error(err);
     alert("Failed to sync to Google Calendar (kept locally). You can retry from Edit.");
@@ -221,18 +227,22 @@ function downloadICSFromForm() {
 
 function init() {
   const form = $("#eventForm");
-  form.addEventListener("submit", createFromForm);
-  $("#eventsTbody").addEventListener("click", onTableClick);
-  $("#downloadICS").addEventListener("click", downloadICSFromForm);
+  if (form) {
+    form.addEventListener("submit", createFromForm);
+    if (form.allDay) {
+      form.allDay.addEventListener("change", () => {
+        const isAllDay = form.allDay.value === "true";
+        document.querySelectorAll(".time-start, .time-end").forEach(el => {
+          el.classList.toggle("hidden", isAllDay);
+        });
+        if (form.startTime) form.startTime.required = !isAllDay;
+        if (form.endTime) form.endTime.required = !isAllDay;
+      });
+    }
+  }
 
-  form.allDay.addEventListener("change", () => {
-    const isAllDay = form.allDay.value === "true";
-    document.querySelectorAll(".time-start, .time-end").forEach(el => {
-      el.classList.toggle("hidden", isAllDay);
-    });
-    form.startTime.required = !isAllDay;
-    form.endTime.required = !isAllDay;
-  });
+  const tbody = $("#eventsTbody"); if (tbody) tbody.addEventListener("click", onTableClick);
+  const dl = $("#downloadICS"); if (dl) dl.addEventListener("click", downloadICSFromForm);
 
   render();
 }
