@@ -1,6 +1,6 @@
 // StudyFlow Intro + Preloader (performance-tuned)
 (() => {
-  const WELCOME_URL = 'welcome.html';
+  const WELCOME_URL = 'performance-build/assets/pages/welcome.html';
   const OVERLAY_MS = 600;           // match CSS --fade-ms
   const SAFETY_TIMEOUT_MS = 2500;   // faster: don't wait forever
 
@@ -29,7 +29,7 @@
     'performance-build/assets/images/optimized/studyflow-logo-768.webp',
     'performance-build/assets/css/welcome.css',
     'performance-build/assets/js/welcome.js',
-    'welcome.html'
+  'performance-build/assets/pages/welcome.html'
   ];
 
   let loaded = 0;
