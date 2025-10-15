@@ -15,11 +15,15 @@
 </head>
 <body class="min-h-screen bg-gray-900 font-inter antialiased overflow-hidden">
 	<!-- Background Container -->
-	<div 
+    <div 
 		id="background-container"
 		class="fixed inset-0 bg-cover bg-center transition-opacity duration-1000 ease-in-out"
 		style="
+			background-color: #07120a; /* dark fallback while image loads */
 			background-image: url('/Study-Flow-Manager/performance-build/assets/images/welcome-page.png');
+			background-size: cover;
+			background-position: center center;
+			background-repeat: no-repeat;
 			filter: brightness(0.7) blur(1px);
 			z-index: 0;
 		"

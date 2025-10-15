@@ -27,6 +27,7 @@
   // Keep the preload list tight — just what the first fold needs
   const assets = [
     '/Study-Flow-Manager/performance-build/assets/images/optimized/studyflow-logo-768.webp',
+    '/Study-Flow-Manager/performance-build/assets/images/welcome-page.png',
     '/Study-Flow-Manager/performance-build/assets/css/welcome.css',
     '/Study-Flow-Manager/performance-build/assets/js/welcome.js',
     '/Study-Flow-Manager/performance-build/assets/pages/welcome.html'
