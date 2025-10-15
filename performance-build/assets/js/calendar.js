@@ -348,4 +348,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const prev = document.getElementById('prevMonth'); if (prev) prev.addEventListener('click', () => { if(--calState.view.month < 0){ calState.view.month = 11; calState.view.year--; } buildMonthGrid(); });
   const next = document.getElementById('nextMonth'); if (next) next.addEventListener('click', () => { if(++calState.view.month > 11){ calState.view.month = 0; calState.view.year++; } buildMonthGrid(); });
+
+  // Back to timer (uses history if available, else falls back to configured or default path)
+  const backBtn = document.getElementById('backToTimer');
+  if (backBtn) {
+    backBtn.addEventListener('click', () => {
+      const fallback = (window.SF_CONFIG?.ROUTES?.TIMER) || '/Study-Flow-Manager/performance-build/index.html#timer';
+      if (history.length > 1) history.back();
+      else location.href = fallback;
+    });
+  }
+
+  // Close on overlay click and Escape
+  const modal = document.getElementById('calendarSettings');
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeCalSettings();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !modal.hidden) closeCalSettings();
+    });
+  }
 });

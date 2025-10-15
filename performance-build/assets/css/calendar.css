@@ -222,3 +222,10 @@ body.winter-theme { --sf-accent:#60a5fa; }
   margin-bottom: 10px;
 }
 .sf-calendar .sf-modal__footer{ justify-content: flex-end; margin: 8px 0 0; }
+
+/* Ensure the modal honors the [hidden] attribute */
+.sf-calendar .sf-modal[hidden] {
+  display: none !important;
+  /* let clicks pass through when hidden (belt & suspenders) */
+  pointer-events: none !important;
+}
