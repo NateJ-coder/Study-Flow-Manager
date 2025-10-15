@@ -152,16 +152,37 @@ const BACKGROUND_IMAGES = [
 
 // Preload images for performance
 function preloadImages(urls) {
-  return Promise.all(urls.map(url => {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.onload = () => resolve(url);
-      img.onerror = () => {
-        console.warn(`Failed to load: ${url}`);
-        resolve(url); // Continue even if some images fail
-      };
-      img.src = url;
-    });
+  // Bump up preload capacity: preload ALL images, CSS, JS, and audio assets for welcome page
+  const allAssets = [
+    ...urls,
+    '/Study-Flow-Manager/performance-build/assets/css/welcome.css',
+    '/Study-Flow-Manager/performance-build/assets/js/welcome.js',
+    '/Study-Flow-Manager/performance-build/assets/audio/click.mp3',
+    '/Study-Flow-Manager/performance-build/assets/audio/splash.mp3',
+    // Add all images from ALL_BACKGROUND_IMAGES
+    ...ALL_BACKGROUND_IMAGES.map(img => '/Study-Flow-Manager/' + img),
+    '/Study-Flow-Manager/performance-build/assets/images/welcome-page.png'
+  ];
+  return Promise.all(allAssets.map(url => {
+    if (/\.(webp|png|jpg|jpeg|gif|avif|svg)$/i.test(url)) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(url);
+        img.onerror = () => {
+          console.warn(`Failed to load: ${url}`);
+          resolve(url);
+        };
+        img.src = url;
+      });
+    } else if (/\.(css)$/i.test(url)) {
+      return fetch(url, {cache: 'force-cache'}).then(r => r.ok ? url : Promise.resolve(url));
+    } else if (/\.(js)$/i.test(url)) {
+      return fetch(url, {cache: 'force-cache'}).then(r => r.ok ? url : Promise.resolve(url));
+    } else if (/\.(mp3|wav|ogg)$/i.test(url)) {
+      return fetch(url, {cache: 'force-cache'}).then(r => r.ok ? url : Promise.resolve(url));
+    } else {
+      return Promise.resolve(url);
+    }
   }));
 }
 
@@ -360,7 +381,7 @@ function continueToApp() {
   if (preloadState.totalProgress === 100) {
     playSound('click');
     console.log('🎯 Navigating to timer with fully preloaded resources');
-    window.location.href = 'performance-build/timer.html';
+    window.location.href = '/Study-Flow-Manager/performance-build/assets/pages/timer.html';
   } else {
     console.log(`⏳ Still preloading... ${preloadState.totalProgress}% complete`);
   }
@@ -368,12 +389,12 @@ function continueToApp() {
 
 function goToTimer() {
   playSound('click');
-  window.location.href = 'performance-build/timer.html';
+  window.location.href = '/Study-Flow-Manager/performance-build/assets/pages/timer.html';
 }
 
 function goToCalendar() {
   playSound('click');
-  window.location.href = 'performance-build/calendar.html';
+  window.location.href = '/Study-Flow-Manager/performance-build/assets/pages/calendar.html';
 }
 
 function goToWelcome() {
@@ -389,8 +410,8 @@ function goToWelcome() {
 function playSound(soundName) {
   try {
     const soundMap = {
-      'click': 'performance-build/assets/audio/click.mp3',
-      'splash': 'performance-build/assets/audio/splash.mp3'
+      'click': '/Study-Flow-Manager/performance-build/assets/audio/click.mp3',
+      'splash': '/Study-Flow-Manager/performance-build/assets/audio/splash.mp3'
     };
     
     if (soundMap[soundName]) {
