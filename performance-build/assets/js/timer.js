@@ -281,9 +281,10 @@ async function loadSettings() {
   if (docRef) {
     try {
       const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
+        if (docSnap.exists()) {
         const loadedSettings = docSnap.data();
-        appSettings = { ...appSettings, ...loadedSettings };
+        // Preserve object identity so window.appSettings references remain valid
+        Object.assign(appSettings, loadedSettings);
         console.log('Settings loaded from Firestore:', appSettings);
       } else {
         console.log('No existing settings found in Firestore. Using defaults.');
@@ -1085,9 +1086,21 @@ document.getElementById('sessions-before-long-break').addEventListener('change',
 });
 
 document.getElementById('sleep-timeout').addEventListener('change', (e) => {
-  // Stage new value — do not apply until the user clicks Save
-  pendingSettings.sleepTimeout = parseInt(e.target.value);
+  // Stage new value for persistence
+  const seconds = parseInt(e.target.value);
+  pendingSettings.sleepTimeout = seconds;
   console.log('⚙️ Pending sleep timeout set to', pendingSettings.sleepTimeout, 'seconds');
+
+  // Apply immediately so SleepModeManager sees the new timeout without Save
+  try {
+    appSettings.sleepTimeout = seconds;
+    if (window.sleepManager && typeof window.sleepManager.updateSleepTimeout === 'function') {
+      window.sleepManager.updateSleepTimeout();
+      console.log('💤 Sleep timeout applied immediately:', seconds, 'seconds');
+    }
+  } catch (e) {
+    console.warn('Failed to apply sleep timeout immediately', e);
+  }
 });
 
 // Toggle for disabling ticking glow (staged until Save)
