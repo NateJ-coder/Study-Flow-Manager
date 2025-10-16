@@ -184,15 +184,24 @@ async function initializeFirebase() {
         console.error("Critical error during Firebase operations. App will run without persistence:", error);
   } finally {
     // --- GUARANTEE UNLOCK ---
-    // If authentication failed, use a temporary ID so the app still runs.
     if (!userId) {
       userId = crypto.randomUUID(); 
     }
     isAuthReady = true;
-    loadSettings(); // This runs and applies settings (defaults if no persistence)
-    // NOTE: Do NOT hide the loading overlay here — the inline DOMContentLoaded
-    // handler in timer.html handles the first paint fade. showAppWhenReady()
-    // will also remove the overlay after the first bg image has loaded.
+    try {
+      // loadSettings may be async; wait for it so appSettings are applied before showing
+      await loadSettings();
+    } catch (e) { console.warn('loadSettings failed in finally:', e); }
+
+    // Wait until first background image is ready (or timeout) before revealing UI
+    try {
+      if (typeof showAppWhenReady === 'function') {
+        await showAppWhenReady();
+      }
+    } catch (e) { console.warn('showAppWhenReady failed in finally:', e); }
+
+    // Signal that it's safe to start non-critical animations (particles, etc.)
+    try { window.dispatchEvent(new Event('studyflow:readyToAnimate')); } catch (e) {}
   }
 }
 
@@ -271,14 +280,18 @@ function applySettings() {
   updateSessionUI();
   updateDisplay();
 
-  // Start the particle system after first paint/idle so it doesn't compete with LCP
+  // Defer particle startup until after the app is shown to avoid extra paints during first-second
   try {
-    const schedule = (window.requestIdleCallback || function (fn) { return setTimeout(fn, 100); });
-    schedule(() => {
-      if (window.ParticleSystem && typeof window.ParticleSystem.start === 'function') {
-        window.ParticleSystem.start();
-      }
-    });
+    const startParticles = () => {
+      try {
+        if (window.ParticleSystem && typeof window.ParticleSystem.start === 'function') {
+          window.ParticleSystem.start();
+        }
+      } catch (e) {}
+    };
+    // Start immediately if the ready event already fired, otherwise wait for it
+    if (window._appReadyShown) startParticles();
+    else window.addEventListener('studyflow:readyToAnimate', startParticles, { once: true });
   } catch (e) { /* non-blocking */ }
 
   // Notify sleep manager (if available) so it can pick up the new sleepTimeout value

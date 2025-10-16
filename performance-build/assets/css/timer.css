@@ -110,6 +110,15 @@ body {
   font-size: 1.1rem;
 }
 
+/* Stabilize clock layout to avoid CLS from shifting digits */
+#perpetual-clock {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  width: 9ch;
+  text-align: right;
+}
+
 /* Main Timer Card */
 .container {
   padding: 2rem 1rem;
@@ -119,13 +128,16 @@ body {
 
 .timer-card {
   background: var(--card-bg);
-  backdrop-filter: blur(10px);
+  backdrop-filter: none; /* applied later when the page is stable */
   border-radius: 16px;
   padding: 2.5rem;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
   position: relative;
   text-align: center;
 }
+
+/* Apply blur after the page is stable to reduce initial paint cost */
+body.ready .timer-card { backdrop-filter: blur(10px); }
 
 /* Utility Icons */
 .card-icon {

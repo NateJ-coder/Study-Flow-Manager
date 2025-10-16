@@ -58,7 +58,7 @@
 
   <!-- Background Layer -->
   <div id="bg-container">
-    <img id="background-image" src="" alt="Dynamic StudyFlow Background" decoding="async" />
+    <img id="background-image" src="" alt="Dynamic StudyFlow Background" decoding="async" fetchpriority="high" />
   </div>
   
   <!-- Particle Layer -->
@@ -203,16 +203,7 @@
   <!-- Sleep Mode System (quotes will be loaded dynamically by sleep.js when sleep starts) -->
   <script src="/Study-Flow-Manager/performance-build/assets/js/sleep.js?v=2025101401"></script>
   
-  <!-- Fade loading overlay quickly on DOMContentLoaded so first paint is not blocked -->
-  <script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const o = document.getElementById('loading-overlay');
-    if (!o) return;
-    o.style.transition = 'opacity .35s ease';
-    o.style.opacity = '0';
-    setTimeout(() => (o.style.display = 'none'), 400);
-  });
-  </script>
+  <!-- Overlay fade is handled by showAppWhenReady() in timer.js to avoid racing with BG load -->
 
   <!-- Firebase and Core Logic -->
   <script type="module" src="/Study-Flow-Manager/performance-build/assets/js/timer.js?v=2025101401"></script>
