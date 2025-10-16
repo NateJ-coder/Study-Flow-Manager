@@ -24,6 +24,13 @@
     </div>
   </header>
 
+  <!-- Seasonal Ribbon -->
+  <div id="seasonalRibbon" hidden aria-live="polite">
+    <span id="seasonalEmoji">🌸</span>
+    <span id="seasonalText">Welcome — seasonal focus tips.</span>
+    <button id="seasonalClose" aria-label="Dismiss">✕</button>
+  </div>
+
   <main class="sf-wrap">
     <!-- Utility row -->
     <div class="sf-util">
@@ -234,5 +241,13 @@
       else setTimeout(loadParticle, 1500);
     })();
   </script>
+    <!-- Seasonal Particles Layer -->
+    <div id="seasonalParticles" aria-hidden="true"></div>
+
+    <!-- Toasts -->
+    <div id="toasts" aria-live="polite" aria-atomic="true"></div>
+
+    <!-- Season Switcher (dev/test) -->
+    <button id="seasonSwitcher" class="sf-btn sf-btn--ghost" title="Preview seasons" style="position:fixed; left:10px; bottom:10px; z-index:40">⚙️</button>
 </body>
 </html>

@@ -330,6 +330,18 @@ body.ready .sf-calendar .sf-card { backdrop-filter: blur(10px); }
   @keyframes breathe { 50% { transform: scale(1.15); opacity:.8; } }
 }
 
+/* Seasonal Particles */
+#seasonalParticles{ position:fixed; inset:0; pointer-events:none; z-index:10; contain:layout paint style; }
+.particle{ position:absolute; will-change:transform,opacity; font-size:clamp(12px,2vw,22px); opacity:.85; filter:drop-shadow(0 2px 2px rgba(0,0,0,.15)); }
+@media (prefers-reduced-motion: reduce){ #seasonalParticles{ display:none !important } }
+
+/* Toasts */
+#toasts{ position:fixed; right:12px; bottom:12px; z-index:50; display:grid; gap:8px; width:min(320px,90vw); }
+.toast{ background: color-mix(in oklab, var(--sf-surface-2), black 6%); color:var(--sf-text); border:1px solid var(--sf-border); padding:10px 12px; border-radius:12px; box-shadow:0 8px 20px rgba(0,0,0,.14); transform:translateY(8px); opacity:0; transition:transform .25s ease, opacity .25s ease; }
+.toast.show{ transform:translateY(0); opacity:1; }
+.toast.ok{ border-color: color-mix(in oklab, #22c55e, black 20%) }
+.toast.warn{ border-color: color-mix(in oklab, #f59e0b, black 20%) }
+.toast.err{ border-color: color-mix(in oklab, #ef4444, black 20%) }
 .sf-day .ev-dot{ width:6px; height:6px; border-radius:50%; background:hsl(var(--accent)); display:inline-block; margin:2px 2px 0 0; opacity:.8; }
 .sf-day .ev-dot.is-all-day{ background:hsl(var(--accent-2)); }
 
@@ -343,4 +355,21 @@ body.ready #background-image{ transition: transform .2s ease; will-change: trans
 }
 .sf-calendar .sf-btn:hover { filter: brightness(1.05); }
 .sf-calendar input::placeholder { color: color-mix(in oklab, var(--sf-muted), white 10%); }
+
+  /* Seasonal Ribbon */
+  #seasonalRibbon{
+    --rib-bg: color-mix(in oklab, var(--sf-accent), black 10%);
+    --rib-fg: var(--sf-text);
+    position: sticky; top: 0; z-index: 30; display:flex; align-items:center; gap:.6rem;
+    padding:.6rem .9rem; background:var(--rib-bg); color:var(--rib-fg);
+    border-bottom:1px solid color-mix(in oklab, var(--sf-accent), black 25%);
+    box-shadow: 0 3px 12px color-mix(in oklab, black, transparent 92%);
+    opacity:0; transform:translateY(-6px); transition: opacity .35s ease, transform .35s ease;
+  }
+  #seasonalRibbon[aria-live="polite"]{ opacity:1; transform:translateY(0); }
+  #seasonalRibbon #seasonalEmoji{ font-size:1.1rem }
+  #seasonalRibbon #seasonalText{ font-weight:600; letter-spacing:.2px }
+  #seasonalRibbon #seasonalClose{ margin-left:auto; background:transparent; border:0; color:inherit; font-size:1rem; opacity:.85; cursor:pointer }
+  #seasonalRibbon #seasonalClose:hover{ opacity:1 }
+  @media (prefers-reduced-motion: reduce){ #seasonalRibbon{ transition:none } }
 

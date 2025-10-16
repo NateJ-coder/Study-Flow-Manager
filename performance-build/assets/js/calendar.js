@@ -200,6 +200,29 @@ function render() {
   requestAnimationFrame(() => { tbody.innerHTML = html; });
 }
 
+// --- Seasonal Ribbon (Southern Hemisphere seasons) ---
+(function seasonalRibbon(){
+  try {
+    const el = document.getElementById('seasonalRibbon');
+    if (!el) return;
+    function pickSeasonalMessage(){
+      const m = new Date().getMonth();
+      if (m===11 || m<=1) return { emoji:'☀️', text:'Summer vibes! Light days, light workload.' };
+      if (m>=2 && m<=4) return { emoji:'🍂', text:'Autumn focus—tidy schedules, tidy mind.' };
+      if (m>=5 && m<=7) return { emoji:'❄️', text:'Winter calm—perfect time to plan ahead.' };
+      return { emoji:'🌸', text:'Spring refresh—clear out old tasks!' };
+    }
+    const msg = pickSeasonalMessage();
+    el.querySelector('#seasonalEmoji').textContent = msg.emoji;
+    el.querySelector('#seasonalText').textContent = msg.text;
+
+    // show after first render-frame to keep TTI smooth
+    requestAnimationFrame(() => { el.hidden = false; el.setAttribute('aria-live','polite'); });
+
+    el.querySelector('#seasonalClose')?.addEventListener('click', () => el.remove());
+  } catch (e) { /* non-blocking */ }
+})();
+
 // ---- ACTIONS ----
 async function createFromForm(e) {
   e.preventDefault();
@@ -775,3 +798,44 @@ document.addEventListener("DOMContentLoaded", () => {
     filterInput.addEventListener('input', apply, { passive: true });
   }
 });
+
+// --- Seasonal Particles (low-cost DOM version) ---
+(function seasonalParticles(){
+  try{
+    const root = document.getElementById('seasonalParticles'); if (!root) return;
+    const month = new Date().getMonth();
+    const palette = month===11||month<=1 ? ['☀️','✨','🌞']
+                  : month>=2 && month<=4 ? ['🍂','🍁','🌾']
+                  : month>=5 && month<=7 ? ['❄️','❅','☃️']
+                  : /* spring */           ['🌸','🌼','🦋'];
+
+    const MAX = 16; const nodes = []; let raf = null; let stopped = false;
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    for (let i=0;i<MAX;i++){
+      const n = document.createElement('span'); n.className='particle';
+      n.textContent = palette[(Math.random()*palette.length)|0];
+      n.style.left = (Math.random()*100)+'vw'; n.style.top = (Math.random()*-15)+'vh';
+      n._vx = (Math.random()-.5)*0.05; n._vy = (0.02 + Math.random()*0.08); n._rot = (Math.random()-.5)*0.02; n._a = 0.6 + Math.random()*0.4;
+      root.appendChild(n); nodes.push(n);
+    }
+
+    function tick(){ if (stopped) return; const W=innerWidth,H=innerHeight; for(const n of nodes){ const r=n.getBoundingClientRect(); let x=r.left,y=r.top; x += n._vx*W; y += n._vy*H*0.016; if (y>H+20){ x = Math.random()*W; y = -20; } const rot = (parseFloat(n._rotAngle||0)+n._rot); n._rotAngle = rot; n.style.transform = `translate(${x}px, ${y}px) rotate(${rot}turn)`; n.style.opacity = n._a.toFixed(2); } raf = requestAnimationFrame(tick); }
+
+    const vis = ()=>{ if (document.hidden){ stopped=true; if(raf) cancelAnimationFrame(raf); } else { if (stopped){ stopped=false; raf=requestAnimationFrame(tick); } } };
+    document.addEventListener('visibilitychange', vis, {passive:true}); raf = requestAnimationFrame(tick);
+    setTimeout(()=>{ stopped=true; if(raf) cancelAnimationFrame(raf); root.remove(); }, 25000);
+  }catch(e){}
+})();
+
+// --- Toast helper ---
+function toast(msg, kind='ok', ms=2600){ try{ const host=document.getElementById('toasts'); if(!host) return; const t=document.createElement('div'); t.className=`toast ${kind}`; t.textContent=msg; host.appendChild(t); requestAnimationFrame(()=>t.classList.add('show')); setTimeout(()=>{ t.classList.remove('show'); setTimeout(()=>t.remove(),250); }, ms); }catch(e){} }
+
+// --- Micro confetti burst (DOM, 2 seconds) ---
+function microConfetti(){ try{ const layer=document.createElement('div'); layer.style.position='fixed'; layer.style.inset='0'; layer.style.pointerEvents='none'; layer.style.zIndex='60'; document.body.appendChild(layer); const COLORS=['#F87171','#60A5FA','#34D399','#FBBF24','#A78BFA','#F472B6']; const N=60; for(let i=0;i<N;i++){ const s=document.createElement('i'); s.style.position='absolute'; s.style.left=(Math.random()*100)+'vw'; s.style.top='-2vh'; s.style.width=s.style.height=(6+Math.random()*6)+'px'; s.style.background=COLORS[(Math.random()*COLORS.length)|0]; s.style.opacity='0.9'; s.style.willChange='transform'; layer.appendChild(s); const dx=(Math.random()-.5)*40; const dy=100+Math.random()*40; const rot=200+Math.random()*360; const dur=1200+Math.random()*800; const start=performance.now(); (function anim(t0){ const p=Math.min(1,(t0-start)/dur); const ease=p*p*(3-2*p); const x=dx*ease,y=dy*ease; s.style.transform=`translate(${x}px, ${y}vh) rotate(${rot*ease}deg)`; s.style.opacity=String(0.9*(1-p)); if(p<1) requestAnimationFrame(anim); else s.remove(); })(start); } setTimeout(()=>layer.remove(),2200); }catch(e){} }
+
+// Holiday auto-trigger
+(function holidayConfetti(){ try{ const d=new Date(); const md=`${d.getMonth()+1}-${d.getDate()}`; if (['1-1','12-25'].includes(md)) setTimeout(microConfetti, 600); }catch(e){} })();
+
+// --- Season switcher (dev/test) ---
+(function seasonPreview(){ try{ const btn=document.getElementById('seasonSwitcher'); if(!btn) return; btn.addEventListener('click', ()=>{ const host=document.getElementById('seasonalParticles'); if(!host) return; const sets=[['☀️','✨','🌞'],['🍂','🍁','🌾'],['❄️','❅','☃️'],['🌸','🌼','🦋']]; const idx=Number(host.dataset.idx||'0'); const next=(idx+1)%sets.length; host.dataset.idx=String(next); host.querySelectorAll('.particle').forEach(p=>{ p.textContent = sets[next][Math.floor(Math.random()*sets[next].length)]; }); toast('Season preview changed','ok',1600); }); }catch(e){} })();
