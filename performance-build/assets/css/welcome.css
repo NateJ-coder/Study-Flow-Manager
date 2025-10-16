@@ -167,3 +167,24 @@ body {
 #timer-screen, #calendar-screen { content-visibility: auto; contain-intrinsic-size: 800px 600px; }
 
 /* Duplicate responsive block removed - using corrected version above */
+
+/* Soft pan for background to give a subtle sense of motion */
+@keyframes soft-pan {
+  0%   { background-position: 50% 50%; }
+  50%  { background-position: 55% 45%; }
+  100% { background-position: 50% 50%; }
+}
+
+/* Fade-in-up for main content */
+@keyframes fade-in-up {
+  0% { opacity: 0; transform: translateY(20px) scale(0.98); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+#background-container { animation: soft-pan 60s ease-in-out infinite alternate; transition: opacity 1000ms ease-in-out, filter 1000ms ease-in-out; }
+#content-container { animation: fade-in-up 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; opacity: 0; }
+#timer-screen, #calendar-screen { animation: none !important; }
+
+/* Ready button styles: add a pseudo-element checkmark when ready */
+.ready-with-check { position: relative; padding-right: 3.5rem; }
+.ready-with-check::after { content: '✅'; position: absolute; right: 1.5rem; top: 50%; transform: translateY(-50%); font-size: 1.25rem; line-height: 1; }

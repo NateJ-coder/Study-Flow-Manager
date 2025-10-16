@@ -209,13 +209,13 @@ function updateLoadingProgress() {
   const total = Object.keys(loadingState).length;
   const percentage = Math.round((completed / total) * 100);
   
-  // Update the continue button text to show progress
+  // Update the continue button text to show progress (minimal text)
   const continueBtn = document.getElementById('continue-button');
   if (continueBtn && !isLoaded) {
     continueBtn.innerHTML = `
       <div class="flex items-center justify-center">
-        <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-        Loading Critical Assets... ${percentage}%
+        <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2" aria-hidden="true"></div>
+        Loading... ${percentage}%
       </div>
     `;
   }
@@ -225,10 +225,9 @@ function updateLoadingProgress() {
 function enableContinueButton() {
   const continueBtn = document.getElementById('continue-button');
   if (!continueBtn) return;
-
+  // Set clean final text (icon provided by CSS pseudo-element)
   continueBtn.innerHTML = `
     <div class="flex items-center justify-center">
-      <span class="mr-2">✅</span>
       Continue to Focus
     </div>
   `;
@@ -237,10 +236,11 @@ function enableContinueButton() {
   continueBtn.classList.add('hover-bg-amber-500', 'active-scale-98', 'hover-scale-102', 'cursor-pointer');
   // Announce readiness to assistive tech
   try { continueBtn.setAttribute('aria-busy', 'false'); } catch (e) { /* ignore */ }
-  
-  // Remove any spinning animation and add a subtle ready pulse
+
+  // Add a subtle slow pulse and a CSS-provided checkmark using a pseudo-element
   setTimeout(() => {
-    continueBtn.classList.add('animate-pulse');
+    continueBtn.classList.add('animate-pulse-slow');
+    continueBtn.classList.add('ready-with-check');
   }, 200);
 }
 
