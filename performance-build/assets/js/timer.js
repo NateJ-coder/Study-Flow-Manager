@@ -155,8 +155,47 @@ async function initializeFirebase() {
           overlay.style.opacity = '0';
           setTimeout(() => { try { overlay.remove(); } catch(e){} }, 260);
         }
+        // Mark the document as ready so CSS can enable post-load effects (blur, etc.)
+        try {
+          document.body.classList.add('ready');
+          // Give the browser a frame to paint the ready state before starting
+          // non-critical animations (particles). This prevents jank on first paint.
+          requestAnimationFrame(() => {
+            try { window.dispatchEvent(new Event('studyflow:readyToAnimate')); } catch (e) {}
+          });
+        } catch (e) { /* non-blocking */ }
       } catch (e) { console.warn('showAppWhenReady failed', e); }
     };
+
+  // Particle autostart bootstrap — listens for the single ready event and starts
+  // particles safely, honoring prefers-reduced-motion and ensuring it only runs once.
+  (function initParticleAutostart() {
+    let started = false;
+    const startParticles = () => {
+      if (started) return;
+      started = true;
+
+      // Respect reduced motion preference
+      try {
+        if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          return; // do not start particles
+        }
+      } catch (e) { /* ignore */ }
+
+      try {
+        if (window.ParticleSystem && typeof window.ParticleSystem.start === 'function') {
+          window.ParticleSystem.start();
+        }
+      } catch (e) { /* non-blocking */ }
+    };
+
+    // If app already ready, start immediately; otherwise wait for event
+    if (window._appReadyShown) {
+      startParticles();
+    } else {
+      window.addEventListener('studyflow:readyToAnimate', startParticles, { once: true });
+    }
+  })();
 
     try {
         // Dynamic imports to prevent blocking if Firebase CDN is slow
