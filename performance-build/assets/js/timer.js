@@ -846,6 +846,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+// Pending settings buffer — changes are staged here until the user clicks Save
+let pendingSettings = {};
+
 document.getElementById('focus-duration').addEventListener('change', (e) => {
     appSettings.focusDuration = parseInt(e.target.value);
     saveSettings();
@@ -892,17 +895,35 @@ document.getElementById('sessions-before-long-break').addEventListener('change',
 });
 
 document.getElementById('sleep-timeout').addEventListener('change', (e) => {
-    appSettings.sleepTimeout = parseInt(e.target.value);
-    saveSettings();
-    
-    // Update sleep manager if it exists
-    if (window.sleepManager) {
-        window.sleepManager.updateSleepTimeout();
-    }
-    
-    const timeoutText = appSettings.sleepTimeout === 0 ? 'disabled' : `${appSettings.sleepTimeout} seconds`;
-    console.log(`💤 Sleep mode timeout updated to: ${timeoutText}`);
+  // Stage new value — do not apply until the user clicks Save
+  pendingSettings.sleepTimeout = parseInt(e.target.value);
+  console.log('⚙️ Pending sleep timeout set to', pendingSettings.sleepTimeout, 'seconds');
 });
+
+// Settings Save button applies all pending changes and notifies subsystems
+const settingsSaveBtn = document.getElementById('settingsSaveBtn');
+if (settingsSaveBtn) {
+  settingsSaveBtn.addEventListener('click', () => {
+    // Merge pending settings into appSettings
+    Object.assign(appSettings, pendingSettings);
+
+    // Apply to UI/subsystems
+    try {
+      applySettings();
+    } catch (e) {
+      console.warn('applySettings failed during Save:', e);
+    }
+
+    // Persist settings
+    saveSettings();
+
+    // Clear pending buffer
+    pendingSettings = {};
+
+    const timeoutText = appSettings.sleepTimeout === 0 ? 'disabled' : `${appSettings.sleepTimeout} seconds`;
+    console.log(`💤 Settings saved. Sleep mode timeout is now: ${timeoutText}`);
+  });
+}
 
 
 // --- INITIALIZATION ---

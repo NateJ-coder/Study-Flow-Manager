@@ -379,6 +379,30 @@ body {
 
 .settings-close-btn:hover { opacity: 0.8; }
 
+/* Save button styling — more prominent and consistent */
+.settings-save-btn {
+  margin-top: 1.5rem;
+  background: linear-gradient(90deg, #64ffda, #4bd3b0);
+  color: #071019;
+  padding: 0.6rem 1.1rem;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 700;
+  box-shadow: 0 6px 18px rgba(75, 211, 176, 0.18), inset 0 1px 0 rgba(255,255,255,0.35);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.12s;
+  margin-right: 0.5rem;
+}
+.settings-save-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 26px rgba(75, 211, 176, 0.22);
+}
+.settings-save-btn:active {
+  transform: translateY(0px);
+  box-shadow: 0 4px 12px rgba(75, 211, 176, 0.16);
+}
+
+
 /* Responsive Mobile Adaptations */
 @media (max-width: 768px) {
   :root {
