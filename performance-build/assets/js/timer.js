@@ -877,11 +877,16 @@ function startTimer() {
     clearInterval(timerInterval);
     isRunning = false;
     updateStartButton('Resume');
+    // Remove ticking visual when paused
+    try { setTickingClass(false); } catch(e){}
   } else {
     // Start/Resume timer
     isRunning = true;
     updateStartButton('Pause');
     document.getElementById('resetButton').disabled = false;
+
+    // Apply ticking visual when running
+    try { setTickingClass(true); } catch(e){}
 
     timerInterval = setInterval(() => {
       totalSeconds--;
@@ -933,6 +938,15 @@ function resetTimer() {
   
   updateSessionUI();
   updateDisplay();
+}
+
+// Small helper to toggle visual ticking state on the main card
+function setTickingClass(enabled) {
+  try {
+    const card = document.querySelector('.timer-card');
+    if (!card) return;
+    card.classList.toggle('is-ticking', !!enabled);
+  } catch (e) { /* non-blocking */ }
 }
 
 

@@ -128,16 +128,35 @@ body {
 
 .timer-card {
   background: var(--card-bg);
+  /* glassmorphism: apply a subtle frosted glass effect after initial paint */
   backdrop-filter: none; /* applied later when the page is stable */
+  -webkit-backdrop-filter: none; /* Safari prefix; applied later */
   border-radius: 16px;
   padding: 2.5rem;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
   position: relative;
   text-align: center;
+  border: 1px solid rgba(255,255,255,0.04); /* very subtle border to separate from bg */
 }
 
 /* Apply blur after the page is stable to reduce initial paint cost */
-body.ready .timer-card { backdrop-filter: blur(10px); }
+/* Apply blur (standard + vendor prefixed) once the page is ready */
+body.ready .timer-card {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* Ticking state - breathing glow that uses the accent color */
+.timer-card.is-ticking {
+  box-shadow: 0 10px 40px rgba(0,0,0,0.55), 0 0 18px rgba(100,255,218,0.12);
+  animation: ticking-glow 1.8s ease-in-out infinite;
+}
+
+@keyframes ticking-glow {
+  0% { box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 6px rgba(100,255,218,0.06); }
+  50% { box-shadow: 0 12px 46px rgba(0,0,0,0.6), 0 0 22px rgba(100,255,218,0.18); }
+  100% { box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 6px rgba(100,255,218,0.06); }
+}
 
 /* Utility Icons */
 .card-icon {
