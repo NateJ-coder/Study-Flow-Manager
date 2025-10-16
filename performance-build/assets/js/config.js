@@ -59,7 +59,7 @@
       BASE + '/images/winter-day-5.png'
     ],
     INTEGRATIONS: {
-      GAS_CALENDAR_URL: 'https://script.google.com/macros/s/AKfycbwWMAjA6YoMLp2-uQcbg4TQJItQtdpzCTtPle7Itg4cA4DhXSxdfO5ORFcBE1dgch_cIg/exec',
+      GAS_CALENDAR_URL: 'https://script.google.com/macros/s/AKfycbwDnClA4AKpSc_G_SVA0rVVZnfPpukMGFuLIDPBEGFkqoqpiLrpIJaK3E4i0FZKIkyWAA/exec',
       GAS_SHARED_KEY:  '8bd4cad053faee35a6e87af44d78622122fd8bce954c91c20e7412f56947558c1d0d2de4e2f6f83e883194db9012b2c1'
     }
   };
