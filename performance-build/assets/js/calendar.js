@@ -10,22 +10,89 @@ try {
 
 // ---- STORAGE (local list so the page is instant, even offline) ----
 const STORE_KEY = "sf_events_v1";
+// store wrapper: prefers SF_LOCAL API when available, falls back to localStorage shape used by the page
 const store = {
-  all() { try { return JSON.parse(localStorage.getItem(STORE_KEY)) || []; } catch { return []; } },
-  save(list) { localStorage.setItem(STORE_KEY, JSON.stringify(list)); },
+  all() {
+    try {
+      if (window.SF_LOCAL?.list) {
+        return window.SF_LOCAL.list().map(e => {
+          const startISO = e.startISO || '';
+          const endISO = e.endISO || '';
+          const date = startISO.slice(0,10) || (endISO.slice(0,10) || '');
+          const startTime = startISO ? startISO.slice(11,16) : '';
+          const endTime = endISO ? endISO.slice(11,16) : '';
+          return {
+            local_id: e.id,
+            event_id: e.event_id || null,
+            title: e.title,
+            date,
+            startTime,
+            endTime,
+            all_day: !!e.allDay || !!e.all_day,
+            reminders: e.reminders || []
+          };
+        });
+      }
+      return JSON.parse(localStorage.getItem(STORE_KEY)) || [];
+    } catch { return []; }
+  },
+  save(list) {
+    if (window.SF_LOCAL?.upsert) {
+      // Persist each item into SF_LOCAL (best-effort)
+      list.forEach(item => {
+        try {
+          const evt = {
+            id: item.local_id,
+            title: item.title,
+            startISO: item.date ? (item.startTime ? `${item.date}T${item.startTime}:00${tzOffset()}` : `${item.date}T00:00:00${tzOffset()}`) : undefined,
+            endISO: item.date ? (item.endTime ? `${item.date}T${item.endTime}:00${tzOffset()}` : `${item.date}T23:59:00${tzOffset()}`) : undefined,
+            allDay: !!item.all_day,
+            reminders: item.reminders || [],
+            notes: ''
+          };
+          window.SF_LOCAL.upsert(evt);
+        } catch (e) { /* ignore individual failures */ }
+      });
+      return;
+    }
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(list)); } catch (e) {}
+  },
   upsert(evt) {
+    if (window.SF_LOCAL?.upsert) {
+      const mapped = {
+        id: evt.local_id || undefined,
+        title: evt.title,
+        startISO: evt.date ? (evt.startTime ? `${evt.date}T${evt.startTime}:00${tzOffset()}` : `${evt.date}T00:00:00${tzOffset()}`) : undefined,
+        endISO: evt.date ? (evt.endTime ? `${evt.date}T${evt.endTime}:00${tzOffset()}` : `${evt.date}T23:59:00${tzOffset()}`) : undefined,
+        allDay: !!evt.all_day,
+        reminders: evt.reminders || [],
+        notes: ''
+      };
+      const id = window.SF_LOCAL.upsert(mapped);
+      evt.local_id = id || evt.local_id;
+      return;
+    }
     const list = store.all();
     const i = list.findIndex(x => x.local_id === evt.local_id);
     if (i === -1) list.unshift(evt); else list[i] = evt;
     store.save(list);
   },
   remove(local_id) {
+    if (window.SF_LOCAL?.remove) {
+      try { return window.SF_LOCAL.remove(local_id); } catch (e) { /* ignore */ }
+      return;
+    }
     store.save(store.all().filter(x => x.local_id !== local_id));
   }
 };
 
 // ---- UTIL ----
 const $ = sel => document.querySelector(sel);
+// schedule work during idle time when possible to keep first paint fast
+const scheduleIdle = (fn, opts) => {
+  if (typeof window.requestIdleCallback === 'function') return window.requestIdleCallback(fn, opts);
+  return setTimeout(fn, opts && opts.timeout ? opts.timeout : 200);
+};
 const tzOffset = () => {
   const d = new Date(); const off = -d.getTimezoneOffset(); // minutes east
   const sign = off >= 0 ? "+" : "-";
@@ -106,7 +173,9 @@ function render() {
       </td>
     </tr>`;
   }).join("");
-  tbody.innerHTML = rows || `<tr><td colspan="5" class="muted">No reminders yet.</td></tr>`;
+  const html = rows || `<tr><td colspan="5" class="muted">No reminders yet.</td></tr>`;
+  // batch DOM update to next paint
+  requestAnimationFrame(() => { tbody.innerHTML = html; });
 }
 
 // ---- ACTIONS ----
@@ -151,20 +220,9 @@ async function createFromForm(e) {
   const modal = document.getElementById('reminderModal');
   if (modal) modal.hidden = true;
 
-  // Try to sync in background; if it fails, keep the item local and notify the user
-  (async () => {
-    try {
-      const r = await gasPost(payload);
-      if (r && r.event_id) {
-        local.event_id = r.event_id;
-        store.upsert(local);
-        render();
-      }
-    } catch (err) {
-      console.warn('Background sync failed:', err);
-      try { alert('Saved locally. Google sync failed (you can retry from Edit).'); } catch(e){}
-    }
-  })();
+  // Local-first: if SF_LOCAL is present we keep reminders local-only.
+  // If GAS is configured, leave optional background sync logic commented out for now.
+  // (Background sync removed to make calendar fully local-first)
 }
 
 function onTableClick(e) {
@@ -185,14 +243,7 @@ function onTableClick(e) {
 async function deleteEvent(evt) {
   store.remove(evt.local_id); render();
 
-  if (evt.event_id) {
-    try {
-      await gasPost({ action: "delete", event_id: evt.event_id });
-    } catch (err) {
-      alert("Delete failed on Google; restoring locally.");
-      store.upsert(evt); render();
-    }
-  }
+  // Remote delete disabled in local-first mode. If you re-enable GAS, implement remote delete here.
 }
 
 async function editPrompt(evt) {
@@ -201,13 +252,7 @@ async function editPrompt(evt) {
   evt.title = newTitle.trim();
   store.upsert(evt); render();
 
-  if (evt.event_id) {
-    try {
-      await gasPost({ action: "update", event_id: evt.event_id, title: evt.title });
-    } catch (err) {
-      alert("Update failed on Google (change kept locally).");
-    }
-  }
+  // Remote update disabled in local-first mode. Change is saved locally.
 }
 
 function downloadICSFromForm() {
@@ -264,7 +309,20 @@ function init() {
   const dl = $("#downloadICS"); if (dl) dl.addEventListener("click", downloadICSFromForm);
 
   render();
-  // pull remote upcoming (non-blocking)
+  // Request notification permission and schedule reminders during idle time
+  try {
+    scheduleIdle(() => {
+      if (window.SF_LOCAL?.ensureNotificationPermission) {
+        window.SF_LOCAL.ensureNotificationPermission().then(() => {
+          if (window.SF_LOCAL?.scheduleDueNotifications) window.SF_LOCAL.scheduleDueNotifications();
+        });
+      }
+      // build month grid (visual heavy) during idle
+      try { buildMonthGrid(); } catch (e) { console.warn('buildMonthGrid failed', e); }
+    }, { timeout: 1000 });
+  } catch (e) { /* ignore */ }
+
+  // pull remote upcoming (non-blocking) — preserved but optional
   if (GAS_URL && GAS_KEY) {
     try { syncUpcoming(); } catch (e) { console.warn('syncUpcoming failed', e); }
   }

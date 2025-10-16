@@ -190,7 +190,6 @@
 
   <script src="/Study-Flow-Manager/performance-build/assets/js/gas-endpoint.js?v=2025-10-16-11" defer></script>
   <script src="/Study-Flow-Manager/performance-build/assets/js/config.js?v=2025-10-16-11" defer></script>
-  <script src="/Study-Flow-Manager/performance-build/assets/js/particle.js" defer></script>
   <script src="/Study-Flow-Manager/performance-build/assets/js/local-reminders.js?v=1" defer></script>
   <script src="/Study-Flow-Manager/performance-build/assets/js/calendar.js" defer></script>
   <script src="/Study-Flow-Manager/performance-build/assets/js/sleep.js" defer></script>
@@ -212,6 +211,18 @@
         }
       });
     });
+  </script>
+  <script>
+    // lazy-load particle effects during idle to avoid blocking LCP
+    (function(){
+      function loadParticle(){
+        const s = document.createElement('script');
+        s.src = '/Study-Flow-Manager/performance-build/assets/js/particle.js';
+        s.defer = true; document.body.appendChild(s);
+      }
+      if ('requestIdleCallback' in window) requestIdleCallback(loadParticle, {timeout:2000});
+      else setTimeout(loadParticle, 1500);
+    })();
   </script>
 </body>
 </html>
