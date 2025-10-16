@@ -56,6 +56,7 @@ const store = {
       return;
     }
     try { localStorage.setItem(STORE_KEY, JSON.stringify(list)); } catch (e) {}
+    invalidateEventsCache();
   },
   upsert(evt) {
     if (window.SF_LOCAL?.upsert) {
@@ -68,21 +69,24 @@ const store = {
         reminders: evt.reminders || [],
         notes: ''
       };
-      const id = window.SF_LOCAL.upsert(mapped);
-      evt.local_id = id || evt.local_id;
+  const id = window.SF_LOCAL.upsert(mapped);
+  evt.local_id = id || evt.local_id;
+  invalidateEventsCache();
       return;
     }
     const list = store.all();
     const i = list.findIndex(x => x.local_id === evt.local_id);
     if (i === -1) list.unshift(evt); else list[i] = evt;
     store.save(list);
+    invalidateEventsCache();
   },
   remove(local_id) {
     if (window.SF_LOCAL?.remove) {
-      try { return window.SF_LOCAL.remove(local_id); } catch (e) { /* ignore */ }
+      try { const r = window.SF_LOCAL.remove(local_id); invalidateEventsCache(); return r; } catch (e) { /* ignore */ }
       return;
     }
     store.save(store.all().filter(x => x.local_id !== local_id));
+    invalidateEventsCache();
   }
 };
 
@@ -100,6 +104,17 @@ const tzOffset = () => {
   const mm = String(Math.abs(off) % 60).padStart(2, "0");
   return `${sign}${hh}:${mm}`;
 };
+
+// ---- FAST EVENTS CACHE ----
+let _eventsCache = null, _eventsCacheAt = 0;
+function eventsCached(ttlMs = 1000) {
+  const now = Date.now();
+  if (_eventsCache && now - _eventsCacheAt < ttlMs) return _eventsCache;
+  _eventsCache = store.all();
+  _eventsCacheAt = now;
+  return _eventsCache;
+}
+function invalidateEventsCache(){ _eventsCache = null; }
 
 // Global delegated submit: never miss "Save reminder"
 document.addEventListener('submit', (e) => {
@@ -152,7 +167,8 @@ async function gasPost(payload) {
 // ---- RENDER ----
 function render() {
   const tbody = $("#eventsTbody");
-  const rows = store.all().map(evt => {
+  const list = eventsCached(); // use cache
+  const rows = list.map(evt => {
     const when = evt.all_day
       ? `${evt.date}`
       : `${evt.date} ${evt.startTime}–${evt.endTime}`;
@@ -162,12 +178,18 @@ function render() {
     const status = evt.event_id
       ? `<span class="tag ok">Synced</span>`
       : `<span class="tag">Local</span>`;
+    const gcal = window.SF_LOCAL?.googleCalendarLink ?
+      `<a class="sf-btn sf-btn--ghost" href="${SF_LOCAL.googleCalendarLink({ id: evt.local_id, title: evt.title, notes: '', allDay: evt.all_day, startISO: evt.date + 'T' + (evt.startTime||'00:00') + ':00' + tzOffset(), endISO: evt.date + 'T' + (evt.endTime||'23:59') + ':00' + tzOffset(), reminders: evt.reminders||[] })}" target="_blank" rel="noopener">GCal</a>` : '';
+
+    const ics = window.SF_LOCAL?.downloadICS ? `<button class="sf-btn sf-btn--ghost js-ics">ICS</button>` : '';
+
     return `<tr data-id="${evt.local_id}">
       <td>${evt.title || "(no title)"}</td>
       <td>${when}</td>
       <td>${reminders}</td>
       <td>${status}</td>
       <td class="right">
+        ${gcal} ${ics}
         <button class="btn secondary js-edit">Edit</button>
         <button class="btn js-delete" style="margin-left:6px;background:#ef4444">Delete</button>
       </td>
@@ -229,7 +251,7 @@ function onTableClick(e) {
   const row = e.target.closest("tr[data-id]");
   if (!row) return;
   const id = row.getAttribute("data-id");
-  const evt = store.all().find(x => x.local_id === id);
+  const evt = eventsCached().find(x => x.local_id === id);
   if (!evt) return;
 
   if (e.target.classList.contains("js-delete")) {
@@ -237,6 +259,18 @@ function onTableClick(e) {
   }
   if (e.target.classList.contains("js-edit")) {
     return editPrompt(evt);
+  }
+  if (e.target.classList.contains('js-ics')) {
+    const evtFull = {
+      id: evt.local_id,
+      title: evt.title,
+      allDay: evt.all_day,
+      startISO: evt.date + 'T' + (evt.startTime||'00:00') + ':00' + tzOffset(),
+      endISO:   evt.date + 'T' + (evt.endTime  ||'23:59') + ':00' + tzOffset(),
+      reminders: evt.reminders || []
+    };
+    try { window.SF_LOCAL?.downloadICS(evtFull); } catch {}
+    return;
   }
 }
 
@@ -465,21 +499,30 @@ function buildMonthGrid(){
     });
   });
 
-  // Render per-day dots from the store (non-blocking)
+  // Render per-day dots from the store during idle to keep TTI snappy
   try {
-    const events = store.all();
-    const byDate = events.reduce((acc, ev) => { (acc[ev.date] = acc[ev.date] || []).push(ev); return acc; }, {});
-    Object.keys(byDate).forEach(date => {
-      const container = document.querySelector(`.day[data-date="${date}"] .ev-dots`);
-      if (!container) return;
-      const items = byDate[date].slice(0,3); // cap dots to 3
-      items.forEach(it => {
-        const dot = document.createElement('span');
-        dot.className = 'ev-dot' + (it.all_day ? ' is-all-day' : '');
-        container.appendChild(dot);
-      });
-    });
+    const dotTask = () => {
+      try {
+        const events = eventsCached();
+        const byDate = events.reduce((acc, ev) => { (acc[ev.date] = acc[ev.date] || []).push(ev); return acc; }, {});
+        for (const date in byDate) {
+          const container = document.querySelector(`.day[data-date="${date}"] .ev-dots`);
+          if (!container) continue;
+          const frag = document.createDocumentFragment();
+          byDate[date].slice(0,3).forEach(it => {
+            const dot = document.createElement('span');
+            dot.className = 'ev-dot' + (it.all_day ? ' is-all-day' : '');
+            frag.appendChild(dot);
+          });
+          container.appendChild(frag);
+        }
+      } catch (e) {}
+    };
+    if (window.requestIdleCallback) requestIdleCallback(dotTask, { timeout: 300 }); else setTimeout(dotTask, 50);
   } catch (e) { /* non-blocking */ }
+
+  // make days focusable for keyboard a11y
+  document.dispatchEvent(new CustomEvent('sf:makeDaysFocusable'));
 }
 
 /* ===== TASKS (per-day) ===== */
@@ -676,5 +719,59 @@ document.addEventListener("DOMContentLoaded", () => {
   if (reminderModal) {
     reminderModal.addEventListener('click', (e) => { if (e.target === reminderModal) reminderModal.hidden = true; });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !reminderModal.hidden) reminderModal.hidden = true; });
+  }
+
+  // --- Today button (jump to today) + keyboard nav + upcoming filter ---
+  const jumpBtn = document.getElementById('jumpToday');
+  function selectDate(iso) {
+    selectedDateISO = iso;
+    document.querySelectorAll('.day[aria-selected="true"]').forEach(el => el.setAttribute('aria-selected','false'));
+    const el = document.querySelector(`.day[data-date="${iso}"]`);
+    if (el) { el.setAttribute('aria-selected','true'); el.focus({preventScroll:true}); el.scrollIntoView({block:'nearest', inline:'nearest'}); }
+  }
+  function jumpToday() {
+    const iso = new Date().toISOString().slice(0,10);
+    const d = new Date(); calState.view.year = d.getFullYear(); calState.view.month = d.getMonth();
+    buildMonthGrid(); selectDate(iso);
+  }
+  jumpBtn?.addEventListener('click', jumpToday);
+
+  document.addEventListener('sf:makeDaysFocusable', () => {
+    document.querySelectorAll('.day').forEach(el => el.setAttribute('tabindex','0'));
+    selectDate(selectedDateISO || new Date().toISOString().slice(0,10));
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (document.getElementById('reminderModal')?.hidden === false) return;
+    const navKeys = ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Enter','t','T'];
+    if (!navKeys.includes(e.key)) return;
+    e.preventDefault();
+    const current = selectedDateISO ? new Date(selectedDateISO) : new Date();
+    if (e.key === 'ArrowLeft') current.setDate(current.getDate()-1);
+    if (e.key === 'ArrowRight') current.setDate(current.getDate()+1);
+    if (e.key === 'ArrowUp') current.setDate(current.getDate()-7);
+    if (e.key === 'ArrowDown') current.setDate(current.getDate()+7);
+    if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)) {
+      const iso = current.toISOString().slice(0,10);
+      calState.view.year = current.getFullYear(); calState.view.month = current.getMonth();
+      buildMonthGrid(); selectDate(iso);
+    }
+    if (e.key === 'Enter') {
+      const iso = (selectedDateISO || new Date().toISOString().slice(0,10));
+      const f = document.getElementById('eventForm'); if (f?.date) f.date.value = iso;
+      const modal = document.getElementById('reminderModal'); if (modal) modal.hidden = false;
+      setTimeout(() => document.querySelector('#eventForm input[name="title"]')?.focus(), 50);
+    }
+    if (e.key === 't' || e.key === 'T') jumpToday();
+  });
+
+  const filterInput = document.getElementById('upcomingFilter');
+  if (filterInput) {
+    const apply = () => {
+      const q = filterInput.value.trim().toLowerCase();
+      const rows = document.querySelectorAll('#eventsTbody tr[data-id]');
+      rows.forEach(tr => { const title = tr.children[0]?.textContent?.toLowerCase() || ''; tr.style.display = q && !title.includes(q) ? 'none' : ''; });
+    };
+    filterInput.addEventListener('input', apply, { passive: true });
   }
 });

@@ -336,3 +336,11 @@ body.ready .sf-calendar .sf-card { backdrop-filter: blur(10px); }
 /* Keep background parallax rule consistent with timer */
 body.ready #background-image{ transition: transform .2s ease; will-change: transform; }
 
+/* --- UX polish --- */
+.sf-calendar .day:focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--sf-accent), white 20%);
+  outline-offset: 2px;
+}
+.sf-calendar .sf-btn:hover { filter: brightness(1.05); }
+.sf-calendar input::placeholder { color: color-mix(in oklab, var(--sf-muted), white 10%); }
+

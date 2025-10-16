@@ -34,7 +34,13 @@
     <section class="sf-card" aria-labelledby="monthLabel">
       <div class="sf-cal-head">
         <button id="prevMonth" class="sf-btn sf-btn--ghost" aria-label="Previous month">←</button>
-        <h2 id="monthLabel" class="sf-cal-title">October 2025</h2>
+
+        <!-- Today button + title -->
+        <div style="display:flex; align-items:center; justify-content:center; gap:8px;">
+          <h2 id="monthLabel" class="sf-cal-title">October 2025</h2>
+          <button id="jumpToday" class="sf-btn sf-btn--ghost" title="Jump to today (T)">Today</button>
+        </div>
+
         <button id="nextMonth" class="sf-btn sf-btn--ghost" aria-label="Next month">→</button>
       </div>
 
@@ -44,6 +50,10 @@
     <!-- Upcoming events table (render target for calendar.js) -->
     <section class="sf-card">
       <div class="sf-h3" style="margin-bottom:6px">Upcoming</div>
+      <div class="sf-util" style="justify-content:space-between; margin-top:4px;">
+        <div class="sf-muted">Filter upcoming</div>
+        <input id="upcomingFilter" placeholder="Search title…" style="padding:8px 10px; border-radius:10px; border:1px solid var(--sf-border); background:var(--sf-surface-2); color:var(--sf-text); width:min(320px, 60vw)">
+      </div>
       <div class="sf-table-wrap">
         <table class="sf-table">
           <thead>
