@@ -182,16 +182,18 @@ async function initializeFirebase() {
     } catch (error) {
         // If Firebase fails (e.g., network error, auth not enabled)
         console.error("Critical error during Firebase operations. App will run without persistence:", error);
-    } finally {
-        // --- GUARANTEE UNLOCK ---
-        // If authentication failed, use a temporary ID so the app still runs.
-        if (!userId) {
-            userId = crypto.randomUUID(); 
-        }
-        isAuthReady = true;
-        loadSettings(); // This runs and applies settings (defaults if no persistence)
-        hideLoadingOverlay(); // Ensure the UI is unlocked!
+  } finally {
+    // --- GUARANTEE UNLOCK ---
+    // If authentication failed, use a temporary ID so the app still runs.
+    if (!userId) {
+      userId = crypto.randomUUID(); 
     }
+    isAuthReady = true;
+    loadSettings(); // This runs and applies settings (defaults if no persistence)
+    // NOTE: Do NOT hide the loading overlay here — the inline DOMContentLoaded
+    // handler in timer.html handles the first paint fade. showAppWhenReady()
+    // will also remove the overlay after the first bg image has loaded.
+  }
 }
 
 
@@ -450,10 +452,11 @@ async function updateBackground(forceUpdate = false) {
   // HTML uses id="bg-container"; ensure we query the correct element
   const bgContainer = document.getElementById('bg-container');
 
-  if (backgroundImageElement.src.includes(nextImage) && !forceUpdate) {
-      // Image hasn't changed (day/night boundary crossed or first run with correct image)
-      console.log(`🖼️ Background skipped. Current: ${nextImage.split('/').pop()}`);
-      return;
+  // Avoid stale/global variable reference — use live DOM lookup for current src
+  if (bgImgEl && bgImgEl.src && bgImgEl.src.includes(nextImage) && !forceUpdate) {
+    // Image hasn't changed (day/night boundary crossed or first run with correct image)
+    console.log(`🖼️ Background skipped. Current: ${nextImage.split('/').pop()}`);
+    return;
   }
 
   console.log(`🖼️ Loading background: ${nextImage.split('/').pop()} (Index: ${appSettings.bgIndex})`);

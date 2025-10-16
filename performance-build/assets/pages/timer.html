@@ -20,6 +20,7 @@
   <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
 
   <!-- Preload a best-guess first background image for LCP (based on stored theme + day/night) -->
+  <link rel="modulepreload" href="/Study-Flow-Manager/performance-build/assets/js/timer.js?v=2025101401">
   <script>
   (function(){
     try {
@@ -31,6 +32,20 @@
       const l = document.createElement('link');
       l.rel = 'preload'; l.as = 'image'; l.href = first; l.fetchPriority = 'high';
       document.head.appendChild(l);
+
+      // Immediately set the background image src so first paint shows it
+      const setFirst = () => {
+        try {
+          const img = document.getElementById('background-image');
+          if (img) img.src = first;
+        } catch (e) { /* non-blocking */ }
+      };
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setFirst, { once: true });
+      } else {
+        setFirst();
+      }
+
     } catch(e) { /* non-blocking */ }
   })();
   </script>
@@ -176,8 +191,10 @@
     </div>
     
     <!-- Placeholder for other settings like audio volume -->
-  <button class="settings-save-btn" id="settingsSaveBtn">Save</button>
-  <button class="settings-close-btn">Close</button>
+  <div class="settings-actions">
+    <button type="button" class="settings-save-btn" id="settingsSaveBtn">Save</button>
+    <button type="button" class="settings-close-btn">Close</button>
+  </div>
   </div>
 
   <!-- Particle System -->
