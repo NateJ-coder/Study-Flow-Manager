@@ -183,13 +183,37 @@ const KANT_QUOTES = [
 "Space and time are the framework within which the mind constructs reality."
 ];
 
+const WILDE_QUOTES = [
+"Be yourself; everyone else is already taken.",
+"Always forgive your enemies; nothing annoys them so much.",
+"To live is the rarest thing in the world. Most people exist, that is all.",
+"Experience is simply the name we give our mistakes.",
+"We are all in the gutter, but some of us are looking at the stars.",
+"The truth is rarely pure and never simple.",
+"A cynic is a man who knows the price of everything and the value of nothing.",
+"I can resist everything except temptation.",
+"Some cause happiness wherever they go; others whenever they go.",
+"The only thing to do with good advice is to pass it on.",
+"Life is too important to be taken seriously.",
+"No man is rich enough to buy back his past.",
+"Every saint has a past, and every sinner has a future.",
+"The only way to get rid of temptation is to yield to it.",
+"To define is to limit.",
+"You can never be overdressed or overeducated.",
+"Selfishness is not living as one wishes to live, it is asking others to live as one wishes.",
+"True friends stab you in the front.",
+"Women are meant to be loved, not to be understood.",
+"Art is the most intense mode of individualism that the world has known."
+];
+
 // Combine pools into a single array of quote objects for the bouncer
 const PHILOSOPHER_POOLS = [
   ...NIETZSCHE_QUOTES.map(t => ({ text: t, author: 'Friedrich Nietzsche' })),
   ...KIERKEGAARD_QUOTES.map(t => ({ text: t, author: 'Søren Kierkegaard' })),
   ...SCHOPENHAUER_QUOTES.map(t => ({ text: t, author: 'Arthur Schopenhauer' })),
   ...PLATO_QUOTES.map(t => ({ text: t, author: 'Plato' })),
-  ...KANT_QUOTES.map(t => ({ text: t, author: 'Immanuel Kant' }))
+  ...KANT_QUOTES.map(t => ({ text: t, author: 'Immanuel Kant' })),
+  ...WILDE_QUOTES.map(t => ({ text: t, author: 'Oscar Wilde' }))
 ];
 
 // Expanded quotes pool (mole book + philosophers)
