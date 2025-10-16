@@ -317,6 +317,7 @@ function applySettings() {
     const chk = document.getElementById('disable-ticking-glow');
     if (chk) chk.checked = !!appSettings.disableTickingGlow;
     document.body.classList.toggle('no-ticking-glow', !!appSettings.disableTickingGlow);
+    try { localStorage.setItem('sf_disable_ticking_glow', appSettings.disableTickingGlow ? '1' : '0'); } catch(e){}
   } catch (e) { /* non-blocking */ }
   
   // 4. Apply Slideshow Interval - update options based on preload performance

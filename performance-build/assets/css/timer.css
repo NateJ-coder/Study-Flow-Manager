@@ -164,7 +164,12 @@ body.ready .timer-card {
 }
 
 /* Opt-out class: when body has .no-ticking-glow, the glow is disabled */
-body.no-ticking-glow .timer-card.is-ticking { animation: none !important; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+/* Support applying the opt-out class to either html or body for early-preference read */
+html.no-ticking-glow .timer-card.is-ticking,
+body.no-ticking-glow .timer-card.is-ticking {
+  animation: none !important;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
 
 /* Utility Icons */
 .card-icon {

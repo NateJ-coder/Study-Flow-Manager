@@ -49,6 +49,16 @@
     } catch(e) { /* non-blocking */ }
   })();
   </script>
+  <!-- Early preference read to avoid flash-of-glow on cold load -->
+  <script>
+    try {
+      var _pref = localStorage.getItem('sf_disable_ticking_glow');
+      if (_pref === '1') {
+        // add class to root element as early as possible to prevent paint flash
+        document.documentElement.classList.add('no-ticking-glow');
+      }
+    } catch (e) { /* ignore */ }
+  </script>
 
 </head>
 <body>
