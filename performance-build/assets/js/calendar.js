@@ -3,6 +3,11 @@ const CFG = window.SF_CONFIG || {};
 const GAS_URL = CFG?.INTEGRATIONS?.GAS_CALENDAR_URL;
 const GAS_KEY = CFG?.INTEGRATIONS?.GAS_SHARED_KEY;
 
+// Runtime verification log
+try {
+  console.log('[StudyFlow] GAS URL at runtime:', SF_CONFIG?.INTEGRATIONS?.GAS_CALENDAR_URL, 'origin:', location.origin);
+} catch (e) { /* ignore */ }
+
 // ---- STORAGE (local list so the page is instant, even offline) ----
 const STORE_KEY = "sf_events_v1";
 const store = {
