@@ -352,6 +352,59 @@ function applySettings() {
   } catch (e) { /* non-blocking */ }
 }
 
+// --- SETTINGS DIALOG HANDLER ---
+function handleSettingsSave() {
+  // 1. Read values from the dialog back into appSettings
+  // NOTE: Values read from <select> elements are strings, so parseInt is necessary
+
+  // Update Pomodoro Durations
+  appSettings.focusDuration = parseInt(document.getElementById('focus-duration').value);
+  appSettings.shortBreakDuration = parseInt(document.getElementById('short-break-duration').value);
+  appSettings.longBreakDuration = parseInt(document.getElementById('long-break-duration').value);
+  appSettings.sessionsBeforeLongBreak = parseInt(document.getElementById('sessions-before-long-break').value);
+    
+  // Update Background/Theme settings
+  appSettings.theme = document.getElementById('theme-select').value;
+  appSettings.slideshowInterval = parseInt(document.getElementById('slideshow-interval').value);
+    
+  // ⭐ FIX: Update the sleepTimeout property from the dialog input
+  appSettings.sleepTimeout = parseInt(document.getElementById('sleep-timeout').value);
+
+  // 2. Save to persistence (Firestore)
+  saveSettings(); 
+
+  // 3. Apply to running system
+  // The applySettings function will call window.sleepManager.updateSleepTimeout() 
+  // with the newly updated appSettings.sleepTimeout value.
+  applySettings();
+    
+  // Close the settings dialog (assuming it uses the 'active' class to show/hide)
+  const settingsDialog = document.querySelector('.settings-card');
+  if (settingsDialog) {
+    settingsDialog.classList.remove('active');
+  }
+}
+
+// --- EVENT LISTENERS FOR SETTINGS DIALOG ---
+document.addEventListener('DOMContentLoaded', () => {
+  // Attach handler to the Save button
+  const saveBtn = document.getElementById('settingsSaveBtn');
+  if (saveBtn) {
+    saveBtn.addEventListener('click', handleSettingsSave);
+  }
+    
+  // Attach handler to the Close button(s)
+  const closeBtns = document.querySelectorAll('.settings-close-btn');
+  closeBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const settingsDialog = document.querySelector('.settings-card');
+      if (settingsDialog) {
+        settingsDialog.classList.remove('active');
+      }
+    });
+  });
+});
+
 
 // --- BACKGROUND SYSTEM LOGIC ---
 
