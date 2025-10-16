@@ -1,6 +1,11 @@
 // Centralized runtime config for StudyFlow asset paths
 // Exposes window.SF_CONFIG for other scripts to consume.
 (function () {
+  // Runtime verification for cache-busted deploys
+  try {
+    console.log('[SF config] v=2025-10-16-1',
+      (typeof SF_CONFIG !== 'undefined') ? SF_CONFIG.INTEGRATIONS?.GAS_CALENDAR_URL : '(not set)');
+  } catch (e) { /* ignore */ }
   const BASE = '/Study-Flow-Manager/performance-build/assets';
 
   const SF_CONFIG = {
