@@ -50,7 +50,7 @@
     },
     INTEGRATIONS: {
       // Google Apps Script endpoint for calendar bridge
-      GAS_CALENDAR_URL: 'https://script.google.com/macros/s/AKfycbz5y0Ft2ijBLElvMmul-qNunyWqkE26iN4jXjtNks82QL3CMG_93ME1_TB92vhpCZEa/exec',
+  GAS_CALENDAR_URL: 'https://script.google.com/macros/s/AKfycbzf6m5rF7y_KxdtzBwrqk3aKwWvVo2Nj24c3l-IBbloVDwz2KgEruc6PfqZUPnnNW08pw/exec',
       // Replace with the shared secret used by your Apps Script deployment
       GAS_SHARED_KEY: 'CHANGE_ME_32+CHARS'
     },
