@@ -103,7 +103,7 @@ async function createFromForm(e) {
   const allDay = f.allDay && f.allDay.value === "true";
   const date = (f.date && f.date.value) || new Date().toISOString().slice(0,10);
   const startISO = allDay ? `${date}T00:00:00${tzOffset()}` : toISO(date, (f.startTime && f.startTime.value) || "00:00");
-  const endISO   = allDay ? `${date}T00:00:00${tzOffset()}` : toISO(date, (f.endTime && f.endTime.value) || "00:00");
+  const endISO   = allDay ? `${date}T23:59:00${tzOffset()}` : toISO(date, (f.endTime && f.endTime.value) || "00:00");
 
   // Guard optional repeat fields which may not exist in the modal
   const repeatSel = f.repeat ? f.repeat.value : "";
@@ -245,8 +245,49 @@ function init() {
   const dl = $("#downloadICS"); if (dl) dl.addEventListener("click", downloadICSFromForm);
 
   render();
+  // pull remote upcoming (non-blocking)
+  if (GAS_URL && GAS_KEY) {
+    try { syncUpcoming(); } catch (e) { console.warn('syncUpcoming failed', e); }
+  }
 }
 document.addEventListener("DOMContentLoaded", init);
+
+// Fetch upcoming events from GAS and merge with local store
+async function syncUpcoming() {
+  const now = new Date().toISOString();
+  const in30 = new Date(Date.now() + 30*24*60*60*1000).toISOString();
+  try {
+    const r = await gasPost({ action: 'listUpcoming', timeMin: now, timeMax: in30, maxResults: 25 });
+    const remote = Array.isArray(r.events) ? r.events : [];
+    const mapped = remote.map(ev => {
+      const allDay = !!ev.start?.date;
+      const startISO = ev.start?.dateTime || (ev.start?.date ? `${ev.start.date}T00:00:00${tzOffset()}` : '');
+      const endISO = ev.end?.dateTime || (ev.end?.date ? `${ev.end.date}T23:59:00${tzOffset()}` : '');
+      const date = ev.start?.date || (startISO ? startISO.slice(0,10) : '');
+      return {
+        local_id: ev.id || crypto.randomUUID(),
+        event_id: ev.id,
+        title: ev.summary || '(no title)',
+        date,
+        startTime: startISO ? startISO.slice(11,16) : '',
+        endTime: endISO ? endISO.slice(11,16) : '',
+        all_day: allDay,
+        reminders: []
+      };
+    });
+
+    const existing = store.all();
+    const byId = new Map(existing.filter(x=>x.event_id).map(x=>[x.event_id,x]));
+    const merged = [
+      ...existing.filter(x=>!x.event_id),
+      ...mapped.map(m => Object.assign(byId.get(m.event_id) || {}, m))
+    ].sort((a,b)=> (a.date + (a.startTime||'')) < (b.date + (b.startTime||'')) ? -1 : 1);
+
+    // Save merged list
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(merged)); } catch(e) { console.warn('Failed to save merged events', e); }
+    render();
+  } catch (e) { console.warn('Upcoming fetch failed; showing local only', e); }
+}
 
 /* ====== ADD: SETTINGS STATE ====== */
 const CAL_STORE = "sf_calendar_settings_v1";
@@ -387,11 +428,22 @@ function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;',
     const img = document.getElementById('background-image');
     if (img && src) img.src = src;
 
-    // Start particle system if available
-    if (window.ParticleSystem && typeof window.ParticleSystem.start === 'function') {
-      window.ParticleSystem.start();
-    }
+    // Particle start is deferred until the app signals ready to animate
+    // (bootstrap will listen for 'studyflow:readyToAnimate').
   } catch(e) { console.warn('Calendar bg bootstrap failed', e); }
+})();
+
+// Particle autostart bootstrap for calendar (respects reduced-motion)
+(function calendarParticleBootstrap(){
+  let started = false;
+  const startParticles = () => {
+    if (started) return; started = true;
+    try {
+      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    } catch (e) {}
+    try { if (window.ParticleSystem && typeof window.ParticleSystem.start === 'function') window.ParticleSystem.start(); } catch(e){}
+  };
+  if (window._appReadyShown) startParticles(); else window.addEventListener('studyflow:readyToAnimate', startParticles, { once: true });
 })();
 
 /* ====== ADD: SETTINGS UI WIRING ====== */

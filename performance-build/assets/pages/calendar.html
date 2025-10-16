@@ -12,7 +12,7 @@
 </head>
 <body>
   <!-- Background Layer (same structure as Timer page) -->
-  <div id="bg-container"><img id="background-image" src="" alt="Background" decoding="async" /></div>
+  <div id="bg-container"><img id="background-image" src="" alt="Background" decoding="async" fetchpriority="high" /></div>
   <canvas id="particle-canvas" aria-hidden="true"></canvas>
   <header class="sf-header">
     <div class="sf-header__left">
@@ -39,6 +39,21 @@
       </div>
 
       <div id="calendarGrid" class="sf-calendar-grid" aria-label="Monthly calendar"></div>
+    </section>
+
+    <!-- Upcoming events table (render target for calendar.js) -->
+    <section class="sf-card">
+      <div class="sf-h3" style="margin-bottom:6px">Upcoming</div>
+      <div class="sf-table-wrap">
+        <table class="sf-table">
+          <thead>
+            <tr><th>Title</th><th>When</th><th>Reminders</th><th>Status</th><th class="sf-right">Actions</th></tr>
+          </thead>
+          <tbody id="eventsTbody">
+            <tr><td colspan="5" class="sf-muted">No reminders yet.</td></tr>
+          </tbody>
+        </table>
+      </div>
     </section>
 
     <!-- (Event form removed — now presented in a modal) -->
@@ -171,6 +186,7 @@
   <script src="/Study-Flow-Manager/performance-build/assets/js/config.js" defer></script>
   <script src="/Study-Flow-Manager/performance-build/assets/js/particle.js" defer></script>
   <script src="/Study-Flow-Manager/performance-build/assets/js/calendar.js" type="module"></script>
-  <script src="/Study-Flow-Manager/performance-build/assets/js/calendar-sleep-redirect.js"></script>
+  <script src="/Study-Flow-Manager/performance-build/assets/js/sleep.js" defer></script>
+  <script src="/Study-Flow-Manager/performance-build/assets/js/calendar-sleep-redirect.js" defer></script>
 </body>
 </html>

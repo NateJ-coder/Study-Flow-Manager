@@ -242,8 +242,10 @@ body.winter-theme { --sf-accent:#60a5fa; }
 /* 50% opacity card look */
 .sf-calendar .sf-card{
   background: rgba(15, 20, 25, 0.50); /* ~50% */
-  backdrop-filter: blur(10px);
+  backdrop-filter: none; /* enabled once body.ready */
+  transition: backdrop-filter .2s ease;
 }
+body.ready .sf-calendar .sf-card { backdrop-filter: blur(10px); }
 
 /* Utility row */
 .sf-calendar .sf-util{
