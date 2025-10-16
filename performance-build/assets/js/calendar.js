@@ -29,6 +29,15 @@ const tzOffset = () => {
   return `${sign}${hh}:${mm}`;
 };
 
+// Global delegated submit: never miss "Save reminder"
+document.addEventListener('submit', (e) => {
+  const form = e.target;
+  if (form && form.id === 'eventForm') {
+    // delegate to the existing handler; it will call preventDefault()
+    try { createFromForm(e); } catch (err) { console.error('Delegated submit failed', err); }
+  }
+}, true);
+
 function toISO(dateStr, timeStr) {
   const t = (timeStr || "00:00").split(":");
   const d = new Date(dateStr);
@@ -132,20 +141,25 @@ async function createFromForm(e) {
   };
   store.upsert(local);
   render();
+  // Close modal immediately after local save so the UI feels responsive
+  try { f.reset(); } catch (e) {}
+  const modal = document.getElementById('reminderModal');
+  if (modal) modal.hidden = true;
 
-  try {
-    const r = await gasPost(payload);
-    local.event_id = r.event_id;
-    store.upsert(local);
-    render();
-    f.reset();
-    // close the reminder modal after successful save
-    const modal = document.getElementById('reminderModal');
-    if (modal) modal.hidden = true;
-  } catch (err) {
-    console.error(err);
-    alert("Failed to sync to Google Calendar (kept locally). You can retry from Edit.");
-  }
+  // Try to sync in background; if it fails, keep the item local and notify the user
+  (async () => {
+    try {
+      const r = await gasPost(payload);
+      if (r && r.event_id) {
+        local.event_id = r.event_id;
+        store.upsert(local);
+        render();
+      }
+    } catch (err) {
+      console.warn('Background sync failed:', err);
+      try { alert('Saved locally. Google sync failed (you can retry from Edit).'); } catch(e){}
+    }
+  })();
 }
 
 function onTableClick(e) {
