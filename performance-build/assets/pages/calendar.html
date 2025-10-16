@@ -56,6 +56,11 @@
       </div>
     </section>
 
+    <div style="margin-top:8px; margin-left:8px;">
+      <button id="exportBtn" class="sf-btn sf-btn--ghost">Export reminders</button>
+      <label class="sf-btn sf-btn--ghost" style="margin-left:8px">Import <input id="importInput" type="file" accept="application/json" hidden></label>
+    </div>
+
     <!-- (Event form removed — now presented in a modal) -->
   </main>
 
@@ -186,8 +191,27 @@
   <script src="/Study-Flow-Manager/performance-build/assets/js/gas-endpoint.js?v=2025-10-16-11" defer></script>
   <script src="/Study-Flow-Manager/performance-build/assets/js/config.js?v=2025-10-16-11" defer></script>
   <script src="/Study-Flow-Manager/performance-build/assets/js/particle.js" defer></script>
+  <script src="/Study-Flow-Manager/performance-build/assets/js/local-reminders.js?v=1" defer></script>
   <script src="/Study-Flow-Manager/performance-build/assets/js/calendar.js" defer></script>
   <script src="/Study-Flow-Manager/performance-build/assets/js/sleep.js" defer></script>
   <script src="/Study-Flow-Manager/performance-build/assets/js/calendar-sleep-redirect.js" defer></script>
+  <script>
+    // wire export/import buttons to SF_LOCAL when ready
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('exportBtn')?.addEventListener('click', () => {
+        if (window.SF_LOCAL?.exportJSON) window.SF_LOCAL.exportJSON();
+      });
+      const input = document.getElementById('importInput');
+      input?.addEventListener('change', async (e) => {
+        const [file] = e.target.files || [];
+        if (file && window.SF_LOCAL?.importJSON) {
+          await window.SF_LOCAL.importJSON(file);
+          // if calendar.js exposes a refresh function, call it; otherwise reload
+          const refresh = window.renderUpcoming || window.refreshCalendar;
+          if (typeof refresh === 'function') refresh(); else location.reload();
+        }
+      });
+    });
+  </script>
 </body>
 </html>
