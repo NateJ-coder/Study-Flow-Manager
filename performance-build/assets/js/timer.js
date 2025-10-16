@@ -685,13 +685,22 @@ window.addEventListener('resize', () => {
 
 
 // --- PERPETUAL CLOCK ---
-
 function updatePerpetualClock() {
   const now = new Date();
   const h = String(now.getHours()).padStart(2, '0');
   const m = String(now.getMinutes()).padStart(2, '0');
   const s = String(now.getSeconds()).padStart(2, '0');
-  document.getElementById('perpetual-clock').textContent = `${h}:${m}:${s}`;
+  const clockEl = document.getElementById('perpetual-clock');
+  if (clockEl) {
+    clockEl.textContent = `${h}:${m}:${s}`;
+    // minute tick shimmer when seconds flip to 00
+    if (s === '00') {
+      try {
+        clockEl.classList.add('is-ticking');
+        requestAnimationFrame(() => clockEl.classList.remove('is-ticking'));
+      } catch (e) { /* ignore */ }
+    }
+  }
 }
 
 // Update the clock every second
@@ -710,6 +719,24 @@ function playCompletionSound() {
   } catch (e) {
     console.log('Audio loading failed:', e);
   }
+}
+
+// Confetti burst (12 particles) - lightweight, respects reduced-motion
+function burst() {
+  try {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const c = document.createElement('div'); c.className = 'confetti';
+    for (let i = 0; i < 12; i++) {
+      const p = document.createElement('i');
+      p.style.left = (50 + (Math.random() * 20 - 10)) + 'vw';
+      p.style.top = '10vh';
+      p.style.background = `hsl(${Math.floor(Math.random() * 360)} 90% 60%)`;
+      p.style.animationDelay = (Math.random() * 120) + 'ms';
+      c.appendChild(p);
+    }
+    document.body.appendChild(c);
+    setTimeout(() => c.remove(), 1400);
+  } catch (e) { /* ignore */ }
 }
 
 // Update UI elements for current session
@@ -779,6 +806,16 @@ function formatTime(seconds) {
 
 function updateDisplay() {
   document.getElementById('timer-display').textContent = formatTime(totalSeconds);
+
+  // Update CSS-driven progress ring (0..1)
+  try {
+    const ring = document.querySelector('.timer-ring');
+    if (ring) {
+      const totalForCurrent = (sessionType === 'focus' ? appSettings.focusDuration : (sessionType === 'short-break' ? appSettings.shortBreakDuration : appSettings.longBreakDuration)) * 60;
+      const progressRatio = Math.max(0, Math.min(1, totalSeconds / (totalForCurrent || 1)));
+      ring.style.setProperty('--p', String(progressRatio));
+    }
+  } catch (e) { /* non-blocking */ }
 }
 
 function startTimer() {
@@ -801,8 +838,10 @@ function startTimer() {
         clearInterval(timerInterval);
         isRunning = false;
         
-        // Play completion sound
-        playCompletionSound();
+  // Play completion sound
+  playCompletionSound();
+  // Lightweight celebration
+  try { burst(); } catch (e) { /* ignore */ }
         
         console.log(`${sessionType} session completed!`);
         
@@ -900,6 +939,27 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+
+// Background parallax (lightweight) — register once app is ready
+(function registerParallax(){
+  let raf = 0; const bg = document.getElementById('background-image');
+  function onMove(e){
+    if (!bg) return;
+    const { innerWidth: w, innerHeight: h } = window;
+    const x = (e.clientX - w/2) / w, y = (e.clientY - h/2) / h;
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(()=> bg.style.transform = `translate(${x*6}px, ${y*6}px) scale(1.03)`);
+  }
+  function register(){
+    try {
+      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: no-preference)').matches) {
+        window.addEventListener('mousemove', onMove);
+      }
+    } catch (e) {}
+  }
+  if (document.body.classList.contains('ready')) register();
+  else window.addEventListener('studyflow:readyToAnimate', register, { once: true });
+})();
 
 // Pending settings buffer — changes are staged here until the user clicks Save
 let pendingSettings = {};

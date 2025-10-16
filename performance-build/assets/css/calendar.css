@@ -303,3 +303,36 @@ body.ready .sf-calendar .sf-card { backdrop-filter: blur(10px); }
 
 /* Keep long task text from pushing layout */
 .sf-calendar .sf-taskitem .t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ------------------------- */
+/* micro-animations (calendar) */
+/* ------------------------- */
+
+:root { --accent: 217 100% 60%; --accent-2: 280 85% 60%; }
+
+@media (prefers-reduced-motion:no-preference) {
+  .ambient-gradient::before{
+    content:""; position:fixed; inset:-20%;
+    background: radial-gradient(60% 60% at 30% 20%, hsl(var(--accent)/.20), transparent 60%),
+                radial-gradient(60% 60% at 70% 80%, hsl(var(--accent-2)/.18), transparent 60%);
+    animation: drift 18s ease-in-out infinite alternate; pointer-events:none; z-index:0; filter: blur(40px);
+  }
+  @keyframes drift { to { transform: translate3d(2%, -2%, 0) scale(1.03); } }
+}
+
+/* Today pulse + event dots */
+.sf-day.today { outline: 2px solid hsl(var(--accent)); outline-offset:-2px; position:relative; }
+@media (prefers-reduced-motion:no-preference){
+  .sf-day.today::after{
+    content:""; position:absolute; inset:auto 6px 6px auto; width:8px; height:8px; border-radius:50%;
+    background:hsl(var(--accent)); box-shadow: 0 0 12px hsl(var(--accent)/.8); animation: breathe 2.4s ease-in-out infinite;
+  }
+  @keyframes breathe { 50% { transform: scale(1.15); opacity:.8; } }
+}
+
+.sf-day .ev-dot{ width:6px; height:6px; border-radius:50%; background:hsl(var(--accent)); display:inline-block; margin:2px 2px 0 0; opacity:.8; }
+.sf-day .ev-dot.is-all-day{ background:hsl(var(--accent-2)); }
+
+/* Keep background parallax rule consistent with timer */
+body.ready #background-image{ transition: transform .2s ease; will-change: transform; }
+

@@ -252,6 +252,27 @@ function init() {
 }
 document.addEventListener("DOMContentLoaded", init);
 
+// Background parallax (lightweight) — register once app is ready
+(function registerParallaxCalendar(){
+  let raf = 0; const bg = document.getElementById('background-image');
+  function onMove(e){
+    if (!bg) return;
+    const { innerWidth: w, innerHeight: h } = window;
+    const x = (e.clientX - w/2) / w, y = (e.clientY - h/2) / h;
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(()=> bg.style.transform = `translate(${x*6}px, ${y*6}px) scale(1.03)`);
+  }
+  function register(){
+    try {
+      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: no-preference)').matches) {
+        window.addEventListener('mousemove', onMove);
+      }
+    } catch (e) {}
+  }
+  if (document.body.classList.contains('ready')) register();
+  else window.addEventListener('studyflow:readyToAnimate', register, { once: true });
+})();
+
 // Fetch upcoming events from GAS and merge with local store
 async function syncUpcoming() {
   const now = new Date().toISOString();
@@ -334,8 +355,10 @@ function buildMonthGrid(){
     const isOther = d.getMonth() !== m;
     const isToday = iso === ymd(new Date());
     const crossed = !!calState.crossed[iso];
+    // Add small container for event dots; rendering of dots happens below
     cells.push(`<div class="day${isOther?' other':''}${isToday?' today':''}${crossed?' crossed':''}" data-date="${iso}">
       <div class="num" title="${dow[d.getDay()]}">${d.getDate()}</div>
+      <div class="ev-dots" aria-hidden="true"></div>
     </div>`);
   }
   document.getElementById('calendarGrid').innerHTML =
@@ -364,6 +387,22 @@ function buildMonthGrid(){
       } catch {}
     });
   });
+
+  // Render per-day dots from the store (non-blocking)
+  try {
+    const events = store.all();
+    const byDate = events.reduce((acc, ev) => { (acc[ev.date] = acc[ev.date] || []).push(ev); return acc; }, {});
+    Object.keys(byDate).forEach(date => {
+      const container = document.querySelector(`.day[data-date="${date}"] .ev-dots`);
+      if (!container) return;
+      const items = byDate[date].slice(0,3); // cap dots to 3
+      items.forEach(it => {
+        const dot = document.createElement('span');
+        dot.className = 'ev-dot' + (it.all_day ? ' is-all-day' : '');
+        container.appendChild(dot);
+      });
+    });
+  } catch (e) { /* non-blocking */ }
 }
 
 /* ===== TASKS (per-day) ===== */
