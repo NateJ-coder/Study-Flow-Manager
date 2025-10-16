@@ -66,6 +66,7 @@ let appSettings = {
   sessionsBeforeLongBreak: 4, // number of focus sessions before long break
   slideshowInterval: 30, // seconds (will be validated against minimum)
   sleepTimeout: 300, // seconds (5 minutes default)
+  disableTickingGlow: false, // user preference to disable visual ticking glow
 };
 
 // Timer State
@@ -311,6 +312,12 @@ function applySettings() {
   document.getElementById('long-break-duration').value = appSettings.longBreakDuration;
   document.getElementById('sessions-before-long-break').value = appSettings.sessionsBeforeLongBreak;
   document.getElementById('sleep-timeout').value = appSettings.sleepTimeout;
+  // Apply ticking glow preference
+  try {
+    const chk = document.getElementById('disable-ticking-glow');
+    if (chk) chk.checked = !!appSettings.disableTickingGlow;
+    document.body.classList.toggle('no-ticking-glow', !!appSettings.disableTickingGlow);
+  } catch (e) { /* non-blocking */ }
   
   // 4. Apply Slideshow Interval - update options based on preload performance
   updateSlideshowIntervalOptions();
@@ -1081,6 +1088,17 @@ document.getElementById('sleep-timeout').addEventListener('change', (e) => {
   pendingSettings.sleepTimeout = parseInt(e.target.value);
   console.log('⚙️ Pending sleep timeout set to', pendingSettings.sleepTimeout, 'seconds');
 });
+
+// Toggle for disabling ticking glow (staged until Save)
+const disableTickChk = document.getElementById('disable-ticking-glow');
+if (disableTickChk) {
+  disableTickChk.addEventListener('change', (e) => {
+    pendingSettings.disableTickingGlow = !!e.target.checked;
+    // Allow preview: toggle body class immediately so the user sees effect before saving
+    document.body.classList.toggle('no-ticking-glow', !!e.target.checked);
+    console.log('⚙️ Pending disableTickingGlow set to', pendingSettings.disableTickingGlow);
+  });
+}
 
 // Settings Save button applies all pending changes and notifies subsystems
 const settingsSaveBtn = document.getElementById('settingsSaveBtn');

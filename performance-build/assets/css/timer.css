@@ -158,6 +158,14 @@ body.ready .timer-card {
   100% { box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 6px rgba(100,255,218,0.06); }
 }
 
+/* Respect prefers-reduced-motion: disable the glowing animation */
+@media (prefers-reduced-motion: reduce) {
+  .timer-card.is-ticking { animation: none !important; }
+}
+
+/* Opt-out class: when body has .no-ticking-glow, the glow is disabled */
+body.no-ticking-glow .timer-card.is-ticking { animation: none !important; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+
 /* Utility Icons */
 .card-icon {
   position: absolute;
