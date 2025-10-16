@@ -235,6 +235,8 @@ function enableContinueButton() {
   continueBtn.disabled = false;
   continueBtn.classList.remove('opacity-75', 'cursor-not-allowed');
   continueBtn.classList.add('hover-bg-amber-500', 'active-scale-98', 'hover-scale-102', 'cursor-pointer');
+  // Announce readiness to assistive tech
+  try { continueBtn.setAttribute('aria-busy', 'false'); } catch (e) { /* ignore */ }
   
   // Remove any spinning animation and add a subtle ready pulse
   setTimeout(() => {
@@ -326,8 +328,8 @@ async function continueToApp() {
     position: 'fixed', inset: '0', background: '#000', opacity: '0', transition: 'opacity 300ms ease', zIndex: '9999'
   });
   document.body.appendChild(veil);
-  // Force style calc then fade in
-  veil.offsetHeight; veil.style.opacity = '1';
+  // Fade in using rAF to avoid forcing layout/reflow
+  requestAnimationFrame(() => { veil.style.opacity = '1'; });
 
   // 2) Warm the timer (race preloader vs cap)
   const CAP_MS = 1200;

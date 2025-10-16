@@ -42,6 +42,11 @@ body {
   transform: translateZ(0);
 }
 
+/* Respect user preference for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .animate-bounce-slow, .animate-pulse-slow, .animate-pulse { animation: none !important; }
+}
+
 /* Critical utility classes */
 .flex { display: flex; }
 .flex-col { flex-direction: column; }
@@ -157,5 +162,8 @@ body {
 .hover-bg-red-600:hover { background-color: #dc2626; }
 .active-scale-98:active { transform: scale(0.98); }
 .hover-scale-102:hover { transform: scale(1.02); }
+
+/* content-visibility: let the browser skip layout/paint for hidden screens */
+#timer-screen, #calendar-screen { content-visibility: auto; contain-intrinsic-size: 800px 600px; }
 
 /* Duplicate responsive block removed - using corrected version above */

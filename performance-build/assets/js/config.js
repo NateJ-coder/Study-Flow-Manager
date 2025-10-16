@@ -50,9 +50,9 @@
     },
     INTEGRATIONS: {
       // Google Apps Script endpoint for calendar bridge
-  GAS_CALENDAR_URL: 'https://script.google.com/macros/s/AKfycbzf6m5rF7y_KxdtzBwrqk3aKwWvVo2Nj24c3l-IBbloVDwz2KgEruc6PfqZUPnnNW08pw/exec',
+  GAS_CALENDAR_URL: 'https://script.google.com/macros/s/AKfycbxo3ZwBY2zDS1MUh1xCqZqKIMaqWa-PwVSQdGgHOAMHBxS3meaM-2Uu0q3NyEtwcmRKDA/exec',
       // Replace with the shared secret used by your Apps Script deployment
-      GAS_SHARED_KEY: 'CHANGE_ME_32+CHARS'
+      GAS_SHARED_KEY: '8bd4cad853faee35a6e87a44df78622122ffd8bce954c91c20e7412f56947558c1d0d2de4e2f6f83e883194db9012b2c1'
     },
     // helper arrays for preloads
     PRELOAD: {

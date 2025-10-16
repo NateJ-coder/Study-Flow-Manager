@@ -7,7 +7,10 @@
 	<meta name="description" content="StudyFlow Manager - Immersive Focus Timer">
 	<!-- Performance-Critical Preloads -->
 	<link rel="preload" href="/Study-Flow-Manager/performance-build/assets/images/welcome-page.png" as="image" fetchpriority="high">
-	<link rel="preload" href="/Study-Flow-Manager/performance-build/assets/css/welcome.css" as="style">
+	<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+	<link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+	<link rel="preload" href="/Study-Flow-Manager/performance-build/assets/css/welcome.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+	<noscript><link rel="stylesheet" href="/Study-Flow-Manager/performance-build/assets/css/welcome.css?v=2025101402"></noscript>
 	<link rel="preload" href="/Study-Flow-Manager/performance-build/assets/js/welcome.js" as="script">
 
 	<!-- Prefetch next page assets to warm cache for faster navigation -->
@@ -54,7 +57,7 @@
 					</p>
 				</header>
 				<main class="text-center">
-					<div id="loading-state" class="flex flex-col items-center">
+					<div id="loading-state" class="flex flex-col items-center" role="status" aria-live="polite">
 						<p class="text-lg text-amber-300 font-medium">
 							Preparing your focus environment...
 						</p>
@@ -64,6 +67,7 @@
 						class="bg-amber-600 text-white font-inter font-bold py-4 px-10 rounded-xl shadow-xl transition duration-200 border-b-4 border-r-2 border-amber-800 text-lg md-text-xl opacity-75 cursor-not-allowed"
 						onclick="continueToApp()"
 						disabled
+						aria-busy="true" aria-live="polite"
 					>
 						<div class="flex items-center justify-center">
 							<span id="button-text">Preparing timer...</span>
