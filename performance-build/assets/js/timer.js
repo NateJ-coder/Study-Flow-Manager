@@ -645,7 +645,8 @@ async function updateBackground(forceUpdate = false) {
         const fav = document.getElementById('background-image');
         if (sAvif) sAvif.srcset = `${nextImage}-768.avif 768w, ${nextImage}-1080.avif 1080w, ${nextImage}-1440.avif 1440w, ${nextImage}-1920.avif 1920w`;
         if (sWebp) sWebp.srcset = `${nextImage}-768.webp 768w, ${nextImage}-1080.webp 1080w, ${nextImage}-1440.webp 1440w, ${nextImage}-1920.webp 1920w`;
-        fav.src = preloaded || `${nextImage}-1080.webp`;
+  // If preload didn't return a successful URL, fall back to PNG (most deployments still have PNGs)
+  fav.src = preloaded || `${nextImage}-1080.png`;
         // Ensure the app overlay is hidden only after the first background image has loaded
         if (!window._appReadyShown) {
           bgImgEl.addEventListener('load', function _onFirstBg() {
@@ -665,13 +666,13 @@ async function updateBackground(forceUpdate = false) {
       bgContainer.style.transition = 'background-image 1s ease, opacity 1s ease';
       bgContainer.style.opacity = '0.2';
       setTimeout(() => {
-        // Attempt best-effort WebP background for container fallback
-        bgContainer.style.backgroundImage = `url('${nextImage}-1080.webp')`;
+        // Fall back to PNG if modern formats aren't present on disk
+        bgContainer.style.backgroundImage = `url('${nextImage}-1080.png')`;
       }, 600);
       setTimeout(() => { bgContainer.style.opacity = '0.95'; }, 1000);
     } else {
       // Last resort: try to set document body background
-      document.body.style.backgroundImage = `url('${nextImage}')`;
+  document.body.style.backgroundImage = `url('${nextImage}-1080.png')`;
     }
     
     // Save the new index/theme
