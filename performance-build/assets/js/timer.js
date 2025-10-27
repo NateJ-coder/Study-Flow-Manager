@@ -501,6 +501,12 @@ function preloadImage(url) {
         img.src = `${base}-1080.png`;
         return;
       }
+      // Final fallback: try the original PNG filename without size suffix (e.g., autumn-day-1.png)
+      if (!img._triedBasePng) {
+        img._triedBasePng = true;
+        img.src = `${base}.png`;
+        return;
+      }
       console.warn('Failed to preload any format for', base);
       resolve(null);
     };
@@ -646,7 +652,8 @@ async function updateBackground(forceUpdate = false) {
         if (sAvif) sAvif.srcset = `${nextImage}-768.avif 768w, ${nextImage}-1080.avif 1080w, ${nextImage}-1440.avif 1440w, ${nextImage}-1920.avif 1920w`;
         if (sWebp) sWebp.srcset = `${nextImage}-768.webp 768w, ${nextImage}-1080.webp 1080w, ${nextImage}-1440.webp 1440w, ${nextImage}-1920.webp 1920w`;
   // If preload didn't return a successful URL, fall back to PNG (most deployments still have PNGs)
-  fav.src = preloaded || `${nextImage}-1080.png`;
+  // If preload didn't return a successful URL, fall back to the original PNG filename (no size suffix)
+  fav.src = preloaded || `${nextImage}.png`;
         // Ensure the app overlay is hidden only after the first background image has loaded
         if (!window._appReadyShown) {
           bgImgEl.addEventListener('load', function _onFirstBg() {
@@ -666,13 +673,13 @@ async function updateBackground(forceUpdate = false) {
       bgContainer.style.transition = 'background-image 1s ease, opacity 1s ease';
       bgContainer.style.opacity = '0.2';
       setTimeout(() => {
-        // Fall back to PNG if modern formats aren't present on disk
-        bgContainer.style.backgroundImage = `url('${nextImage}-1080.png')`;
+  // Fall back to PNG (original filename) if modern formats aren't present on disk
+  bgContainer.style.backgroundImage = `url('${nextImage}.png')`;
       }, 600);
       setTimeout(() => { bgContainer.style.opacity = '0.95'; }, 1000);
     } else {
       // Last resort: try to set document body background
-  document.body.style.backgroundImage = `url('${nextImage}-1080.png')`;
+  document.body.style.backgroundImage = `url('${nextImage}.png')`;
     }
     
     // Save the new index/theme
