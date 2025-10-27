@@ -271,6 +271,27 @@
   <!-- Overlay fade is handled by showAppWhenReady() in timer.js to avoid racing with BG load -->
 
   <!-- Firebase and Core Logic -->
+  <script>
+    // Debug helper: log bg image src and listen for load/error to diagnose missing backgrounds
+    (function(){
+      function attach() {
+        try {
+          const img = document.getElementById('background-image');
+          if (!img) { console.info('BG debug: #background-image not found'); return; }
+          console.info('BG debug: initial src ->', img.src);
+          img.addEventListener('load', () => console.info('BG debug: background image loaded:', img.currentSrc || img.src));
+          img.addEventListener('error', (e) => {
+            console.error('BG debug: background image failed to load:', img.src, e);
+            // Show if updateBackground exists, try forcing a set
+            try { if (typeof updateBackground === 'function') { console.info('BG debug: calling updateBackground(true)'); updateBackground(true); } } catch(ex){ console.warn('BG debug: updateBackground call failed', ex); }
+          });
+          // If updateBackground exists already, call it to force population
+          try { if (typeof updateBackground === 'function') { console.info('BG debug: updateBackground exists; invoking'); updateBackground(true); } } catch(e){ console.warn('BG debug: updateBackground invoke error', e); }
+        } catch (e) { console.warn('BG debug attach failed', e); }
+      }
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', attach, { once: true }); else attach();
+    })();
+  </script>
   <script type="module" src="/Study-Flow-Manager/performance-build/assets/js/timer.js?v=2025101401"></script>
 </body>
 </html>
