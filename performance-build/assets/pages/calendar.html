@@ -212,6 +212,45 @@
   <script src="/Study-Flow-Manager/performance-build/assets/js/sleep.js" defer></script>
   <script src="/Study-Flow-Manager/performance-build/assets/js/calendar-sleep-redirect.js" defer></script>
   <script>
+    // Lightweight background initializer for calendar page.
+    // Runs on DOMContentLoaded and uses SF_CONFIG.BACKGROUNDS when available.
+    document.addEventListener('DOMContentLoaded', () => {
+      try {
+        const img = document.getElementById('background-image');
+        const container = document.getElementById('bg-container');
+        const hour = new Date().getHours();
+        const timeOfDay = (hour >= 18 || hour < 6) ? 'night' : 'day';
+        const theme = (localStorage.getItem('sf_theme') || document.getElementById('calTheme')?.value || 'autumn');
+
+        const cfg = window.SF_CONFIG && Array.isArray(window.SF_CONFIG.BACKGROUNDS) ? window.SF_CONFIG.BACKGROUNDS : null;
+        let chosen = null;
+
+        if (cfg) {
+          // try to find an entry matching theme + timeOfDay
+          const candidates = cfg.filter(p => typeof p === 'string' && p.includes(`${theme}-${timeOfDay}`));
+          if (candidates.length) chosen = candidates[0];
+          else {
+            // try any entry for the theme
+            const themeCandidates = cfg.filter(p => typeof p === 'string' && p.includes(`${theme}-`));
+            if (themeCandidates.length) chosen = themeCandidates[0];
+          }
+        }
+
+        // Fallback: construct a safe path to the PNG that exists in the assets folder
+        if (!chosen) {
+          const base = '/Study-Flow-Manager/performance-build/assets/images';
+          chosen = `${base}/${theme}-${timeOfDay}-1.png`;
+        }
+
+        if (img) img.src = chosen;
+        if (container && !img) container.style.backgroundImage = `url('${chosen}')`;
+        console.log('Calendar background set to', chosen);
+      } catch (e) {
+        console.warn('Failed to set calendar background', e);
+      }
+    });
+  </script>
+  <script>
     // wire export/import buttons to SF_LOCAL when ready
     document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('exportBtn')?.addEventListener('click', () => {
