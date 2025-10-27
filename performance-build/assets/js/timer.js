@@ -700,6 +700,9 @@ async function updateBackground(forceUpdate = false) {
   }
 }
 
+// Expose for non-module callers (some pages may call this from non-module scripts)
+try { window.updateBackground = updateBackground; } catch (e) { /* ignore in strict contexts */ }
+
 // Function to run when the theme changes (called by settings modal)
 function changeTheme(newTheme) {
     if (appSettings.theme !== newTheme) {
