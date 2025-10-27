@@ -462,7 +462,11 @@ function isNightTime() {
 
 function getCurrentImageAssets() {
   // Ensure theme key is valid and lowercase per spec
-  const themeKey = (appSettings.theme || 'autumn').toLowerCase();
+  let themeKey = (appSettings.theme || 'autumn').toString().toLowerCase();
+  if (!BACKGROUND_CONFIG[themeKey]) {
+    console.warn(`🛠️ Background theme "${themeKey}" not found — falling back to 'autumn'`);
+    themeKey = 'autumn';
+  }
   const themeConfig = BACKGROUND_CONFIG[themeKey] || BACKGROUND_CONFIG['autumn'];
   const timeOfDay = isNight ? 'night' : 'day';
   return themeConfig.images[timeOfDay] || [];
@@ -609,7 +613,32 @@ async function updateBackground(forceUpdate = false) {
      appSettings.bgIndex = 0;
   }
 
-  const nextImage = assets[appSettings.bgIndex];
+  let nextImage = assets[appSettings.bgIndex];
+
+  // Debug: surface theme and chosen base so we can diagnose path 404s
+  try {
+    console.info('🔍 Background debug:', {
+      theme: appSettings.theme,
+      isNight: isNight,
+      assetsLength: assets && assets.length,
+      assetsSample: (assets || []).slice(0, 4),
+      chosenBase: nextImage,
+      ASSET_BASE
+    });
+  } catch (e) { /* non-blocking */ }
+
+  // If assets are missing or nextImage is falsy, build a safe fallback using known names
+  if (!assets || assets.length === 0 || !nextImage) {
+    console.warn('⚠️ No background assets found for theme — using safe fallback');
+    const fallbackBase = `${ASSET_BASE}/images/autumn-${isNight ? 'night' : 'day'}-1`;
+    appSettings.bgIndex = 0;
+    // Ensure nextImage has a usable value
+    // NOTE: we do not overwrite assets[] here; we just pick a safe base to render
+    try { console.info('Using fallback background base:', fallbackBase); } catch (e) {}
+    // proceed with fallback
+    // (assign to a variable the rest of the function expects)
+    nextImage = fallbackBase; // eslint-disable-line no-param-reassign, no-unused-expressions
+  }
 
   // Find DOM targets at call time (ensure DOM is ready)
   const bgImgEl = document.getElementById('background-image');
