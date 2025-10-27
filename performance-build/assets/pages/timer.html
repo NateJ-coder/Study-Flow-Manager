@@ -19,7 +19,8 @@
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
 
-  <!-- Preload a best-guess first background image for LCP (based on stored theme + day/night) -->
+  <!-- Preload a best-guess first background image for LCP (based on stored theme + day/night)
+       and use a responsive <picture> element so clients can pick modern formats and sizes. -->
   <link rel="modulepreload" href="/Study-Flow-Manager/performance-build/assets/js/timer.js?v=2025101401">
   <script>
   (function(){
@@ -28,18 +29,34 @@
       const hour = new Date().getHours();
       const night = (hour >= 18 || hour < 6);
       const theme = (localStorage.getItem('sf_theme') || 'autumn');
-      const first = `${BASE}/images/${theme}-${night ? 'night' : 'day'}-1.png`;
-      const l = document.createElement('link');
-      l.rel = 'preload'; l.as = 'image'; l.href = first; l.fetchPriority = 'high';
-      document.head.appendChild(l);
 
-      // Immediately set the background image src so first paint shows it
+      // base name (no extension). We'll provide avif/webp/png fallbacks via srcset
+      const firstBase = `${BASE}/images/${theme}-${night ? 'night' : 'day'}-1`;
+
+      const preload = (href, type) => {
+        const l = document.createElement('link');
+        l.rel = 'preload'; l.as = 'image'; l.href = href; if (type) l.type = type; l.fetchPriority = 'high';
+        document.head.appendChild(l);
+      };
+
+      // Preload a mid-size AVIF/WebP which is a good compromise for phones
+      preload(`${firstBase}-1080.avif`, 'image/avif');
+      preload(`${firstBase}-1080.webp`, 'image/webp');
+
       const setFirst = () => {
         try {
+          const pic = document.getElementById('bg-picture');
+          const sAvif = document.getElementById('bg-source-avif');
+          const sWebp = document.getElementById('bg-source-webp');
           const img = document.getElementById('background-image');
-          if (img) img.src = first;
+          if (!pic || !sAvif || !sWebp || !img) return;
+
+          sAvif.srcset = `${firstBase}-768.avif 768w, ${firstBase}-1080.avif 1080w, ${firstBase}-1440.avif 1440w, ${firstBase}-1920.avif 1920w`;
+          sWebp.srcset = `${firstBase}-768.webp 768w, ${firstBase}-1080.webp 1080w, ${firstBase}-1440.webp 1440w, ${firstBase}-1920.webp 1920w`;
+          img.src = `${firstBase}-1080.webp`;
         } catch (e) { /* non-blocking */ }
       };
+
       if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', setFirst, { once: true });
       } else {
@@ -68,7 +85,15 @@
 
   <!-- Background Layer -->
   <div id="bg-container">
-    <img id="background-image" src="" alt="Dynamic StudyFlow Background" decoding="async" fetchpriority="high" />
+    <picture id="bg-picture">
+      <source id="bg-source-avif" type="image/avif" />
+      <source id="bg-source-webp" type="image/webp" />
+      <img id="background-image"
+           alt="Dynamic StudyFlow Background"
+           decoding="async"
+           fetchpriority="high"
+           sizes="100vw" />
+    </picture>
   </div>
   
   <!-- Particle Layer -->

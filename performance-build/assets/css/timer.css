@@ -146,6 +146,15 @@ body.ready .timer-card {
   -webkit-backdrop-filter: blur(10px);
 }
 
+/* Mobile override: disable expensive backdrop-filter on small screens */
+@media (max-width: 600px) {
+  body.ready .timer-card {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: rgba(15, 20, 25, 0.35); /* slightly more opaque for readability */
+  }
+}
+
 /* Ticking state - breathing glow that uses the accent color */
 .timer-card.is-ticking {
   box-shadow: 0 10px 40px rgba(0,0,0,0.55), 0 0 18px rgba(100,255,218,0.12);

@@ -37,6 +37,11 @@ let transitionProgress = 0;
 let isSleepMode = false;
 let sleepModeFrameSkip = 0;
 
+// Low-end device heuristic (used to throttle particle work)
+const _isLowEnd = (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4)
+              || (navigator.deviceMemory && navigator.deviceMemory <= 4)
+              || /Mobi|Android/i.test(navigator.userAgent);
+
 // External dependencies (will be injected)
 let getCurrentTheme = null;
 let getIsNight = null;
@@ -91,9 +96,11 @@ function getCurrentParticleConfig() {
     const scaleFactor = Math.sqrt(screenArea / baseArea);
     const densityMultiplier = Math.max(0.3, Math.min(2.0, scaleFactor));
     
+    const computedCount = Math.floor(baseConfig.count * densityMultiplier);
+    const capped = _isLowEnd ? Math.min(computedCount, 20) : computedCount;
     return {
         ...baseConfig,
-        count: Math.floor(baseConfig.count * densityMultiplier)
+        count: capped
     };
 }
 
@@ -110,9 +117,8 @@ function initializeParticles(config) {
         particles = [];
     }
 
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    
+    // NOTE: do not overwrite canvas.width/height here — resizeParticleCanvas() already applied DPR scaling.
+    particles = [];
     for (let i = 0; i < config.count; i++) {
         particles.push(createParticle(config));
     }
@@ -133,7 +139,7 @@ function createParticle(config) {
 // --- TRANSITION EFFECTS ---
 function createTransitionParticles(config) {
     transitionParticles = [];
-    const transitionCount = config.count * 3; // Triple the normal particle count for transition
+    const transitionCount = _isLowEnd ? Math.min(config.count, 12) : config.count * 3; // limit on low-end
     
     for (let i = 0; i < transitionCount; i++) {
         transitionParticles.push({
@@ -202,15 +208,20 @@ function drawParticles(config) {
             ctx.arc(p.x, p.y, p.size / 2, 0, Math.PI * 2); // Simple circles for snow
         } else if (config.type === 'leaf' || config.type === 'green-leaf') {
             ctx.fillRect(p.x, p.y, p.size, p.size * 0.5); // Rectangular shape for leaves
-        } else {
-            // Enhanced glow effect for fireflies
-            ctx.globalAlpha = 0.9; // Increase opacity
-            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-            // Enhanced glow with multiple layers
-            ctx.shadowColor = '#ffff80'; // Warm yellow glow
-            ctx.shadowBlur = p.size * 5; // Larger glow radius
-            ctx.fillStyle = '#ffff99'; // Brighter firefly color
-        }
+                } else {
+                        // Enhanced glow effect for fireflies
+                        ctx.globalAlpha = 0.9; // Increase opacity
+                        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                        // Glow is expensive on low-end devices; reduce or disable
+                        if (!_isLowEnd) {
+                            ctx.shadowColor = '#ffff80'; // Warm yellow glow
+                            ctx.shadowBlur = p.size * 3; // reduced glow radius
+                            ctx.fillStyle = '#ffff99'; // Brighter firefly color
+                        } else {
+                            // simpler rendering for low-end devices
+                            ctx.fillStyle = '#fff9cc';
+                        }
+                }
         ctx.fill();
         ctx.shadowBlur = 0; // Reset shadow for next draw
         ctx.globalAlpha = 1; // Reset alpha for next draw
@@ -282,9 +293,13 @@ function drawTransitionParticles(config) {
             // Enhanced transition glow
             ctx.globalAlpha = p.life * 0.8; // Fade based on life and increase visibility
             ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-            ctx.shadowColor = '#ffff80';
-            ctx.shadowBlur = p.size * 6; // Even more dramatic for transition
-            ctx.fillStyle = '#ffff99';
+                        if (!_isLowEnd) {
+                            ctx.shadowColor = '#ffff80';
+                            ctx.shadowBlur = p.size * 6; // Even more dramatic for transition
+                            ctx.fillStyle = '#ffff99';
+                        } else {
+                            ctx.fillStyle = '#fff9cc';
+                        }
         }
         ctx.fill();
         ctx.shadowBlur = 0;

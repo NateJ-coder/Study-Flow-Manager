@@ -35,23 +35,24 @@ let doc, getDoc, setDoc;
 // Theme and Background Config based on BACKGROUND_SYSTEM_SPEC.md
 // Use absolute asset URLs derived from SF_CONFIG.BASE so paths resolve correctly
 const ASSET_BASE = (window.SF_CONFIG && window.SF_CONFIG.BASE) || '/Study-Flow-Manager/performance-build/assets';
+// Store base filenames (no extension). Runtime will prefer AVIF -> WebP -> PNG
 const BACKGROUND_CONFIG = {
   summer: {
     images: {
-      day: Array.from({ length: 8 }, (_, i) => `${ASSET_BASE}/images/summer-day-${i + 1}.png`),
-      night: Array.from({ length: 8 }, (_, i) => `${ASSET_BASE}/images/summer-night-${i + 1}.png`),
+      day: Array.from({ length: 8 }, (_, i) => `${ASSET_BASE}/images/summer-day-${i + 1}`),
+      night: Array.from({ length: 8 }, (_, i) => `${ASSET_BASE}/images/summer-night-${i + 1}`),
     }
   },
   autumn: {
     images: {
-      day: Array.from({ length: 8 }, (_, i) => `${ASSET_BASE}/images/autumn-day-${i + 1}.png`),
-      night: Array.from({ length: 8 }, (_, i) => `${ASSET_BASE}/images/autumn-night-${i + 1}.png`),
+      day: Array.from({ length: 8 }, (_, i) => `${ASSET_BASE}/images/autumn-day-${i + 1}`),
+      night: Array.from({ length: 8 }, (_, i) => `${ASSET_BASE}/images/autumn-night-${i + 1}`),
     }
   },
   winter: {
     images: {
-      day: Array.from({ length: 7 }, (_, i) => `${ASSET_BASE}/images/winter-day-${i + 1}.png`),
-      night: Array.from({ length: 7 }, (_, i) => `${ASSET_BASE}/images/winter-night-${i + 1}.png`),
+      day: Array.from({ length: 7 }, (_, i) => `${ASSET_BASE}/images/winter-day-${i + 1}`),
+      night: Array.from({ length: 7 }, (_, i) => `${ASSET_BASE}/images/winter-night-${i + 1}`),
     }
   }
 };
@@ -176,12 +177,20 @@ async function initializeFirebase() {
       if (started) return;
       started = true;
 
-      // Respect reduced motion preference
+      // Respect reduced motion preference and low-end devices
       try {
         if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
           return; // do not start particles
         }
       } catch (e) { /* ignore */ }
+
+      const isLowEndDevice = (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4)
+                           || (navigator.deviceMemory && navigator.deviceMemory <= 4)
+                           || /Mobi|Android/i.test(navigator.userAgent);
+      if (isLowEndDevice) {
+        console.log('⚡ Skipping particle startup on low-end device (initParticleAutostart)');
+        return;
+      }
 
       try {
         if (window.ParticleSystem && typeof window.ParticleSystem.start === 'function') {
@@ -242,6 +251,24 @@ async function initializeFirebase() {
 
     // Signal that it's safe to start non-critical animations (particles, etc.)
     try { window.dispatchEvent(new Event('studyflow:readyToAnimate')); } catch (e) {}
+  }
+}
+
+// Lazy gate for Firebase initialization: call only when idle or on user interaction
+function lazyInitFirebase() {
+  if (window._sf_firebase_init) return;
+  window._sf_firebase_init = true;
+  // Kick off initializeFirebase without awaiting here — callers can await if needed.
+  try {
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(() => { initializeFirebase().catch(e => console.warn('lazy init fb failed', e)); });
+    } else {
+      // Fallback: initialize after load
+      window.addEventListener('load', () => { initializeFirebase().catch(e => console.warn('lazy init fb failed', e)); }, { once: true });
+    }
+  } catch (e) {
+    console.warn('lazyInitFirebase failed to schedule', e);
+    initializeFirebase().catch(e => console.warn('lazy init fb failed', e));
   }
 }
 
@@ -330,8 +357,14 @@ function applySettings() {
 
   // Defer particle startup until after the app is shown to avoid extra paints during first-second
   try {
+    const prefersReduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const isLowEndDevice = (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4)
+                         || (navigator.deviceMemory && navigator.deviceMemory <= 4)
+                         || /Mobi|Android/i.test(navigator.userAgent);
+
     const startParticles = () => {
       try {
+        if (prefersReduce || isLowEndDevice) return; // respect user/system preferences and low-end devices
         if (window.ParticleSystem && typeof window.ParticleSystem.start === 'function') {
           window.ParticleSystem.start();
         }
@@ -442,26 +475,37 @@ let preloadTimes = [];
 const MAX_PRELOAD_SAMPLES = 10; // Keep last 10 measurements
 
 function preloadImage(url) {
+  // `url` is now a base path without extension. We'll attempt avif -> webp -> png
+  const base = url;
   const startTime = performance.now();
-  
-  return new Promise((resolve, reject) => {
+
+  return new Promise((resolve) => {
     const img = new Image();
-    
+
     img.onload = () => {
       const loadTime = performance.now() - startTime;
-      
-      // Track preload time for minimum interval calculation
       preloadTimes.push(loadTime);
-      if (preloadTimes.length > MAX_PRELOAD_SAMPLES) {
-        preloadTimes.shift(); // Keep only recent samples
-      }
-      
+      if (preloadTimes.length > MAX_PRELOAD_SAMPLES) preloadTimes.shift();
       console.log(`📊 Image preloaded in ${Math.round(loadTime)}ms`);
-      resolve(url);
+      resolve(img.src);
     };
-    
-    img.onerror = () => reject(new Error(`Failed to load image: ${url}`));
-    img.src = url;
+
+    img.onerror = () => {
+      if (!img._triedWebp) {
+        img._triedWebp = true;
+        img.src = `${base}-1080.webp`;
+        return;
+      }
+      if (!img._triedPng) {
+        img._triedPng = true;
+        img.src = `${base}-1080.png`;
+        return;
+      }
+      console.warn('Failed to preload any format for', base);
+      resolve(null);
+    };
+
+    img.src = `${base}-1080.avif`;
   });
 }
 
@@ -471,9 +515,9 @@ function preloadNextImage() {
     const assets = getCurrentImageAssets();
     if (!assets || assets.length === 0) return Promise.resolve(null);
     const nextIndex = (appSettings.bgIndex + 1) % assets.length;
-    const nextUrl = assets[nextIndex];
-    return preloadImage(nextUrl).catch(err => {
-      console.warn('Preload next image failed:', err.message);
+    const nextBase = assets[nextIndex];
+    return preloadImage(nextBase).catch(err => {
+      console.warn('Preload next image failed:', err && err.message ? err.message : err);
       return null;
     });
   } catch (err) {
@@ -576,10 +620,10 @@ async function updateBackground(forceUpdate = false) {
   console.log(`🖼️ Loading background: ${nextImage.split('/').pop()} (Index: ${appSettings.bgIndex})`);
 
   try {
-    // Preload the next image before setting it (with a safety race to avoid stalls)
-    const preloadPromise = preloadImage(nextImage);
-    const safety = new Promise(r => setTimeout(r, 3000));
-    await Promise.race([preloadPromise, safety]);
+  // Preload the next image before setting it (with a safety race to avoid stalls)
+  const preloadPromise = preloadImage(nextImage);
+  const safety = new Promise(r => setTimeout(r, 3000));
+  const preloaded = await Promise.race([preloadPromise, safety]);
     
     // Start particle wipe transition
     if (window.ParticleSystem) {
@@ -594,7 +638,14 @@ async function updateBackground(forceUpdate = false) {
       // Phase 1: prepare and swap the image after a short particle build-up
       setTimeout(() => {
         bgImgEl.style.opacity = '0.05';
-        bgImgEl.src = nextImage;
+        // If the page uses a <picture> with sources, populate their srcsets so the browser
+        // can pick the best image format/size. Fallback to a WebP single src for <img>.
+        const sAvif = document.getElementById('bg-source-avif');
+        const sWebp = document.getElementById('bg-source-webp');
+        const fav = document.getElementById('background-image');
+        if (sAvif) sAvif.srcset = `${nextImage}-768.avif 768w, ${nextImage}-1080.avif 1080w, ${nextImage}-1440.avif 1440w, ${nextImage}-1920.avif 1920w`;
+        if (sWebp) sWebp.srcset = `${nextImage}-768.webp 768w, ${nextImage}-1080.webp 1080w, ${nextImage}-1440.webp 1440w, ${nextImage}-1920.webp 1920w`;
+        fav.src = preloaded || `${nextImage}-1080.webp`;
         // Ensure the app overlay is hidden only after the first background image has loaded
         if (!window._appReadyShown) {
           bgImgEl.addEventListener('load', function _onFirstBg() {
@@ -614,7 +665,8 @@ async function updateBackground(forceUpdate = false) {
       bgContainer.style.transition = 'background-image 1s ease, opacity 1s ease';
       bgContainer.style.opacity = '0.2';
       setTimeout(() => {
-        bgContainer.style.backgroundImage = `url('${nextImage}')`;
+        // Attempt best-effort WebP background for container fallback
+        bgContainer.style.backgroundImage = `url('${nextImage}-1080.webp')`;
       }, 600);
       setTimeout(() => { bgContainer.style.opacity = '0.95'; }, 1000);
     } else {
@@ -1173,24 +1225,17 @@ window.onload = async () => {
         }
     }, 3000); // 3 second timeout
     
-    try {
-        await initializeFirebase();
-        firebaseCompleted = true;
-        clearTimeout(timeoutId);
-    } catch (error) {
-        // If the dynamic imports or other synchronous initialization fails:
-        console.error('Firebase initialization failed:', error);
-        firebaseCompleted = true;
-        clearTimeout(timeoutId);
-        
-        // FIX: Guaranteed unlock in case initializeFirebase failed to reach its finally block.
-        hideLoadingOverlay();
-        
-        // Ensure background loads even if Firebase fails
-        if (typeof updateBackground === 'function') {
-            setTimeout(() => updateBackground(true), 100);
-        }
+  try {
+    // Defer Firebase initialization until the browser is idle or the user interacts with Settings.
+    lazyInitFirebase();
+    // Do not await here — allow the timeout fallback to proceed if Firebase is slow.
+  } catch (error) {
+    console.error('Failed to schedule lazy Firebase init:', error);
+    hideLoadingOverlay();
+    if (typeof updateBackground === 'function') {
+      setTimeout(() => updateBackground(true), 100);
     }
+  }
     
     // Fallback: Always ensure background loads after 2 seconds
     setTimeout(() => {
@@ -1199,3 +1244,9 @@ window.onload = async () => {
         }
     }, 2000);
 };
+
+// Also initialize Firebase when the user opens Settings (so persistence is ready sooner)
+document.addEventListener('DOMContentLoaded', () => {
+  const settingsBtn = document.getElementById('settingsButton');
+  if (settingsBtn) settingsBtn.addEventListener('click', lazyInitFirebase, { once: true });
+});
