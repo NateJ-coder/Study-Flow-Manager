@@ -319,6 +319,37 @@ async function loadSettings() {
   applySettings();
 }
 
+// Settings adapter: expose getUserSettings and setUserSettings
+function getUserSettings() {
+  try {
+    const raw = localStorage.getItem('sf_user_settings');
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (e) {
+    console.warn('getUserSettings failed:', e);
+    return null;
+  }
+}
+
+function setUserSettings(obj) {
+  try {
+    const json = JSON.stringify(obj || {});
+    localStorage.setItem('sf_user_settings', json);
+    // Dispatch an app-level event so subsystems can react to applied settings
+    try {
+      const ev = new CustomEvent('sf:settings:applied', { detail: obj });
+      window.dispatchEvent(ev);
+    } catch (e) { /* ignore */ }
+    return true;
+  } catch (e) {
+    console.warn('setUserSettings failed:', e);
+    return false;
+  }
+}
+
+// Expose to window for other modules
+try { window.getUserSettings = getUserSettings; window.setUserSettings = setUserSettings; } catch (e) {}
+
 function applySettings() {
   // 1. Apply Theme
   document.body.className = `${appSettings.theme}-theme`;
@@ -496,6 +527,11 @@ function preloadImage(url) {
 // Preload the next image in the sequence (nice to have for seamless transitions)
 function preloadNextImage() {
   try {
+    // If preload throttle is active, avoid preloading beyond the current image
+    if (document.documentElement.hasAttribute('data-preload-eco')) {
+      // Skip non-essential preloads while eco mode active
+      return Promise.resolve(null);
+    }
     const assets = getCurrentImageAssets();
     if (!assets || assets.length === 0) return Promise.resolve(null);
     const nextIndex = (appSettings.bgIndex + 1) % assets.length;
