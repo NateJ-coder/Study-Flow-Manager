@@ -136,6 +136,8 @@
     rainStopTimeout = setTimeout(() => {
       stopRain();
     }, RAIN_DURATION_MS);
+    // Start rain audio loop when available
+    try { window.AudioManager?.loopRain(true, 0.22); } catch (e) {}
   }
 
   function stopRain() {
@@ -156,6 +158,8 @@
 
     // Restore user settings snapshot
     restoreUserSettings();
+    // Stop rain audio
+    try { window.AudioManager?.loopRain(false); } catch (e) {}
   }
 
   function scheduleRain() {

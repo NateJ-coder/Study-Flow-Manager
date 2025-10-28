@@ -515,10 +515,7 @@ function buildMonthGrid(){
       const nowCrossed = el.classList.contains('crossed');
       calState.crossed[date] = nowCrossed; if (!nowCrossed) delete calState.crossed[date];
       saveCrossed();
-      try {
-        const src = (window.SF_CONFIG?.AUDIO?.DRAWING) || (window.SF_CONFIG?.AUDIO?.CLICK);
-        if (src) { const a = new Audio(src); a.volume = 0.35; a.play().catch(()=>{}); }
-      } catch {}
+      try { window.AudioManager?.play('drawing', 0.35); } catch {}
     });
   });
 

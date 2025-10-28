@@ -31,6 +31,12 @@
     IMAGES: {
       LOGO_768: BASE + '/images/optimized/studyflow-logo-768.webp'
     },
+    AUDIO: {
+      CLICK: BASE + '/audio/click.mp3',
+      SPLASH: BASE + '/audio/splash.mp3',
+      RAIN: BASE + '/audio/rain.mp3',
+      DRAWING: BASE + '/audio/drawing.mp3'
+    },
     BACKGROUNDS: [
       BASE + '/images/autumn-day-1.png',
       BASE + '/images/autumn-day-2.png',

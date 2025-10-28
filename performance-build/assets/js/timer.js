@@ -877,12 +877,8 @@ updatePerpetualClock();
 // Audio Management
 function playCompletionSound() {
   try {
-    const audio = new Audio('assets/audio/splash.mp3');
-    audio.volume = 0.7;
-    audio.play().catch(e => console.log('Audio play failed:', e));
-  } catch (e) {
-    console.log('Audio loading failed:', e);
-  }
+    window.AudioManager?.play('splash', 0.7);
+  } catch (e) { /* no-op */ }
 }
 
 // Confetti burst (12 particles) - lightweight, respects reduced-motion
