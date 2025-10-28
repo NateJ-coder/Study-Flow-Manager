@@ -35,26 +35,20 @@ let doc, getDoc, setDoc;
 // Theme and Background Config based on BACKGROUND_SYSTEM_SPEC.md
 // Use absolute asset URLs derived from SF_CONFIG.BASE so paths resolve correctly
 const ASSET_BASE = (window.SF_CONFIG && window.SF_CONFIG.BASE) || '/Study-Flow-Manager/performance-build/assets';
-// Store base filenames (no extension). Runtime will prefer AVIF -> WebP -> PNG
+
+// Build BACKGROUND_CONFIG from the canonical list in window.SF_CONFIG.BACKGROUNDS
+// The SF_CONFIG list contains full paths with extensions for the shipped PNGs.
+function backgroundsFor(theme, tod) {
+  try {
+    const list = (window.SF_CONFIG && window.SF_CONFIG.BACKGROUNDS) || [];
+    return list.filter(p => p.indexOf(`/images/${theme}-${tod}-`) !== -1);
+  } catch (e) { return []; }
+}
+
 const BACKGROUND_CONFIG = {
-  summer: {
-    images: {
-      day: Array.from({ length: 8 }, (_, i) => `${ASSET_BASE}/images/summer-day-${i + 1}`),
-      night: Array.from({ length: 8 }, (_, i) => `${ASSET_BASE}/images/summer-night-${i + 1}`),
-    }
-  },
-  autumn: {
-    images: {
-      day: Array.from({ length: 8 }, (_, i) => `${ASSET_BASE}/images/autumn-day-${i + 1}`),
-      night: Array.from({ length: 8 }, (_, i) => `${ASSET_BASE}/images/autumn-night-${i + 1}`),
-    }
-  },
-  winter: {
-    images: {
-      day: Array.from({ length: 7 }, (_, i) => `${ASSET_BASE}/images/winter-day-${i + 1}`),
-      night: Array.from({ length: 7 }, (_, i) => `${ASSET_BASE}/images/winter-night-${i + 1}`),
-    }
-  }
+  summer: { images: { day: backgroundsFor('summer', 'day'), night: backgroundsFor('summer', 'night') } },
+  autumn: { images: { day: backgroundsFor('autumn', 'day'), night: backgroundsFor('autumn', 'night') } },
+  winter: { images: { day: backgroundsFor('winter', 'day'), night: backgroundsFor('winter', 'night') } }
 };
 
 // Default Settings
@@ -479,43 +473,23 @@ let preloadTimes = [];
 const MAX_PRELOAD_SAMPLES = 10; // Keep last 10 measurements
 
 function preloadImage(url) {
-  // `url` is now a base path without extension. We'll attempt avif -> webp -> png
-  const base = url;
+  // `url` is a full path (including extension) from SF_CONFIG.BACKGROUNDS.
+  // Load exactly that URL to avoid probing non-existent suffixes/formats.
   const startTime = performance.now();
-
   return new Promise((resolve) => {
     const img = new Image();
-
     img.onload = () => {
       const loadTime = performance.now() - startTime;
       preloadTimes.push(loadTime);
       if (preloadTimes.length > MAX_PRELOAD_SAMPLES) preloadTimes.shift();
-      console.log(`📊 Image preloaded in ${Math.round(loadTime)}ms`);
-      resolve(img.src);
+      // return the exact URL we loaded
+      resolve(img.src || url);
     };
-
     img.onerror = () => {
-      if (!img._triedWebp) {
-        img._triedWebp = true;
-        img.src = `${base}-1080.webp`;
-        return;
-      }
-      if (!img._triedPng) {
-        img._triedPng = true;
-        img.src = `${base}-1080.png`;
-        return;
-      }
-      // Final fallback: try the original PNG filename without size suffix (e.g., autumn-day-1.png)
-      if (!img._triedBasePng) {
-        img._triedBasePng = true;
-        img.src = `${base}.png`;
-        return;
-      }
-      console.warn('Failed to preload any format for', base);
+      console.warn('Preload failed for', url);
       resolve(null);
     };
-
-    img.src = `${base}-1080.avif`;
+    img.src = url;
   });
 }
 
@@ -678,11 +652,11 @@ async function updateBackground(forceUpdate = false) {
         const sAvif = document.getElementById('bg-source-avif');
         const sWebp = document.getElementById('bg-source-webp');
         const fav = document.getElementById('background-image');
-        if (sAvif) sAvif.srcset = `${nextImage}-768.avif 768w, ${nextImage}-1080.avif 1080w, ${nextImage}-1440.avif 1440w, ${nextImage}-1920.avif 1920w`;
-        if (sWebp) sWebp.srcset = `${nextImage}-768.webp 768w, ${nextImage}-1080.webp 1080w, ${nextImage}-1440.webp 1440w, ${nextImage}-1920.webp 1920w`;
-  // If preload didn't return a successful URL, fall back to PNG (most deployments still have PNGs)
-  // If preload didn't return a successful URL, fall back to the original PNG filename (no size suffix)
-  fav.src = preloaded || `${nextImage}.png`;
+    // We now ship exact PNG paths in SF_CONFIG.BACKGROUNDS; don't probe for size-suffixed formats.
+    if (sAvif) sAvif.srcset = '';
+    if (sWebp) sWebp.srcset = '';
+    // Set src to the preloaded URL or the known PNG path from the config.
+    fav.src = preloaded || nextImage;
         // Ensure the app overlay is hidden only after the first background image has loaded
         if (!window._appReadyShown) {
           bgImgEl.addEventListener('load', function _onFirstBg() {
@@ -702,13 +676,13 @@ async function updateBackground(forceUpdate = false) {
       bgContainer.style.transition = 'background-image 1s ease, opacity 1s ease';
       bgContainer.style.opacity = '0.2';
       setTimeout(() => {
-  // Fall back to PNG (original filename) if modern formats aren't present on disk
-  bgContainer.style.backgroundImage = `url('${nextImage}.png')`;
+        // Use the known PNG path
+        bgContainer.style.backgroundImage = `url('${nextImage}')`;
       }, 600);
       setTimeout(() => { bgContainer.style.opacity = '0.95'; }, 1000);
     } else {
       // Last resort: try to set document body background
-  document.body.style.backgroundImage = `url('${nextImage}.png')`;
+  document.body.style.backgroundImage = `url('${nextImage}')`;
     }
     
     // Save the new index/theme
