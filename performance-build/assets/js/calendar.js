@@ -382,14 +382,10 @@ function init() {
     }, { timeout: 1000 });
   } catch (e) { /* ignore */ }
 
-  // pull remote upcoming (non-blocking) — preserved but optional
-  // Prefer Cloud Functions / Firebase callable in the future. If no remote endpoint is configured,
-  // skip remote sync to avoid leaking secrets or failing silently.
-  if (GAS_URL) {
-    try { syncUpcoming(); } catch (e) { console.warn('syncUpcoming failed', e); }
-  } else {
-    // No remote sync configured — remain local-first
-  }
+  // pull remote upcoming (non-blocking) — prefer Netlify proxy if available
+  try {
+    netlifySyncUpcoming().catch(err => console.warn('Netlify upcoming failed; local only', err));
+  } catch (e) { /* ignore */ }
 }
 document.addEventListener("DOMContentLoaded", init);
 
@@ -449,6 +445,48 @@ async function syncUpcoming() {
     try { localStorage.setItem(STORE_KEY, JSON.stringify(merged)); } catch(e) { console.warn('Failed to save merged events', e); }
     render();
   } catch (e) { console.warn('Upcoming fetch failed; showing local only', e); }
+}
+
+// ---- NETLIFY PROXY BRIDGE ----
+// If you deployed the Netlify function and added calendar-proxy.js, use it.
+async function netlifySyncUpcoming() {
+  const now = new Date().toISOString();
+  const in30 = new Date(Date.now() + 30*24*60*60*1000).toISOString();
+  try {
+    if (!window.CalendarAPI || typeof window.CalendarAPI.listUpcoming !== 'function') {
+      // Proxy not present; skip
+      return;
+    }
+    const remote = await window.CalendarAPI.listUpcoming({ timeMin: now, timeMax: in30, maxResults: 25 });
+    const mapped = (Array.isArray(remote) ? remote : []).map(ev => {
+      const allDay = !!ev.start?.date;
+      const startISO = ev.start?.dateTime || (ev.start?.date ? `${ev.start.date}T00:00:00${tzOffset()}` : '');
+      const endISO = ev.end?.dateTime || (ev.end?.date ? `${ev.end.date}T23:59:00${tzOffset()}` : '');
+      const date = ev.start?.date || (startISO ? startISO.slice(0,10) : '');
+      return {
+        local_id: ev.id || crypto.randomUUID(),
+        event_id: ev.id,
+        title: ev.summary || '(no title)',
+        date,
+        startTime: startISO ? startISO.slice(11,16) : '',
+        endTime: endISO ? endISO.slice(11,16) : '',
+        all_day: allDay,
+        reminders: []
+      };
+    });
+
+    const existing = store.all();
+    const byId = new Map(existing.filter(x => x.event_id).map(x => [x.event_id, x]));
+    const merged = [
+      ...existing.filter(x => !x.event_id),
+      ...mapped.map(m => Object.assign(byId.get(m.event_id) || {}, m))
+    ].sort((a,b)=> (a.date + (a.startTime||'')) < (b.date + (b.startTime||'')) ? -1 : 1);
+
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(merged)); } catch(e) {}
+    render();
+  } catch (e) {
+    console.warn('Netlify upcoming failed; showing local only', e);
+  }
 }
 
 /* ====== ADD: SETTINGS STATE ====== */
