@@ -212,7 +212,12 @@
     </div>
   </aside>
 
-  <script src="/Study-Flow-Manager/performance-build/assets/js/gas-endpoint.js?v=2025-10-16-11" defer></script>
+  <!-- Netlify calendar proxy shim + base (set your Netlify site below) -->
+  <script>
+    // Replace with your live Netlify site, or leave empty to use relative path
+    window.SF_NETLIFY_BASE = 'https://YOUR_SITE.netlify.app';
+  </script>
+  <script src="/Study-Flow-Manager/performance-build/assets/js/calendar-proxy.js" defer></script>
   <script src="/Study-Flow-Manager/performance-build/assets/js/config.js?v=2025-10-16-11" defer></script>
   <script src="/Study-Flow-Manager/performance-build/assets/js/audio.js" defer></script>
   <script src="/Study-Flow-Manager/performance-build/assets/js/local-reminders.js?v=1" defer></script>
