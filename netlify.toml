@@ -1,0 +1,25 @@
+[build]
+  # No build step for a static folder; just publish it.
+  publish = "performance-build"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+# (Optional but recommended) headers for perf & security
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "SAMEORIGIN"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+[[headers]]
+  for = "/**/*.{js,css,webp,avif,png,jpg,jpeg,svg}"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/**/*.html"
+  [headers.values]
+    Cache-Control = "public, max-age=60"

@@ -1,4 +1,7 @@
 {
+  "scripts": {
+    "lint:functions": "npm --prefix functions run lint"
+  },
   "dependencies": {
     "firebase": "^12.4.0"
   }

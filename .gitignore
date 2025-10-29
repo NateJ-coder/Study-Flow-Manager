@@ -47,3 +47,5 @@ summaries/
 
 # Local embedded node runtime (removed from repo)
 nodejs/
+# Local Netlify folder
+.netlify

@@ -70,7 +70,7 @@
         "*.local"
       ],
       "predeploy": [
-        "npm --prefix \"%RESOURCE_DIR%\" run lint"
+        "npm run lint:functions"
       ],
       "source": "functions"
     }
