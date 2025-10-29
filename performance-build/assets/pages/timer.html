@@ -63,9 +63,8 @@
         document.head.appendChild(l);
       };
 
-      // Preload a mid-size AVIF/WebP which is a good compromise for phones
-      preload(`${firstBase}-1080.avif`, 'image/avif');
-      preload(`${firstBase}-1080.webp`, 'image/webp');
+  // Preload a mid-size PNG which is the canonical shipped asset
+  preload(`${firstBase}.png`, 'image/png');
 
       const setFirst = () => {
         try {
@@ -75,9 +74,9 @@
           const img = document.getElementById('background-image');
           if (!pic || !sAvif || !sWebp || !img) return;
 
-          sAvif.srcset = `${firstBase}-768.avif 768w, ${firstBase}-1080.avif 1080w, ${firstBase}-1440.avif 1440w, ${firstBase}-1920.avif 1920w`;
-          sWebp.srcset = `${firstBase}-768.webp 768w, ${firstBase}-1080.webp 1080w, ${firstBase}-1440.webp 1440w, ${firstBase}-1920.webp 1920w`;
-          // Prefer WebP/AVIF when available, but use the original PNG filename (no size suffix) as a safe fallback
+          // Our build ships canonical PNGs. Leave source srcsets empty to avoid 404s
+          if (sAvif) sAvif.srcset = '';
+          if (sWebp) sWebp.srcset = '';
           img.src = `${firstBase}.png`;
         } catch (e) { /* non-blocking */ }
       };

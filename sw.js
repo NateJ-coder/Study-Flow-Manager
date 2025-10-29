@@ -25,12 +25,29 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   const req = event.request;
+  // Do not interfere with non-GET requests or cross-origin requests
+  try {
+    const url = new URL(req.url);
+    if (req.method !== 'GET' || url.origin !== self.location.origin) {
+      // For non-GET or cross-origin, just let the browser handle it normally
+      return;
+    }
+  } catch (e) {
+    // If URL parsing fails, don't attempt to cache - let default network behavior run
+    return;
+  }
+
   // HTML pages: network-first
   if (req.headers.get('accept') && req.headers.get('accept').includes('text/html')) {
     event.respondWith(
       fetch(req).then(res => {
-        const copy = res.clone();
-        caches.open(CACHE).then(c => c.put(req, copy));
+        // Only cache full successful (200) responses
+        if (res && res.status === 200) {
+          const copy = res.clone();
+          caches.open(CACHE).then(c => {
+            try { c.put(req, copy); } catch (e) { /* swallow caching errors */ }
+          });
+        }
         return res;
       }).catch(() => caches.match(req))
     );
@@ -40,7 +57,13 @@ self.addEventListener('fetch', event => {
   // Other assets: cache-first
   event.respondWith(
     caches.match(req).then(hit => hit || fetch(req).then(res => {
-      try { const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)); } catch(e) {}
+      // Only cache full successful (200) responses from same-origin GETs
+      try {
+        if (res && res.status === 200) {
+          const copy = res.clone();
+          caches.open(CACHE).then(c => { try { c.put(req, copy); } catch(e){} });
+        }
+      } catch(e) { /* ignore caching errors */ }
       return res;
     }).catch(() => caches.match(req)))
   );
