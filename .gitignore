@@ -44,3 +44,6 @@ summaries/
 # Cache directories
 .cache/
 .parcel-cache/
+
+# Local embedded node runtime (removed from repo)
+nodejs/

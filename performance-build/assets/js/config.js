@@ -64,10 +64,8 @@
       BASE + '/images/winter-day-4.png',
       BASE + '/images/winter-day-5.png'
     ],
-    INTEGRATIONS: {
-      GAS_CALENDAR_URL: 'https://script.google.com/macros/s/AKfycbwDnClA4AKpSc_G_SVA0rVVZnfPpukMGFuLIDPBEGFkqoqpiLrpIJaK3E4i0FZKIkyWAA/exec',
-      GAS_SHARED_KEY:  '8bd4cad053faee35a6e87af44d78622122fd8bce954c91c20e7412f56947558c1d0d2de4e2f6f83e883194db9012b2c1'
-    }
+    // Integrations: keep empty on the client. Sensitive endpoints/keys must live on server-side.
+    INTEGRATIONS: { }
   };
 
   // --- allow gas-endpoint.js to override these values ---
@@ -80,4 +78,16 @@
 
   // Publish to window
   window.SF_CONFIG = SF_CONFIG;
+  // Expose a minimal, public Firebase config object if the app ships one.
+  // This should contain only non-secret fields (apiKey, authDomain, projectId, messagingSenderId, appId)
+  // If you prefer to set this elsewhere, override window.SF_PUBLIC_FIREBASE before loading modules.
+  try {
+    window.SF_PUBLIC_FIREBASE = {
+      apiKey: 'AIzaSyDiY_fxXuLNSTgpPIiHTkmvSAlT-Owqkgc',
+      authDomain: 'studyflowapp-2dfd0.firebaseapp.com',
+      projectId: 'studyflowapp-2dfd0',
+      messagingSenderId: '292997866503',
+      appId: '1:292997866503:web:a999c0ef9d3f06b61136a2'
+    };
+  } catch (e) { /* non-blocking */ }
 })();

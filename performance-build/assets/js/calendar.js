@@ -148,12 +148,15 @@ function rruleFromSelect(sel, advanced) {
   return advanced ? `RRULE:${base};${advanced}` : `RRULE:${base}`;
 }
 
-// ---- GAS BRIDGE ----
+// ---- GAS BRIDGE (deprecated client-side) ----
+// Note: Server-side integration (Cloud Functions) is recommended. This client-side GAS bridge
+// is a legacy helper and will be skipped when no GAS URL is configured.
 function gasUrl() {
   const o = encodeURIComponent(location.origin);
-  return `${GAS_URL}?key=${encodeURIComponent(GAS_KEY)}&origin=${o}`;
+  return `${GAS_URL || ''}?key=${encodeURIComponent(GAS_KEY || '')}&origin=${o}`;
 }
 async function gasPost(payload) {
+  if (!GAS_URL) throw new Error('No GAS URL configured');
   const res = await fetch(gasUrl(), {
     method: "POST",
     headers: { "Content-Type": "text/plain" },
@@ -380,8 +383,12 @@ function init() {
   } catch (e) { /* ignore */ }
 
   // pull remote upcoming (non-blocking) — preserved but optional
-  if (GAS_URL && GAS_KEY) {
+  // Prefer Cloud Functions / Firebase callable in the future. If no remote endpoint is configured,
+  // skip remote sync to avoid leaking secrets or failing silently.
+  if (GAS_URL) {
     try { syncUpcoming(); } catch (e) { console.warn('syncUpcoming failed', e); }
+  } else {
+    // No remote sync configured — remain local-first
   }
 }
 document.addEventListener("DOMContentLoaded", init);

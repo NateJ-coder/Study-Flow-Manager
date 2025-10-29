@@ -1,0 +1,13 @@
+{
+  "name": "StudyFlow",
+  "short_name": "StudyFlow",
+  "start_url": "/Study-Flow-Manager/performance-build/assets/pages/welcome.html",
+  "scope": "/Study-Flow-Manager/",
+  "display": "standalone",
+  "background_color": "#0b0b0b",
+  "theme_color": "#0b0b0b",
+  "icons": [
+    { "src": "/Study-Flow-Manager/performance-build/assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/Study-Flow-Manager/performance-build/assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

@@ -101,6 +101,13 @@
       }
     } catch (e) { /* ignore */ }
   </script>
+  <link rel="manifest" href="/Study-Flow-Manager/performance-build/manifest.webmanifest">
+  <meta name="theme-color" content="#0b0b0b">
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function(){ navigator.serviceWorker.register('/Study-Flow-Manager/sw.js').catch(()=>{}); });
+    }
+  </script>
 
 </head>
 <body>

@@ -35,6 +35,13 @@
   <link rel="preload" href="/Study-Flow-Manager/performance-build/assets/js/welcome.js" as="script" />
 
   <link rel="stylesheet" href="./performance-build/assets/css/intro.css" />
+  <link rel="manifest" href="/Study-Flow-Manager/performance-build/manifest.webmanifest">
+  <meta name="theme-color" content="#0b0b0b">
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function(){ navigator.serviceWorker.register('/Study-Flow-Manager/sw.js').catch(()=>{}); });
+    }
+  </script>
   <link rel="stylesheet" href="./performance-build/assets/css/rain.css" />
   <!-- Optional (Chromium): prerender for instant swap -->
   <script type="speculationrules">
