@@ -1,3 +1,7 @@
+const {onRequest} = require("firebase-functions/v2/https");
+exports.healthcheck = onRequest({region: "africa-south1"}, (req, res) => {
+	res.status(200).send("OK ✅");
+});
 /**
  * Import function triggers from their respective submodules:
  *
