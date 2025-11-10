@@ -49,3 +49,5 @@ summaries/
 nodejs/
 # Local Netlify folder
 .netlify
+
+.env
