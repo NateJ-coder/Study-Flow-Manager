@@ -14,12 +14,24 @@ async function _call(action, payload) {
     body: JSON.stringify({ action, ...payload })
   });
   if (!res.ok) throw new Error(`Calendar proxy failed: ${res.status}`);
+  // For connect action, we expect a redirect, not JSON
+  if (action === 'connect') {
+    const data = await res.json().catch(() => ({}));
+    if (data.url) {
+      window.location.href = data.url;
+      return { ok: true };
+    }
+  }
   const json = await res.json();
   if (!json || json.ok === false) throw new Error(`Calendar proxy error: ${json?.error || 'unknown'}`);
   return json;
 }
 
 window.CalendarAPI = {
+  async connect() {
+    await _call('connect');
+    return true;
+  },
   async listUpcoming({ timeMin, timeMax, maxResults = 25 } = {}) {
     const { events = [] } = await _call('listUpcoming', { timeMin, timeMax, maxResults });
     return events;

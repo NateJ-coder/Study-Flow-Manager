@@ -718,6 +718,42 @@ document.addEventListener("DOMContentLoaded", () => {
   const closeBtn = document.getElementById('closeCalendarSettings'); if (closeBtn) closeBtn.addEventListener('click', closeCalSettings);
   const saveBtn = document.getElementById('saveCalendarSettings'); if (saveBtn) saveBtn.addEventListener('click', saveSettings);
 
+  const gcalConnectBtn = document.getElementById('gcalConnectBtn');
+  if (gcalConnectBtn) {
+    gcalConnectBtn.addEventListener('click', async () => {
+        try {
+            gcalConnectBtn.disabled = true;
+            gcalConnectBtn.textContent = 'Connecting...';
+            await window.CalendarAPI.connect();
+            // The page will redirect, so no need to re-enable the button here.
+        } catch (e) {
+            console.error('Failed to connect Google Calendar', e);
+            toast('Connection failed. See console for details.', 'err');
+            gcalConnectBtn.disabled = false;
+            gcalConnectBtn.textContent = 'Connect Google Calendar';
+        }
+    });
+  }
+
+  // Check connection status
+  const gcalStatus = document.getElementById('gcalStatus');
+  if (gcalStatus) {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('gcal_connected') === 'true') {
+          gcalStatus.textContent = 'Status: Connected.';
+          gcalStatus.style.color = 'var(--sf-ok)';
+          if (gcalConnectBtn) {
+              gcalConnectBtn.textContent = 'Reconnect';
+          }
+          // Clean the URL
+          if (history.replaceState) {
+              params.delete('gcal_connected');
+              const newUrl = `${window.location.pathname}?${params.toString()}`.replace(/\?$/, '');
+              history.replaceState({}, '', newUrl);
+          }
+      }
+  }
+
   const prev = document.getElementById('prevMonth'); if (prev) prev.addEventListener('click', () => { if(--calState.view.month < 0){ calState.view.month = 11; calState.view.year--; } buildMonthGrid(); });
   const next = document.getElementById('nextMonth'); if (next) next.addEventListener('click', () => { if(++calState.view.month > 11){ calState.view.month = 0; calState.view.year++; } buildMonthGrid(); });
 
