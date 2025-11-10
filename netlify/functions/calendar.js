@@ -82,38 +82,10 @@ exports.handler = async function(event, context) {
     };
   }
 
-  // The rest of this function acts as a proxy to another endpoint.
-  const endpoint = process.env.CALENDAR_ENDPOINT;
-  const sharedKey = process.env.CALENDAR_SHARED_KEY;
-  if (!endpoint || !sharedKey) {
-    return {
-      statusCode: 500,
-      headers: { 'Content-Type': 'application/json', ...corsHeaders },
-      body: JSON.stringify({ ok: false, error: 'Upstream endpoint or shared key not configured' })
-    };
-  }
-
-  try {
-    const res = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-shared-key': sharedKey },
-      body: JSON.stringify(payload)
-    });
-
-    const text = await res.text();
-    let json;
-    try { json = JSON.parse(text); } catch (e) { json = { raw: text }; }
-
-    return {
-      statusCode: res.status >= 200 && res.status < 400 ? 200 : 502,
-      headers: { 'Content-Type': 'application/json', ...corsHeaders },
-      body: JSON.stringify({ ok: true, upstreamStatus: res.status, data: json })
-    };
-  } catch (err) {
-    return {
-      statusCode: 502,
-      headers: { 'Content-Type': 'application/json', ...corsHeaders },
-      body: JSON.stringify({ ok: false, error: String(err) })
-    };
-  }
+  // All other actions are not supported by this function anymore.
+  return {
+    statusCode: 400,
+    headers: { 'Content-Type': 'application/json', ...corsHeaders },
+    body: JSON.stringify({ ok: false, error: 'Unknown or unsupported action' })
+  };
 };
