@@ -65,8 +65,14 @@ class SleepModeManager {
   
   // Get sleep timeout from app settings
   getSleepTimeout() {
+    const MIN_SLEEP_SECONDS = 30; // Safety floor so a stray/test value can't make sleep mode unusable
     if (window.appSettings && typeof window.appSettings.sleepTimeout !== 'undefined') {
-      const timeoutSeconds = window.appSettings.sleepTimeout;
+      let timeoutSeconds = window.appSettings.sleepTimeout;
+      // 0 explicitly means "never sleep" and should pass through unchanged.
+      if (timeoutSeconds !== 0 && timeoutSeconds < MIN_SLEEP_SECONDS) {
+        console.warn('💤 Stored sleep timeout', timeoutSeconds, 's is below the safety floor — using', MIN_SLEEP_SECONDS, 's instead.');
+        timeoutSeconds = MIN_SLEEP_SECONDS;
+      }
       console.log('💤 Sleep timeout from settings:', timeoutSeconds, 'seconds');
       return timeoutSeconds * 1000; // Convert seconds to milliseconds
     }
@@ -188,13 +194,22 @@ class SleepModeManager {
   hideTimerCard() {
     this.timerCard = document.querySelector('.timer-card');
     if (this.timerCard) {
-      this.timerCard.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
-      this.timerCard.style.opacity = '0';
-      this.timerCard.style.transform = 'scale(0.8)';
-      
-      setTimeout(() => {
-        this.timerCard.style.display = 'none';
-      }, 500);
+      if (window.gsap) {
+        // killTweensOf + onComplete (instead of a bare setTimeout) means a rapid
+        // sleep/wake toggle can't leave a stale timer fire display:none on a card
+        // that a later showTimerCard() already brought back — the old setTimeout
+        // had no way to know it had been superseded.
+        gsap.killTweensOf(this.timerCard);
+        gsap.to(this.timerCard, {
+          opacity: 0, scale: 0.8, duration: 0.5, ease: 'power1.inOut',
+          onComplete: () => { this.timerCard.style.display = 'none'; }
+        });
+      } else {
+        this.timerCard.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+        this.timerCard.style.opacity = '0';
+        this.timerCard.style.transform = 'scale(0.8)';
+        setTimeout(() => { this.timerCard.style.display = 'none'; }, 500);
+      }
     }
   }
   
@@ -203,11 +218,18 @@ class SleepModeManager {
     if (this.timerCard) {
       this.timerCard.style.display = 'block';
       
-      // Force reflow
-      this.timerCard.offsetHeight;
-      
-      this.timerCard.style.opacity = '1';
-      this.timerCard.style.transform = 'scale(1)';
+      if (window.gsap) {
+        gsap.killTweensOf(this.timerCard);
+        gsap.fromTo(this.timerCard,
+          { opacity: 0, scale: 0.8 },
+          { opacity: 1, scale: 1, duration: 0.4, ease: 'power1.out' }
+        );
+      } else {
+        // Force reflow
+        this.timerCard.offsetHeight;
+        this.timerCard.style.opacity = '1';
+        this.timerCard.style.transform = 'scale(1)';
+      }
     }
   }
   

@@ -156,6 +156,7 @@ function createTransitionParticles(config) {
 
 function startParticleTransition() {
     if (isTransitioning) return; // Don't start if already transitioning
+    if (!canvas || !ctx) return; // Not initialized yet (e.g. an early forced background update before initializeParticleSystem() has run)
     
     const config = getCurrentParticleConfig();
     createTransitionParticles(config);

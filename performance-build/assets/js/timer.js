@@ -147,9 +147,13 @@ async function initializeFirebase() {
 
         // Fade out overlay
         if (overlay) {
-          overlay.style.transition = 'opacity 250ms ease';
-          overlay.style.opacity = '0';
-          setTimeout(() => { try { overlay.remove(); } catch(e){} }, 260);
+          if (window.gsap) {
+            gsap.to(overlay, { opacity: 0, duration: 0.25, ease: 'power1.out', onComplete: () => { try { overlay.remove(); } catch(e){} } });
+          } else {
+            overlay.style.transition = 'opacity 250ms ease';
+            overlay.style.opacity = '0';
+            setTimeout(() => { try { overlay.remove(); } catch(e){} }, 260);
+          }
         }
         // Mark the document as ready so CSS can enable post-load effects (blur, etc.)
         try {
@@ -231,6 +235,7 @@ async function initializeFirebase() {
       userId = crypto.randomUUID(); 
     }
     isAuthReady = true;
+    window._sf_firebaseInitDone = true; // let the window.onload timeout fallback know we actually finished
     try {
       // loadSettings may be async; wait for it so appSettings are applied before showing
       await loadSettings();
@@ -677,22 +682,17 @@ async function updateBackground(forceUpdate = false) {
 
     // Enhanced smooth transition coordinated with particle effect
     if (bgImgEl) {
-      bgImgEl.style.transition = 'opacity 1s ease';
-      bgImgEl.style.opacity = '0.2';
-
-      // Phase 1: prepare and swap the image after a short particle build-up
-      setTimeout(() => {
-        bgImgEl.style.opacity = '0.05';
+      const swapImageSrc = () => {
         // If the page uses a <picture> with sources, populate their srcsets so the browser
         // can pick the best image format/size. Fallback to a WebP single src for <img>.
         const sAvif = document.getElementById('bg-source-avif');
         const sWebp = document.getElementById('bg-source-webp');
         const fav = document.getElementById('background-image');
-    // We now ship exact PNG paths in SF_CONFIG.BACKGROUNDS; don't probe for size-suffixed formats.
-    if (sAvif) sAvif.srcset = '';
-    if (sWebp) sWebp.srcset = '';
-    // Set src to the preloaded URL or the known PNG path from the config.
-    fav.src = preloaded || nextImage;
+        // We now ship exact PNG paths in SF_CONFIG.BACKGROUNDS; don't probe for size-suffixed formats.
+        if (sAvif) sAvif.srcset = '';
+        if (sWebp) sWebp.srcset = '';
+        // Set src to the preloaded URL or the known PNG path from the config.
+        fav.src = preloaded || nextImage;
         // Ensure the app overlay is hidden only after the first background image has loaded
         if (!window._appReadyShown) {
           bgImgEl.addEventListener('load', function _onFirstBg() {
@@ -701,12 +701,27 @@ async function updateBackground(forceUpdate = false) {
             window._appReadyShown = true;
           });
         }
-      }, 600);
+      };
 
-      // Phase 2: fade image in
-      setTimeout(() => {
-        bgImgEl.style.opacity = '0.95';
-      }, 1000);
+      if (window.gsap) {
+        // A GSAP timeline replaces three independent setTimeout calls. That matters because the
+        // old version could interleave with a second updateBackground() call fired before the
+        // first one's timers finished (this genuinely happened back-to-back on load) — each
+        // setTimeout would blindly stomp bgImgEl.style.opacity regardless of what the other call
+        // was doing. killTweensOf() + a single timeline makes each background swap atomic.
+        gsap.killTweensOf(bgImgEl);
+        gsap.timeline()
+          .to(bgImgEl, { opacity: 0.2, duration: 0.35, ease: 'power1.out' })
+          .add(swapImageSrc)
+          .to(bgImgEl, { opacity: 0.05, duration: 0.15 })
+          .to(bgImgEl, { opacity: 0.95, duration: 0.55, ease: 'power1.in' }, '+=0.05');
+      } else {
+        // Fallback if GSAP failed to load for any reason
+        bgImgEl.style.transition = 'opacity 1s ease';
+        bgImgEl.style.opacity = '0.2';
+        setTimeout(() => { bgImgEl.style.opacity = '0.05'; swapImageSrc(); }, 600);
+        setTimeout(() => { bgImgEl.style.opacity = '0.95'; }, 1000);
+      }
     } else if (bgContainer) {
       // Fallback: set background-image on container if img element not present
       bgContainer.style.transition = 'background-image 1s ease, opacity 1s ease';
@@ -1252,12 +1267,9 @@ window.onload = async () => {
         }
     };
     
-    // Set up Firebase timeout
-    let firebaseCompleted = false;
-    
     // Timeout fallback
     const timeoutId = setTimeout(() => {
-        if (!firebaseCompleted) {
+        if (!window._sf_firebaseInitDone) {
             console.log('⚠️ Firebase initialization timeout - proceeding without it');
             hideLoadingOverlay();
             
