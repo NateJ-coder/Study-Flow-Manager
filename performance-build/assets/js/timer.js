@@ -63,6 +63,29 @@ let appSettings = {
   sleepTimeout: 300, // seconds (5 minutes default)
   disableTickingGlow: false, // user preference to disable visual ticking glow
 };
+// Snapshot of the defaults above, used to repair corrupt/non-numeric stored
+// values (e.g. a NaN that made it into Firestore) without hardcoding a second
+// copy of the numbers elsewhere.
+const DEFAULT_APP_SETTINGS = { ...appSettings };
+const NUMERIC_SETTINGS_KEYS = [
+  'bgIndex', 'focusDuration', 'shortBreakDuration', 'longBreakDuration',
+  'sessionsBeforeLongBreak', 'slideshowInterval', 'sleepTimeout'
+];
+
+// Repairs any numeric setting that isn't actually a finite number (NaN, a
+// string that failed parseInt, null, etc.) by falling back to its default.
+// Returns true if anything was repaired, so callers can decide to re-save.
+function sanitizeAppSettings(settings) {
+  let repaired = false;
+  for (const key of NUMERIC_SETTINGS_KEYS) {
+    if (!Number.isFinite(settings[key])) {
+      console.warn(`⚠️ Settings field "${key}" was not a valid number (`, settings[key], `) — resetting to default`, DEFAULT_APP_SETTINGS[key]);
+      settings[key] = DEFAULT_APP_SETTINGS[key];
+      repaired = true;
+    }
+  }
+  return repaired;
+}
 
 // Timer State
 let timerInterval = null;
@@ -312,6 +335,12 @@ async function loadSettings() {
         // Preserve object identity so window.appSettings references remain valid
         Object.assign(appSettings, loadedSettings);
         console.log('Settings loaded from Firestore:', appSettings);
+        // A previous bug could have written a NaN (or similar) into Firestore;
+        // repair it here rather than propagating a corrupt value into a live
+        // timer, and persist the correction so it doesn't recur every load.
+        if (sanitizeAppSettings(appSettings)) {
+          saveSettings();
+        }
       } else {
         console.log('No existing settings found in Firestore. Using defaults.');
       }
@@ -441,6 +470,10 @@ function handleSettingsSave() {
     
   // ⭐ FIX: Update the sleepTimeout property from the dialog input
   appSettings.sleepTimeout = parseInt(document.getElementById('sleep-timeout').value);
+
+  // A <select> with no option matching the current value reports value === "",
+  // and parseInt("") is NaN — repair before this reaches Firestore.
+  sanitizeAppSettings(appSettings);
 
   // 2. Save to persistence (Firestore)
   saveSettings(); 

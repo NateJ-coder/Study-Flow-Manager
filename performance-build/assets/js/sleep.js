@@ -66,10 +66,17 @@ class SleepModeManager {
   // Get sleep timeout from app settings
   getSleepTimeout() {
     const MIN_SLEEP_SECONDS = 30; // Safety floor so a stray/test value can't make sleep mode unusable
+    const DEFAULT_SECONDS = 300;
     if (window.appSettings && typeof window.appSettings.sleepTimeout !== 'undefined') {
       let timeoutSeconds = window.appSettings.sleepTimeout;
-      // 0 explicitly means "never sleep" and should pass through unchanged.
-      if (timeoutSeconds !== 0 && timeoutSeconds < MIN_SLEEP_SECONDS) {
+      // Guard against NaN/corrupt/non-numeric stored data first — a NaN comparison is always
+      // false, so the floor check below would otherwise silently let NaN sail straight through
+      // and land in setTimeout(fn, NaN), which per spec fires almost immediately.
+      if (!Number.isFinite(timeoutSeconds)) {
+        console.warn('💤 Stored sleep timeout is not a valid number (', timeoutSeconds, ') — using', DEFAULT_SECONDS, 's instead.');
+        timeoutSeconds = DEFAULT_SECONDS;
+      } else if (timeoutSeconds !== 0 && timeoutSeconds < MIN_SLEEP_SECONDS) {
+        // 0 explicitly means "never sleep" and should pass through unchanged.
         console.warn('💤 Stored sleep timeout', timeoutSeconds, 's is below the safety floor — using', MIN_SLEEP_SECONDS, 's instead.');
         timeoutSeconds = MIN_SLEEP_SECONDS;
       }
@@ -77,7 +84,7 @@ class SleepModeManager {
       return timeoutSeconds * 1000; // Convert seconds to milliseconds
     }
     console.log('💤 Using default sleep timeout: 300 seconds');
-    return 5 * 60 * 1000; // Default 5 minutes
+    return DEFAULT_SECONDS * 1000;
   }
   
   // Update sleep timeout (called when settings change)
