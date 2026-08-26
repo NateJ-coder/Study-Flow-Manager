@@ -1,207 +1,7 @@
-// ---- CONFIG ----
-const CFG = window.SF_CONFIG || {};
-const GAS_URL = CFG?.INTEGRATIONS?.GAS_CALENDAR_URL;
-const GAS_KEY = CFG?.INTEGRATIONS?.GAS_SHARED_KEY;
-
-// Runtime verification log
-try {
-  console.log('[StudyFlow] GAS URL at runtime:', SF_CONFIG?.INTEGRATIONS?.GAS_CALENDAR_URL, 'origin:', location.origin);
-} catch (e) { /* ignore */ }
-
-// ---- STORAGE (local list so the page is instant, even offline) ----
-const STORE_KEY = "sf_events_v1";
-// store wrapper: prefers SF_LOCAL API when available, falls back to localStorage shape used by the page
-const store = {
-  all() {
-    try {
-      if (window.SF_LOCAL?.list) {
-        return window.SF_LOCAL.list().map(e => {
-          const startISO = e.startISO || '';
-          const endISO = e.endISO || '';
-          const date = startISO.slice(0,10) || (endISO.slice(0,10) || '');
-          const startTime = startISO ? startISO.slice(11,16) : '';
-          const endTime = endISO ? endISO.slice(11,16) : '';
-          return {
-            local_id: e.id,
-            event_id: e.event_id || null,
-            title: e.title,
-            date,
-            startTime,
-            endTime,
-            all_day: !!e.allDay || !!e.all_day,
-            reminders: e.reminders || []
-          };
-        });
-      }
-      return JSON.parse(localStorage.getItem(STORE_KEY)) || [];
-    } catch { return []; }
-  },
-  save(list) {
-    if (window.SF_LOCAL?.upsert) {
-      // Persist each item into SF_LOCAL (best-effort)
-      list.forEach(item => {
-        try {
-          const evt = {
-            id: item.local_id,
-            title: item.title,
-            startISO: item.date ? (item.startTime ? `${item.date}T${item.startTime}:00${tzOffset()}` : `${item.date}T00:00:00${tzOffset()}`) : undefined,
-            endISO: item.date ? (item.endTime ? `${item.date}T${item.endTime}:00${tzOffset()}` : `${item.date}T23:59:00${tzOffset()}`) : undefined,
-            allDay: !!item.all_day,
-            reminders: item.reminders || [],
-            notes: ''
-          };
-          window.SF_LOCAL.upsert(evt);
-        } catch (e) { /* ignore individual failures */ }
-      });
-      return;
-    }
-    try { localStorage.setItem(STORE_KEY, JSON.stringify(list)); } catch (e) {}
-    invalidateEventsCache();
-  },
-  upsert(evt) {
-    if (window.SF_LOCAL?.upsert) {
-      const mapped = {
-        id: evt.local_id || undefined,
-        title: evt.title,
-        startISO: evt.date ? (evt.startTime ? `${evt.date}T${evt.startTime}:00${tzOffset()}` : `${evt.date}T00:00:00${tzOffset()}`) : undefined,
-        endISO: evt.date ? (evt.endTime ? `${evt.date}T${evt.endTime}:00${tzOffset()}` : `${evt.date}T23:59:00${tzOffset()}`) : undefined,
-        allDay: !!evt.all_day,
-        reminders: evt.reminders || [],
-        notes: ''
-      };
-  const id = window.SF_LOCAL.upsert(mapped);
-  evt.local_id = id || evt.local_id;
-  invalidateEventsCache();
-      return;
-    }
-    const list = store.all();
-    const i = list.findIndex(x => x.local_id === evt.local_id);
-    if (i === -1) list.unshift(evt); else list[i] = evt;
-    store.save(list);
-    invalidateEventsCache();
-  },
-  remove(local_id) {
-    if (window.SF_LOCAL?.remove) {
-      try { const r = window.SF_LOCAL.remove(local_id); invalidateEventsCache(); return r; } catch (e) { /* ignore */ }
-      return;
-    }
-    store.save(store.all().filter(x => x.local_id !== local_id));
-    invalidateEventsCache();
-  }
-};
-
-// ---- UTIL ----
-const $ = sel => document.querySelector(sel);
-// schedule work during idle time when possible to keep first paint fast
-const scheduleIdle = (fn, opts) => {
-  if (typeof window.requestIdleCallback === 'function') return window.requestIdleCallback(fn, opts);
-  return setTimeout(fn, opts && opts.timeout ? opts.timeout : 200);
-};
-const tzOffset = () => {
-  const d = new Date(); const off = -d.getTimezoneOffset(); // minutes east
-  const sign = off >= 0 ? "+" : "-";
-  const hh = String(Math.floor(Math.abs(off) / 60)).padStart(2, "0");
-  const mm = String(Math.abs(off) % 60).padStart(2, "0");
-  return `${sign}${hh}:${mm}`;
-};
-
-// ---- FAST EVENTS CACHE ----
-let _eventsCache = null, _eventsCacheAt = 0;
-function eventsCached(ttlMs = 1000) {
-  const now = Date.now();
-  if (_eventsCache && now - _eventsCacheAt < ttlMs) return _eventsCache;
-  _eventsCache = store.all();
-  _eventsCacheAt = now;
-  return _eventsCache;
-}
-function invalidateEventsCache(){ _eventsCache = null; }
-
-// Global delegated submit: never miss "Save reminder"
-document.addEventListener('submit', (e) => {
-  const form = e.target;
-  if (form && form.id === 'eventForm') {
-    // delegate to the existing handler; it will call preventDefault()
-    try { createFromForm(e); } catch (err) { console.error('Delegated submit failed', err); }
-  }
-}, true);
-
-function toISO(dateStr, timeStr) {
-  const t = (timeStr || "00:00").split(":");
-  const d = new Date(dateStr);
-  d.setHours(Number(t[0]||0), Number(t[1]||0), 0, 0);
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth()+1).padStart(2,"0");
-  const dd = String(d.getDate()).padStart(2,"0");
-  const hh = String(d.getHours()).padStart(2,"0");
-  const mi = String(d.getMinutes()).padStart(2,"0");
-  return `${yyyy}-${mm}-${dd}T${hh}:${mi}:00${tzOffset()}`;
-}
-
-function parseReminders(str) {
-  if (!str) return [];
-  return str.split(",").map(s => Number(s.trim())).filter(n => Number.isFinite(n) && n >= 0);
-}
-
-function rruleFromSelect(sel, advanced) {
-  if (!sel) return "";
-  const base = `FREQ=${sel}`;
-  return advanced ? `RRULE:${base};${advanced}` : `RRULE:${base}`;
-}
-
-// ---- GAS BRIDGE (deprecated client-side) ----
-// Note: Server-side integration (Cloud Functions) is recommended. This client-side GAS bridge
-// is a legacy helper and will be skipped when no GAS URL is configured.
-function gasUrl() {
-  const o = encodeURIComponent(location.origin);
-  return `${GAS_URL || ''}?key=${encodeURIComponent(GAS_KEY || '')}&origin=${o}`;
-}
-async function gasPost(payload) {
-  if (!GAS_URL) throw new Error('No GAS URL configured');
-  const res = await fetch(gasUrl(), {
-    method: "POST",
-    headers: { "Content-Type": "text/plain" },
-    body: JSON.stringify(payload)
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok || data.ok === false) throw new Error(data.error || `HTTP ${res.status}`);
-  return data;
-}
-
-// ---- RENDER ----
-function render() {
-  const tbody = $("#eventsTbody");
-  const list = eventsCached(); // use cache
-  const rows = list.map(evt => {
-    const when = evt.all_day
-      ? `${evt.date}`
-      : `${evt.date} ${evt.startTime}–${evt.endTime}`;
-    const reminders = (evt.reminders && evt.reminders.length)
-      ? evt.reminders.join(", ") + "m"
-      : "—";
-    const status = evt.event_id
-      ? `<span class="tag ok">Synced</span>`
-      : `<span class="tag">Local</span>`;
-    const gcal = window.SF_LOCAL?.googleCalendarLink ?
-      `<a class="sf-btn sf-btn--ghost" href="${SF_LOCAL.googleCalendarLink({ id: evt.local_id, title: evt.title, notes: '', allDay: evt.all_day, startISO: evt.date + 'T' + (evt.startTime||'00:00') + ':00' + tzOffset(), endISO: evt.date + 'T' + (evt.endTime||'23:59') + ':00' + tzOffset(), reminders: evt.reminders||[] })}" target="_blank" rel="noopener">GCal</a>` : '';
-
-    const ics = window.SF_LOCAL?.downloadICS ? `<button class="sf-btn sf-btn--ghost js-ics">ICS</button>` : '';
-
-    return `<tr data-id="${evt.local_id}">
-      <td>${evt.title || "(no title)"}</td>
-      <td>${when}</td>
-      <td>${reminders}</td>
-      <td>${status}</td>
-      <td class="right">
-        ${gcal} ${ics}
-        <button class="btn secondary js-edit">Edit</button>
-        <button class="btn js-delete" style="margin-left:6px;background:#ef4444">Delete</button>
-      </td>
-    </tr>`;
-  }).join("");
-  const html = rows || `<tr><td colspan="5" class="muted">No reminders yet.</td></tr>`;
-  // batch DOM update to next paint
-  requestAnimationFrame(() => { tbody.innerHTML = html; });
-}
+// StudyFlow Calendar — local-only deadline/task calendar.
+// No Google Calendar / Netlify proxy / server sync of any kind: everything
+// here lives in localStorage on this device. (A "connect your calendar app"
+// style integration can come later via a mobile companion — see project notes.)
 
 // --- Seasonal Ribbon (Southern Hemisphere seasons) ---
 (function seasonalRibbon(){
@@ -226,270 +26,7 @@ function render() {
   } catch (e) { /* non-blocking */ }
 })();
 
-// ---- ACTIONS ----
-async function createFromForm(e) {
-  e.preventDefault();
-  const f = e.target;
-
-  const allDay = f.allDay && f.allDay.value === "true";
-  const date = (f.date && f.date.value) || new Date().toISOString().slice(0,10);
-  const startISO = allDay ? `${date}T00:00:00${tzOffset()}` : toISO(date, (f.startTime && f.startTime.value) || "00:00");
-  const endISO   = allDay ? `${date}T23:59:00${tzOffset()}` : toISO(date, (f.endTime && f.endTime.value) || "00:00");
-
-  // Guard optional repeat fields which may not exist in the modal
-  const repeatSel = f.repeat ? f.repeat.value : "";
-  const adv = (f.repeatDetails && f.repeatDetails.value) ? f.repeatDetails.value.trim() : "";
-  const rrule = repeatSel ? rruleFromSelect(repeatSel, adv) : "";
-
-  const payload = {
-    action: "create",
-    title: (f.title && f.title.value || "").trim(),
-    description: (f.description && f.description.value || "").trim(),
-    location: (f.location && f.location.value || "").trim(),
-    start: startISO,
-    end:   endISO,
-    all_day: allDay,
-    reminders: parseReminders((f.reminders && f.reminders.value) || ""),
-    recurrence: rrule || null
-  };
-
-  const local = {
-    local_id: crypto.randomUUID(),
-    title: payload.title,
-    date, startTime: (f.startTime && f.startTime.value) || "",
-    endTime: (f.endTime && f.endTime.value) || "",
-    all_day: allDay,
-    reminders: payload.reminders
-  };
-  store.upsert(local);
-  render();
-  // Close modal immediately after local save so the UI feels responsive
-  try { f.reset(); } catch (e) {}
-  const modal = document.getElementById('reminderModal');
-  if (modal) modal.hidden = true;
-
-  // Local-first: if SF_LOCAL is present we keep reminders local-only.
-  // If GAS is configured, leave optional background sync logic commented out for now.
-  // (Background sync removed to make calendar fully local-first)
-}
-
-function onTableClick(e) {
-  const row = e.target.closest("tr[data-id]");
-  if (!row) return;
-  const id = row.getAttribute("data-id");
-  const evt = eventsCached().find(x => x.local_id === id);
-  if (!evt) return;
-
-  if (e.target.classList.contains("js-delete")) {
-    return deleteEvent(evt);
-  }
-  if (e.target.classList.contains("js-edit")) {
-    return editPrompt(evt);
-  }
-  if (e.target.classList.contains('js-ics')) {
-    const evtFull = {
-      id: evt.local_id,
-      title: evt.title,
-      allDay: evt.all_day,
-      startISO: evt.date + 'T' + (evt.startTime||'00:00') + ':00' + tzOffset(),
-      endISO:   evt.date + 'T' + (evt.endTime  ||'23:59') + ':00' + tzOffset(),
-      reminders: evt.reminders || []
-    };
-    try { window.SF_LOCAL?.downloadICS(evtFull); } catch {}
-    return;
-  }
-}
-
-async function deleteEvent(evt) {
-  store.remove(evt.local_id); render();
-
-  // Remote delete disabled in local-first mode. If you re-enable GAS, implement remote delete here.
-}
-
-async function editPrompt(evt) {
-  const newTitle = prompt("Title:", evt.title || "");
-  if (newTitle == null) return;
-  evt.title = newTitle.trim();
-  store.upsert(evt); render();
-
-  // Remote update disabled in local-first mode. Change is saved locally.
-}
-
-function downloadICSFromForm() {
-  const f = $("#eventForm");
-  const allDay = f.allDay.value === "true";
-  const date = f.date.value;
-  const dtstamp = new Date().toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
-
-  const dtStart = allDay
-    ? `${date.replace(/-/g,"")}T000000`
-    : `${date.replace(/-/g,"")}T${f.startTime.value.replace(":","")}00`;
-  const dtEnd = allDay
-    ? `${date.replace(/-/g,"")}T235900`
-    : `${date.replace(/-/g,"")}T${f.endTime.value.replace(":","")}00`;
-
-  const ics = [
-    "BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//StudyFlow//Calendar//EN","CALSCALE:GREGORIAN",
-    "BEGIN:VEVENT",
-    `UID:${crypto.randomUUID()}@studyflow.local`,
-    `DTSTAMP:${dtstamp}`,
-    `SUMMARY:${(f.title.value||"(no title)").replace(/\n/g," ")}`,
-    `DESCRIPTION:${(f.description.value||"").replace(/\n/g," ")}`,
-    f.location.value ? `LOCATION:${f.location.value}` : "",
-    `DTSTART:${dtStart}`,
-    `DTEND:${dtEnd}`,
-    "END:VEVENT","END:VCALENDAR"
-  ].filter(Boolean).join("\r\n");
-
-  const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "event.ics";
-  a.click();
-  URL.revokeObjectURL(a.href);
-}
-
-function init() {
-  const form = $("#eventForm");
-  if (form) {
-    form.addEventListener("submit", createFromForm);
-    if (form.allDay) {
-      form.allDay.addEventListener("change", () => {
-        const isAllDay = form.allDay.value === "true";
-        document.querySelectorAll(".time-start, .time-end").forEach(el => {
-          el.classList.toggle("hidden", isAllDay);
-        });
-        if (form.startTime) form.startTime.required = !isAllDay;
-        if (form.endTime) form.endTime.required = !isAllDay;
-      });
-    }
-  }
-
-  const tbody = $("#eventsTbody"); if (tbody) tbody.addEventListener("click", onTableClick);
-  const dl = $("#downloadICS"); if (dl) dl.addEventListener("click", downloadICSFromForm);
-
-  render();
-  // Request notification permission and schedule reminders during idle time
-  try {
-    scheduleIdle(() => {
-      if (window.SF_LOCAL?.ensureNotificationPermission) {
-        window.SF_LOCAL.ensureNotificationPermission().then(() => {
-          if (window.SF_LOCAL?.scheduleDueNotifications) window.SF_LOCAL.scheduleDueNotifications();
-        });
-      }
-      // build month grid (visual heavy) during idle
-      try { buildMonthGrid(); } catch (e) { console.warn('buildMonthGrid failed', e); }
-    }, { timeout: 1000 });
-  } catch (e) { /* ignore */ }
-
-  // pull remote upcoming (non-blocking) — prefer Netlify proxy if available
-  try {
-    netlifySyncUpcoming().catch(err => console.warn('Netlify upcoming failed; local only', err));
-  } catch (e) { /* ignore */ }
-}
-document.addEventListener("DOMContentLoaded", init);
-
-// Background parallax (lightweight) — register once app is ready
-(function registerParallaxCalendar(){
-  let raf = 0; const bg = document.getElementById('background-image');
-  function onMove(e){
-    if (!bg) return;
-    const { innerWidth: w, innerHeight: h } = window;
-    const x = (e.clientX - w/2) / w, y = (e.clientY - h/2) / h;
-    cancelAnimationFrame(raf);
-    raf = requestAnimationFrame(()=> bg.style.transform = `translate(${x*6}px, ${y*6}px) scale(1.03)`);
-  }
-  function register(){
-    try {
-      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: no-preference)').matches) {
-        window.addEventListener('mousemove', onMove);
-      }
-    } catch (e) {}
-  }
-  if (document.body.classList.contains('ready')) register();
-  else window.addEventListener('studyflow:readyToAnimate', register, { once: true });
-})();
-
-// Fetch upcoming events from GAS and merge with local store
-async function syncUpcoming() {
-  const now = new Date().toISOString();
-  const in30 = new Date(Date.now() + 30*24*60*60*1000).toISOString();
-  try {
-    const r = await gasPost({ action: 'listUpcoming', timeMin: now, timeMax: in30, maxResults: 25 });
-    const remote = Array.isArray(r.events) ? r.events : [];
-    const mapped = remote.map(ev => {
-      const allDay = !!ev.start?.date;
-      const startISO = ev.start?.dateTime || (ev.start?.date ? `${ev.start.date}T00:00:00${tzOffset()}` : '');
-      const endISO = ev.end?.dateTime || (ev.end?.date ? `${ev.end.date}T23:59:00${tzOffset()}` : '');
-      const date = ev.start?.date || (startISO ? startISO.slice(0,10) : '');
-      return {
-        local_id: ev.id || crypto.randomUUID(),
-        event_id: ev.id,
-        title: ev.summary || '(no title)',
-        date,
-        startTime: startISO ? startISO.slice(11,16) : '',
-        endTime: endISO ? endISO.slice(11,16) : '',
-        all_day: allDay,
-        reminders: []
-      };
-    });
-
-    const existing = store.all();
-    const byId = new Map(existing.filter(x=>x.event_id).map(x=>[x.event_id,x]));
-    const merged = [
-      ...existing.filter(x=>!x.event_id),
-      ...mapped.map(m => Object.assign(byId.get(m.event_id) || {}, m))
-    ].sort((a,b)=> (a.date + (a.startTime||'')) < (b.date + (b.startTime||'')) ? -1 : 1);
-
-    // Save merged list
-    try { localStorage.setItem(STORE_KEY, JSON.stringify(merged)); } catch(e) { console.warn('Failed to save merged events', e); }
-    render();
-  } catch (e) { console.warn('Upcoming fetch failed; showing local only', e); }
-}
-
-// ---- NETLIFY PROXY BRIDGE ----
-// If you deployed the Netlify function and added calendar-proxy.js, use it.
-async function netlifySyncUpcoming() {
-  const now = new Date().toISOString();
-  const in30 = new Date(Date.now() + 30*24*60*60*1000).toISOString();
-  try {
-    if (!window.CalendarAPI || typeof window.CalendarAPI.listUpcoming !== 'function') {
-      // Proxy not present; skip
-      return;
-    }
-    const remote = await window.CalendarAPI.listUpcoming({ timeMin: now, timeMax: in30, maxResults: 25 });
-    const mapped = (Array.isArray(remote) ? remote : []).map(ev => {
-      const allDay = !!ev.start?.date;
-      const startISO = ev.start?.dateTime || (ev.start?.date ? `${ev.start.date}T00:00:00${tzOffset()}` : '');
-      const endISO = ev.end?.dateTime || (ev.end?.date ? `${ev.end.date}T23:59:00${tzOffset()}` : '');
-      const date = ev.start?.date || (startISO ? startISO.slice(0,10) : '');
-      return {
-        local_id: ev.id || crypto.randomUUID(),
-        event_id: ev.id,
-        title: ev.summary || '(no title)',
-        date,
-        startTime: startISO ? startISO.slice(11,16) : '',
-        endTime: endISO ? endISO.slice(11,16) : '',
-        all_day: allDay,
-        reminders: []
-      };
-    });
-
-    const existing = store.all();
-    const byId = new Map(existing.filter(x => x.event_id).map(x => [x.event_id, x]));
-    const merged = [
-      ...existing.filter(x => !x.event_id),
-      ...mapped.map(m => Object.assign(byId.get(m.event_id) || {}, m))
-    ].sort((a,b)=> (a.date + (a.startTime||'')) < (b.date + (b.startTime||'')) ? -1 : 1);
-
-    try { localStorage.setItem(STORE_KEY, JSON.stringify(merged)); } catch(e) {}
-    render();
-  } catch (e) {
-    console.warn('Netlify upcoming failed; showing local only', e);
-  }
-}
-
-/* ====== ADD: SETTINGS STATE ====== */
+/* ====== CALENDAR SETTINGS STATE ====== */
 const CAL_STORE = "sf_calendar_settings_v1";
 const calState = {
   view: { year: new Date().getFullYear(), month: new Date().getMonth() }, // 0-11
@@ -511,7 +48,7 @@ function applyCalendarTheme(){
   try { localStorage.setItem('sf_theme', calState.settings.theme); } catch{}
 }
 
-/* ====== ADD: MONTH GRID RENDER ====== */
+/* ====== MONTH GRID RENDER ====== */
 const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const dow = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 
@@ -522,7 +59,6 @@ function lastDayOfMonth(y,m){ return new Date(y, m+1, 0); }
 function buildMonthGrid(){
   const y = calState.view.year, m = calState.view.month;
   const first = firstDayOfMonth(y,m);
-  const last  = lastDayOfMonth(y,m);
   const startOffset = (first.getDay() - calState.settings.weekStart + 7) % 7;
 
   const startDate = new Date(y, m, 1 - startOffset);
@@ -534,7 +70,7 @@ function buildMonthGrid(){
     const isOther = d.getMonth() !== m;
     const isToday = iso === ymd(new Date());
     const crossed = !!calState.crossed[iso];
-    // Add small container for event dots; rendering of dots happens below
+    // Add small container for task dots; rendering of dots happens below
     cells.push(`<div class="day${isOther?' other':''}${isToday?' today':''}${crossed?' crossed':''}" data-date="${iso}">
       <div class="num" title="${dow[d.getDay()]}">${d.getDate()}</div>
       <div class="ev-dots" aria-hidden="true"></div>
@@ -548,8 +84,8 @@ function buildMonthGrid(){
   document.getElementById('monthLabel').textContent = `${monthNames[m]} ${y}`;
 
   document.querySelectorAll('.day').forEach(el=>{
-    // Left-click opens tasks drawer for the date; right-click toggles crossed
-    el.addEventListener('click', async (e) => {
+    // Left-click opens the tasks/deadlines drawer for the date; right-click toggles crossed
+    el.addEventListener('click', () => {
       const date = el.getAttribute('data-date');
       openTasksDrawer(date);
     });
@@ -564,19 +100,20 @@ function buildMonthGrid(){
     });
   });
 
-  // Render per-day dots from the store during idle to keep TTI snappy
+  // Render a dot per pending task/deadline for each day, from the local task store.
   try {
     const dotTask = () => {
       try {
-        const events = eventsCached();
-        const byDate = events.reduce((acc, ev) => { (acc[ev.date] = acc[ev.date] || []).push(ev); return acc; }, {});
-        for (const date in byDate) {
+        const map = tasksStore.all();
+        for (const date in map) {
+          const list = map[date] || [];
+          if (!list.length) continue;
           const container = document.querySelector(`.day[data-date="${date}"] .ev-dots`);
           if (!container) continue;
           const frag = document.createDocumentFragment();
-          byDate[date].slice(0,3).forEach(it => {
+          list.slice(0,3).forEach(t => {
             const dot = document.createElement('span');
-            dot.className = 'ev-dot' + (it.all_day ? ' is-all-day' : '');
+            dot.className = 'ev-dot' + (t.done ? ' is-done' : '');
             frag.appendChild(dot);
           });
           container.appendChild(frag);
@@ -590,7 +127,7 @@ function buildMonthGrid(){
   document.dispatchEvent(new CustomEvent('sf:makeDaysFocusable'));
 }
 
-/* ===== TASKS (per-day) ===== */
+/* ===== TASKS / DEADLINES (per-day, local only) ===== */
 const TASKS_KEY = 'sf_tasks_v1';
 const tasksStore = {
   all() { try { return JSON.parse(localStorage.getItem(TASKS_KEY)) || {}; } catch { return {}; } },
@@ -620,6 +157,7 @@ function openTasksDrawer(dateISO){
   const label = document.getElementById('taskDateLabel'); if (label) label.textContent = new Date(dateISO).toDateString();
   renderTasks(dateISO);
   const d = document.getElementById('taskDrawer'); if (d) d.hidden = false;
+  const input = document.getElementById('taskInput'); if (input) setTimeout(() => input.focus(), 50);
 }
 function closeTasksDrawer(){ const d = document.getElementById('taskDrawer'); if (d) d.hidden = true; }
 
@@ -627,7 +165,7 @@ function renderTasks(dateISO){
   const list = tasksStore.byDate(dateISO);
   const active = list.filter(t => !t.done);
   const done = list.filter(t => t.done);
-  document.getElementById('tasksActive').innerHTML = active.map(t => li(t,false)).join('') || `<li class="sf-muted">No tasks yet.</li>`;
+  document.getElementById('tasksActive').innerHTML = active.map(t => li(t,false)).join('') || `<li class="sf-muted">No deadlines yet.</li>`;
   document.getElementById('tasksDone').innerHTML = done.map(t => li(t,true)).join('') || `<li class="sf-muted">—</li>`;
   function li(t,isDone){
     return `<li class="sf-taskitem ${isDone?'done':''}" data-id="${t.id}">
@@ -636,6 +174,18 @@ function renderTasks(dateISO){
       <button class="sf-btn sf-btn--ghost js-t-del" aria-label="Delete">🗑</button>
     </li>`;
   }
+  // Keep the month grid's dots in sync (a toggle/delete changes pending-count per day)
+  try {
+    const container = document.querySelector(`.day[data-date="${dateISO}"] .ev-dots`);
+    if (container) {
+      container.innerHTML = '';
+      list.slice(0,3).forEach(t => {
+        const dot = document.createElement('span');
+        dot.className = 'ev-dot' + (t.done ? ' is-done' : '');
+        container.appendChild(dot);
+      });
+    }
+  } catch (e) {}
 }
 function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])); }
 
@@ -670,7 +220,28 @@ function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;',
   if (window._appReadyShown) startParticles(); else window.addEventListener('studyflow:readyToAnimate', startParticles, { once: true });
 })();
 
-/* ====== ADD: SETTINGS UI WIRING ====== */
+// Background parallax (lightweight) — register once app is ready
+(function registerParallaxCalendar(){
+  let raf = 0; const bg = document.getElementById('background-image');
+  function onMove(e){
+    if (!bg) return;
+    const { innerWidth: w, innerHeight: h } = window;
+    const x = (e.clientX - w/2) / w, y = (e.clientY - h/2) / h;
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(()=> bg.style.transform = `translate(${x*6}px, ${y*6}px) scale(1.03)`);
+  }
+  function register(){
+    try {
+      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: no-preference)').matches) {
+        window.addEventListener('mousemove', onMove);
+      }
+    } catch (e) {}
+  }
+  if (document.body.classList.contains('ready')) register();
+  else window.addEventListener('studyflow:readyToAnimate', register, { once: true });
+})();
+
+/* ====== SETTINGS UI WIRING ====== */
 function openCalSettings(){
   const m = document.getElementById('calendarSettings');
   if (!m) return;
@@ -706,53 +277,15 @@ function saveSettings(){
   persistCalendar(); applyCalendarTheme(); buildMonthGrid(); closeCalSettings();
 }
 
-/* ====== PATCH: init() — extend existing DOMContentLoaded init ====== */
-const _origInit = init; // keep the existing init (form, table, ICS)
-try { document.removeEventListener("DOMContentLoaded", init); } catch(e){}
-
-document.addEventListener("DOMContentLoaded", () => {
-  try { _origInit(); } catch(e) { console.warn('Calendar original init failed', e); }
-  applyCalendarTheme(); loadSettingsUI(); buildMonthGrid();
+/* ====== INIT ====== */
+function init() {
+  applyCalendarTheme();
+  loadSettingsUI();
+  buildMonthGrid();
 
   const openBtn = document.getElementById('openCalendarSettings'); if (openBtn) openBtn.addEventListener('click', openCalSettings);
   const closeBtn = document.getElementById('closeCalendarSettings'); if (closeBtn) closeBtn.addEventListener('click', closeCalSettings);
   const saveBtn = document.getElementById('saveCalendarSettings'); if (saveBtn) saveBtn.addEventListener('click', saveSettings);
-
-  const gcalConnectBtn = document.getElementById('gcalConnectBtn');
-  if (gcalConnectBtn) {
-    gcalConnectBtn.addEventListener('click', async () => {
-        try {
-            gcalConnectBtn.disabled = true;
-            gcalConnectBtn.textContent = 'Connecting...';
-            await window.CalendarAPI.connect();
-            // The page will redirect, so no need to re-enable the button here.
-        } catch (e) {
-            console.error('Failed to connect Google Calendar', e);
-            toast('Connection failed. See console for details.', 'err');
-            gcalConnectBtn.disabled = false;
-            gcalConnectBtn.textContent = 'Connect Google Calendar';
-        }
-    });
-  }
-
-  // Check connection status
-  const gcalStatus = document.getElementById('gcalStatus');
-  if (gcalStatus) {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('gcal_connected') === 'true') {
-          gcalStatus.textContent = 'Status: Connected.';
-          gcalStatus.style.color = 'var(--sf-ok)';
-          if (gcalConnectBtn) {
-              gcalConnectBtn.textContent = 'Reconnect';
-          }
-          // Clean the URL
-          if (history.replaceState) {
-              params.delete('gcal_connected');
-              const newUrl = `${window.location.pathname}?${params.toString()}`.replace(/\?$/, '');
-              history.replaceState({}, '', newUrl);
-          }
-      }
-  }
 
   const prev = document.getElementById('prevMonth'); if (prev) prev.addEventListener('click', () => { if(--calState.view.month < 0){ calState.view.month = 11; calState.view.year--; } buildMonthGrid(); });
   const next = document.getElementById('nextMonth'); if (next) next.addEventListener('click', () => { if(++calState.view.month > 11){ calState.view.month = 0; calState.view.year++; } buildMonthGrid(); });
@@ -767,19 +300,18 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Close on overlay click and Escape
+  // Close settings on overlay click and Escape
   const modal = document.getElementById('calendarSettings');
   if (modal) {
     modal.addEventListener('click', (e) => {
       if (e.target === modal) closeCalSettings();
     });
-
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && !modal.hidden) closeCalSettings();
     });
   }
 
-  // Tasks drawer wiring
+  // Tasks/deadlines drawer wiring
   const openTasksBtn = document.getElementById('openTasks'); if (openTasksBtn) openTasksBtn.addEventListener('click', () => {
     const now = new Date(); const iso = now.toISOString().slice(0,10);
     openTasksDrawer(selectedDateISO || iso);
@@ -788,7 +320,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const taskForm = document.getElementById('taskForm'); if (taskForm) taskForm.addEventListener('submit', (e) => {
     e.preventDefault(); const input = document.getElementById('taskInput'); if (!input) return;
-    const v = input.value.trim(); if (!v || !selectedDateISO) return; tasksStore.add(selectedDateISO, v); input.value = ''; renderTasks(selectedDateISO);
+    const v = input.value.trim(); if (!v || !selectedDateISO) return;
+    tasksStore.add(selectedDateISO, v); input.value = ''; renderTasks(selectedDateISO);
   });
 
   // Delegated controls inside drawer (toggle/delete)
@@ -799,30 +332,14 @@ document.addEventListener("DOMContentLoaded", () => {
       if (e.target.classList.contains('js-t-del')) { tasksStore.remove(selectedDateISO, id); renderTasks(selectedDateISO); }
     });
     drawer.addEventListener('change', (e) => {
-      if (!e.target.classList.contains('js-t-toggle')) return; const li = e.target.closest('.sf-taskitem'); if (!li || !selectedDateISO) return; tasksStore.toggle(selectedDateISO, li.getAttribute('data-id')); renderTasks(selectedDateISO);
+      if (!e.target.classList.contains('js-t-toggle')) return;
+      const li = e.target.closest('.sf-taskitem'); if (!li || !selectedDateISO) return;
+      tasksStore.toggle(selectedDateISO, li.getAttribute('data-id'));
+      renderTasks(selectedDateISO);
     });
   }
 
-  // Set reminder button wiring: open the modal pre-filled with the selected day
-  const setRemBtn = document.getElementById('openReminderForSelected');
-  if (setRemBtn) setRemBtn.addEventListener('click', () => {
-    const iso = selectedDateISO || new Date().toISOString().slice(0,10);
-    const f = document.getElementById('eventForm');
-    if (f && f.date) f.date.value = iso;
-    const modal = document.getElementById('reminderModal'); if (modal) modal.hidden = false;
-    setTimeout(() => document.querySelector('#eventForm input[name="title"]')?.focus(), 50);
-  });
-
-  // Reminder modal close/backdrop/Escape
-  const reminderModal = document.getElementById('reminderModal');
-  const closeReminderBtn = document.getElementById('closeReminder');
-  if (closeReminderBtn) closeReminderBtn.addEventListener('click', () => { if (reminderModal) reminderModal.hidden = true; });
-  if (reminderModal) {
-    reminderModal.addEventListener('click', (e) => { if (e.target === reminderModal) reminderModal.hidden = true; });
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !reminderModal.hidden) reminderModal.hidden = true; });
-  }
-
-  // --- Today button (jump to today) + keyboard nav + upcoming filter ---
+  // --- Today button (jump to today) + keyboard nav ---
   const jumpBtn = document.getElementById('jumpToday');
   function selectDate(iso) {
     selectedDateISO = iso;
@@ -843,7 +360,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   document.addEventListener('keydown', (e) => {
-    if (document.getElementById('reminderModal')?.hidden === false) return;
+    if (document.getElementById('taskDrawer') && !document.getElementById('taskDrawer').hidden) return; // don't hijack typing in the drawer
     const navKeys = ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Enter','t','T'];
     if (!navKeys.includes(e.key)) return;
     e.preventDefault();
@@ -858,24 +375,13 @@ document.addEventListener("DOMContentLoaded", () => {
       buildMonthGrid(); selectDate(iso);
     }
     if (e.key === 'Enter') {
-      const iso = (selectedDateISO || new Date().toISOString().slice(0,10));
-      const f = document.getElementById('eventForm'); if (f?.date) f.date.value = iso;
-      const modal = document.getElementById('reminderModal'); if (modal) modal.hidden = false;
-      setTimeout(() => document.querySelector('#eventForm input[name="title"]')?.focus(), 50);
+      // Enter on a focused day opens its deadlines drawer
+      openTasksDrawer(selectedDateISO || new Date().toISOString().slice(0,10));
     }
     if (e.key === 't' || e.key === 'T') jumpToday();
   });
-
-  const filterInput = document.getElementById('upcomingFilter');
-  if (filterInput) {
-    const apply = () => {
-      const q = filterInput.value.trim().toLowerCase();
-      const rows = document.querySelectorAll('#eventsTbody tr[data-id]');
-      rows.forEach(tr => { const title = tr.children[0]?.textContent?.toLowerCase() || ''; tr.style.display = q && !title.includes(q) ? 'none' : ''; });
-    };
-    filterInput.addEventListener('input', apply, { passive: true });
-  }
-});
+}
+document.addEventListener("DOMContentLoaded", init);
 
 // --- Seasonal Particles (low-cost DOM version) ---
 (function seasonalParticles(){

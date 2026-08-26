@@ -1,12 +1,6 @@
 // Centralized runtime config for StudyFlow asset paths
 // Exposes window.SF_CONFIG for other scripts to consume.
 (function () {
-  // Runtime verification for cache-busted deploys
-  try {
-    console.log('[SF config] v=2025-10-16-3',
-      (typeof SF_CONFIG !== 'undefined') ? SF_CONFIG.INTEGRATIONS?.GAS_CALENDAR_URL : '(not set)');
-  } catch (e) { /* ignore */ }
-
   const BASE = '/Study-Flow-Manager/performance-build/assets';
 
   const SF_CONFIG = {
@@ -64,17 +58,7 @@
       BASE + '/images/winter-day-4.png',
       BASE + '/images/winter-day-5.png'
     ],
-    // Integrations: keep empty on the client. Sensitive endpoints/keys must live on server-side.
-    INTEGRATIONS: { }
   };
-
-  // --- allow gas-endpoint.js to override these values ---
-  if (window.SF_GAS?.CALENDAR_URL) {
-    SF_CONFIG.INTEGRATIONS.GAS_CALENDAR_URL = window.SF_GAS.CALENDAR_URL;
-  }
-  if (window.SF_GAS?.SHARED_KEY) {
-    SF_CONFIG.INTEGRATIONS.GAS_SHARED_KEY = window.SF_GAS.SHARED_KEY;
-  }
 
   // Publish to window
   window.SF_CONFIG = SF_CONFIG;

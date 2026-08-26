@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>StudyFlow  Calendar</title>
+  <title>StudyFlow  Calendar</title>
 
   <!-- If this causes style conflicts, remove the next line -->
   <!-- <link rel="stylesheet" href="/Study-Flow-Manager/performance-build/assets/css/timer.css"> -->
@@ -42,7 +42,6 @@
     <!-- Utility row -->
     <div class="sf-util">
       <button id="openTasks" class="sf-btn sf-btn--ghost">☰ Tasks</button>
-      <button id="openReminderForSelected" class="sf-btn">Set reminder</button>
     </div>
     <!-- Month view -->
     <section class="sf-card" aria-labelledby="monthLabel">
@@ -60,32 +59,6 @@
 
       <div id="calendarGrid" class="sf-calendar-grid" aria-label="Monthly calendar"></div>
     </section>
-
-    <!-- Upcoming events table (render target for calendar.js) -->
-    <section class="sf-card">
-      <div class="sf-h3" style="margin-bottom:6px">Upcoming</div>
-      <div class="sf-util" style="justify-content:space-between; margin-top:4px;">
-        <div class="sf-muted">Filter upcoming</div>
-        <input id="upcomingFilter" placeholder="Search title…" style="padding:8px 10px; border-radius:10px; border:1px solid var(--sf-border); background:var(--sf-surface-2); color:var(--sf-text); width:min(320px, 60vw)">
-      </div>
-      <div class="sf-table-wrap">
-        <table class="sf-table">
-          <thead>
-            <tr><th>Title</th><th>When</th><th>Reminders</th><th>Status</th><th class="sf-right">Actions</th></tr>
-          </thead>
-          <tbody id="eventsTbody">
-            <tr><td colspan="5" class="sf-muted">No reminders yet.</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <div style="margin-top:8px; margin-left:8px;">
-      <button id="exportBtn" class="sf-btn sf-btn--ghost">Export reminders</button>
-      <label class="sf-btn sf-btn--ghost" style="margin-left:8px">Import <input id="importInput" type="file" accept="application/json" hidden></label>
-    </div>
-
-    <!-- (Event form removed — now presented in a modal) -->
   </main>
 
   <!-- Settings modal -->
@@ -120,77 +93,9 @@
         </div>
       </div>
 
-      <div class="sf-divider" style="margin-top: 16px; margin-bottom: 16px;">Google Calendar</div>
-      <div class="sf-form">
-        <div class="sf-field sf-span-12">
-          <p id="gcalStatus" class="sf-muted" style="margin-bottom: 8px;">Status: Not connected.</p>
-          <button id="gcalConnectBtn" class="sf-btn">Connect Google Calendar</button>
-        </div>
-      </div>
-
       <div class="sf-modal__footer">
         <button id="saveCalendarSettings" class="sf-btn">Save</button>
       </div>
-    </div>
-  </div>
-
-  <!-- Reminder modal -->
-  <div class="sf-modal" id="reminderModal" hidden>
-    <div class="sf-modal__content" role="dialog" aria-modal="true" aria-labelledby="reminder-title">
-      <div class="sf-modal__header">
-        <h3 id="reminder-title" class="sf-h3">Set reminder</h3>
-        <button class="sf-btn sf-btn--icon" id="closeReminder" aria-label="Close">✕</button>
-      </div>
-
-      <!-- Moved the original event form INTO the modal -->
-      <form id="eventForm" class="sf-form" autocomplete="off">
-        <div class="sf-field sf-span-6">
-          <label>Title *</label>
-          <input name="title" required placeholder="Birthday / Meeting / Reminder" />
-        </div>
-
-        <div class="sf-field sf-span-3">
-          <label>Date *</label>
-          <input type="date" name="date" required />
-        </div>
-
-        <div class="sf-field sf-span-3">
-          <label>All-day</label>
-          <select name="allDay">
-            <option value="false" selected>No</option>
-            <option value="true">Yes</option>
-          </select>
-        </div>
-
-        <div class="sf-field sf-span-3 time-start">
-          <label>Start time *</label>
-          <input type="time" name="startTime" step="60" />
-        </div>
-
-        <div class="sf-field sf-span-3 time-end">
-          <label>End time *</label>
-          <input type="time" name="endTime" step="60" />
-        </div>
-
-        <div class="sf-field sf-span-6">
-          <label>Reminders (minutes before, comma-separated)</label>
-          <input name="reminders" placeholder="10, 60" />
-        </div>
-
-        <div class="sf-field sf-span-6">
-          <label>Location</label>
-          <input name="location" placeholder="Home Office / Zoom / Address" />
-        </div>
-
-        <div class="sf-field sf-span-12">
-          <label>Notes / Description</label>
-          <textarea name="description" rows="3"></textarea>
-        </div>
-
-        <div class="sf-modal__footer">
-          <button type="submit" class="sf-btn">Save reminder</button>
-        </div>
-      </form>
     </div>
   </div>
 
@@ -220,15 +125,8 @@
     </div>
   </aside>
 
-  <!-- Netlify calendar proxy shim + base (set your Netlify site below) -->
-  <script>
-    // Live Netlify site used by the calendar proxy
-    window.SF_NETLIFY_BASE = 'https://6901f2d69d7b5433188d2651--studyflowmanager.netlify.app';
-  </script>
-  <script src="/Study-Flow-Manager/performance-build/assets/js/calendar-proxy.js" defer></script>
   <script src="/Study-Flow-Manager/performance-build/assets/js/config.js?v=2025-10-16-11" defer></script>
   <script src="/Study-Flow-Manager/performance-build/assets/js/audio.js" defer></script>
-  <script src="/Study-Flow-Manager/performance-build/assets/js/local-reminders.js?v=1" defer></script>
   <script src="/Study-Flow-Manager/performance-build/assets/js/calendar.js" defer></script>
   <script src="/Study-Flow-Manager/performance-build/assets/js/sleep.js" defer></script>
   <script src="/Study-Flow-Manager/performance-build/assets/js/calendar-sleep-redirect.js" defer></script>
@@ -269,24 +167,6 @@
       } catch (e) {
         console.warn('Failed to set calendar background', e);
       }
-    });
-  </script>
-  <script>
-    // wire export/import buttons to SF_LOCAL when ready
-    document.addEventListener('DOMContentLoaded', () => {
-      document.getElementById('exportBtn')?.addEventListener('click', () => {
-        if (window.SF_LOCAL?.exportJSON) window.SF_LOCAL.exportJSON();
-      });
-      const input = document.getElementById('importInput');
-      input?.addEventListener('change', async (e) => {
-        const [file] = e.target.files || [];
-        if (file && window.SF_LOCAL?.importJSON) {
-          await window.SF_LOCAL.importJSON(file);
-          // if calendar.js exposes a refresh function, call it; otherwise reload
-          const refresh = window.renderUpcoming || window.refreshCalendar;
-          if (typeof refresh === 'function') refresh(); else location.reload();
-        }
-      });
     });
   </script>
   <script>
