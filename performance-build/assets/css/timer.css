@@ -10,6 +10,10 @@
   --timer-text-size: 5rem;
   --timer-mode-size: 1.5rem;
   --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  /* Cozy rounded display face for the wood buttons — replaces Comic Sans MS,
+     which clashed with the system-font UI everywhere else. Loaded in
+     timer.html's <head>; falls back to the body font if it hasn't loaded yet. */
+  --btn-font: 'Baloo 2', var(--font-family);
 }
 
 /* Theme-specific Overrides (set by JS) */
@@ -304,7 +308,7 @@ body.no-ticking-glow .timer-card.is-ticking {
   border: 3px solid #5d3a21;
   border-radius: 25px;
   padding: 12px 24px;
-  font-family: 'Comic Sans MS', cursive, sans-serif;
+  font-family: var(--btn-font);
   font-size: 16px;
   font-weight: bold;
   color: #fff2e6;

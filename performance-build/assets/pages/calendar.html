@@ -9,7 +9,8 @@
   <!-- <link rel="stylesheet" href="/Study-Flow-Manager/performance-build/assets/css/timer.css"> -->
 
   <link rel="stylesheet" href="/Study-Flow-Manager/performance-build/assets/css/calendar.css">
-  <link rel="stylesheet" href="/Study-Flow-Manager/performance-build/assets/css/companion.css?v=2026090701">
+  <link rel="stylesheet" href="/Study-Flow-Manager/performance-build/assets/css/companion.css?v=2026090702">
+  <link rel="stylesheet" href="/Study-Flow-Manager/performance-build/assets/css/scene.css?v=2026090701">
   <link rel="manifest" href="/Study-Flow-Manager/performance-build/manifest.webmanifest">
   <meta name="theme-color" content="#0b0b0b">
   <script>
@@ -127,12 +128,15 @@
   </aside>
 
   <script src="/Study-Flow-Manager/performance-build/assets/js/config.js?v=2025-10-16-11" defer></script>
+  <script src="/Study-Flow-Manager/performance-build/assets/js/prefs.js?v=2026090701" defer></script>
   <script src="/Study-Flow-Manager/performance-build/assets/js/audio.js" defer></script>
   <script src="/Study-Flow-Manager/performance-build/assets/js/calendar.js" defer></script>
   <script src="/Study-Flow-Manager/performance-build/assets/js/sleep.js" defer></script>
   <script src="/Study-Flow-Manager/performance-build/assets/js/calendar-sleep-redirect.js" defer></script>
-  <!-- Corner companion (lo-fi cat + yarn ball); listens for sleepModeEntered/Exited above -->
-  <script src="/Study-Flow-Manager/performance-build/assets/js/companion.js?v=2026090701" defer></script>
+  <!-- Corner companion (lo-fi cat + mug + yarn ball); listens for sleepModeEntered/Exited above -->
+  <script src="/Study-Flow-Manager/performance-build/assets/js/companion.js?v=2026090702" defer></script>
+  <!-- Living-scene light overlay -->
+  <script src="/Study-Flow-Manager/performance-build/assets/js/scene.js?v=2026090701" defer></script>
   <script>
     // Lightweight background initializer for calendar page.
     // Runs on DOMContentLoaded and uses SF_CONFIG.BACKGROUNDS when available.
@@ -193,10 +197,15 @@
     <!-- Season Switcher (dev/test only — hidden from regular users; reveal with ?debug=1) -->
     <button id="seasonSwitcher" class="sf-btn sf-btn--ghost" title="Preview seasons" style="position:fixed; left:10px; bottom:10px; z-index:40" hidden>⚙️</button>
     <script>
-      try {
-        const isDebug = new URLSearchParams(location.search).get('debug') === '1' || localStorage.getItem('sf_debug') === '1';
-        if (isDebug) document.getElementById('seasonSwitcher')?.removeAttribute('hidden');
-      } catch (e) { /* ignore */ }
+      // Gated on DOMContentLoaded rather than run immediately: prefs.js is loaded with
+      // `defer`, so it isn't guaranteed to have executed yet at the point this parses.
+      document.addEventListener('DOMContentLoaded', function () {
+        try {
+          if (window.SF_PREFS && window.SF_PREFS.isDebug()) {
+            document.getElementById('seasonSwitcher')?.removeAttribute('hidden');
+          }
+        } catch (e) { /* ignore */ }
+      });
     </script>
 </body>
 </html>

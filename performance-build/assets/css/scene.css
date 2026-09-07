@@ -1,0 +1,48 @@
+/* ============================================================
+   StudyFlow living-scene overlay.
+   A soft, slow-breathing light layer over the background art, so scenes
+   feel lit rather than static — sunlight drifting for day themes, a warm
+   flicker (candles/neon/string lights — most of the night art has one)
+   for night themes. Pure CSS, one small div, no per-image tuning needed.
+   The actual pan/zoom "breathing" of the photo itself is handled in
+   timer.js/calendar.js (registerParallax), not here, because it already
+   owns #background-image's transform for the mouse-parallax effect and
+   a second CSS animation on the same property would fight it.
+   ============================================================ */
+
+.sf-scene-glow {
+  position: absolute;
+  inset: -6%; /* slightly oversized so it never shows a hard edge while the photo underneath breathes/pans */
+  pointer-events: none;
+  mix-blend-mode: soft-light;
+}
+
+.sf-scene-glow--day {
+  background: radial-gradient(ellipse 70% 50% at 50% 12%, rgba(255, 244, 214, 0.4), transparent 65%);
+  animation: sf-glow-day 16s ease-in-out infinite;
+}
+
+.sf-scene-glow--night {
+  background: radial-gradient(ellipse 65% 45% at 50% 28%, rgba(255, 178, 102, 0.32), transparent 60%);
+  animation: sf-glow-night 5.5s ease-in-out infinite;
+}
+
+@keyframes sf-glow-day {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.65; }
+}
+
+@keyframes sf-glow-night {
+  0%, 100% { opacity: 0.3; }
+  40% { opacity: 0.58; }
+  55% { opacity: 0.48; }
+  70% { opacity: 0.6; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sf-scene-glow--day,
+  .sf-scene-glow--night {
+    animation: none;
+    opacity: 0.45;
+  }
+}

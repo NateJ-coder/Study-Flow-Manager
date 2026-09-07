@@ -12,12 +12,20 @@
   <link rel="preload" href="/Study-Flow-Manager/performance-build/assets/css/particles.css?v=2025101501" as="style">
   <link rel="stylesheet" href="/Study-Flow-Manager/performance-build/assets/css/particles.css?v=2025101501" media="print" onload="this.media='all'">
   <noscript><link rel="stylesheet" href="/Study-Flow-Manager/performance-build/assets/css/particles.css?v=2025101501"></noscript>
-  <!-- Corner companion (lo-fi cat + yarn) -->
-  <link rel="preload" href="/Study-Flow-Manager/performance-build/assets/css/companion.css?v=2026090701" as="style">
-  <link rel="stylesheet" href="/Study-Flow-Manager/performance-build/assets/css/companion.css?v=2026090701" media="print" onload="this.media='all'">
-  <noscript><link rel="stylesheet" href="/Study-Flow-Manager/performance-build/assets/css/companion.css?v=2026090701"></noscript>
+  <!-- Corner companion (lo-fi cat + mug + yarn) -->
+  <link rel="preload" href="/Study-Flow-Manager/performance-build/assets/css/companion.css?v=2026090702" as="style">
+  <link rel="stylesheet" href="/Study-Flow-Manager/performance-build/assets/css/companion.css?v=2026090702" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="/Study-Flow-Manager/performance-build/assets/css/companion.css?v=2026090702"></noscript>
+  <!-- Living-scene light overlay (day/night glow over the background art) -->
+  <link rel="stylesheet" href="/Study-Flow-Manager/performance-build/assets/css/scene.css?v=2026090701" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="/Study-Flow-Manager/performance-build/assets/css/scene.css?v=2026090701"></noscript>
+  <!-- Cozy rounded display face for the wood buttons (see --btn-font in timer.css) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700&display=swap">
   <!-- Central config -->
   <script src="/Study-Flow-Manager/performance-build/assets/js/config.js" defer></script>
+  <script src="/Study-Flow-Manager/performance-build/assets/js/prefs.js?v=2026090701" defer></script>
   <script src="/Study-Flow-Manager/performance-build/assets/js/audio.js" defer></script>
 
   <!-- Lightweight fallback background initializer (defines window.updateBackground for non-module callers) -->
@@ -265,9 +273,9 @@
       <input type="checkbox" id="disable-ticking-glow" />
     </div>
 
-    <!-- Corner cat companion toggle (purely cosmetic; on by default, remembered locally) -->
+    <!-- Corner companion toggle (purely cosmetic; on by default, remembered locally) -->
     <div class="setting-group">
-      <label for="enable-corner-cat">Corner cat companion</label>
+      <label for="enable-corner-cat">Corner companion</label>
       <input type="checkbox" id="enable-corner-cat" checked />
     </div>
 
@@ -286,23 +294,25 @@
   <!-- Sleep Mode System (quotes will be loaded dynamically by sleep.js when sleep starts) -->
   <script src="/Study-Flow-Manager/performance-build/assets/js/sleep.js?v=2025101401"></script>
 
-  <!-- Corner companion (lo-fi cat + yarn ball); listens for sleepModeEntered/Exited above -->
-  <script src="/Study-Flow-Manager/performance-build/assets/js/companion.js?v=2026090701" defer></script>
+  <!-- Corner companion (lo-fi cat + mug + yarn ball); listens for sleepModeEntered/Exited above -->
+  <script src="/Study-Flow-Manager/performance-build/assets/js/companion.js?v=2026090702" defer></script>
+
+  <!-- Living-scene light overlay -->
+  <script src="/Study-Flow-Manager/performance-build/assets/js/scene.js?v=2026090701" defer></script>
 
   <!-- Overlay fade is handled by showAppWhenReady() in timer.js to avoid racing with BG load -->
 
   <!-- Firebase and Core Logic -->
   <script>
     // Debug helper: logs bg image src/load/error to help diagnose missing backgrounds.
-    // Silent in normal use — enable with ?debug=1 or localStorage.sf_debug = '1'.
+    // Silent in normal use — enable with ?debug=1 or localStorage.sf_debug = '1' (see prefs.js).
+    // The debug check itself lives inside attach() (DOMContentLoaded-gated) rather than
+    // running immediately: prefs.js is loaded with `defer`, so it isn't guaranteed to have
+    // run yet at the point this inline script is parsed.
     (function(){
-      let debugOn = false;
-      try {
-        debugOn = new URLSearchParams(location.search).get('debug') === '1' || localStorage.getItem('sf_debug') === '1';
-      } catch (e) { /* ignore */ }
-      if (!debugOn) return;
       function attach() {
         try {
+          if (!(window.SF_PREFS && window.SF_PREFS.isDebug())) return;
           const img = document.getElementById('background-image');
           if (!img) { console.info('BG debug: #background-image not found'); return; }
           console.info('BG debug: initial src ->', img.src);

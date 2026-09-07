@@ -1,71 +1,84 @@
 // StudyFlow Corner Companion
-// A small, self-contained, purely decorative cat + yarn-ball animation
-// that sits in the bottom-left corner. It:
+// A small, self-contained, purely decorative cat + steaming mug + yarn-ball
+// scene that sits in the bottom-left corner. It:
 //   - never blocks clicks/taps outside its own small hit-area
 //   - respects prefers-reduced-motion (renders nothing if set)
-//   - can be turned off from Settings ("Corner cat companion") and
-//     remembers that choice (localStorage, shared across pages)
+//   - can be turned off from Settings ("Corner companion") and remembers
+//     that choice via SF_PREFS (localStorage, shared across pages)
 //   - hides itself during Sleep Mode and reappears when the app wakes
-//   - has no external dependencies (works even if GSAP fails to load)
+//   - has no hard dependencies (works even if GSAP or prefs.js fail to load)
 (function () {
   const DISABLE_KEY = 'sf_companion_disabled';
   const TOGGLE_ID = 'enable-corner-cat';
+
+  // Falls back to a no-persistence stub if prefs.js didn't load for some
+  // reason, so this feature degrades gracefully instead of hard-failing.
+  const PREFS = window.SF_PREFS || {
+    getBool: function (key, fallback) { return fallback; },
+    setBool: function () { /* no-op — can't persist without SF_PREFS */ }
+  };
 
   function prefersReducedMotion() {
     try { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
     catch (e) { return false; }
   }
 
-  function isDisabled() {
-    try { return localStorage.getItem(DISABLE_KEY) === '1'; }
-    catch (e) { return false; }
-  }
-
-  function setDisabled(disabled) {
-    try {
-      if (disabled) localStorage.setItem(DISABLE_KEY, '1');
-      else localStorage.removeItem(DISABLE_KEY);
-    } catch (e) { /* localStorage unavailable — ignore, feature just won't persist */ }
-  }
+  function isDisabled() { return PREFS.getBool(DISABLE_KEY, false); }
+  function setDisabled(disabled) { PREFS.setBool(DISABLE_KEY, disabled); }
 
   const REDUCED_MOTION = prefersReducedMotion();
 
   const SVG_MARKUP = `
-    <svg viewBox="0 0 132 108" role="img" aria-label="A little cat napping and playing with a ball of yarn">
+    <svg viewBox="0 0 156 108" role="img" aria-label="A little cat napping beside a steaming mug and a ball of yarn">
+      <g class="sf-mug">
+        <ellipse cx="21" cy="97" rx="14" ry="3.5" fill="#3a2c22" opacity="0.22"></ellipse>
+        <path d="M31 85c6 0 6 9 0 9" fill="none" stroke="#c9793f" stroke-width="4" stroke-linecap="round"></path>
+        <rect x="10" y="80" width="21" height="16" rx="4" fill="#c9793f"></rect>
+        <rect x="10" y="80" width="21" height="4" rx="2" fill="var(--accent-color, #64ffda)" opacity="0.85"></rect>
+        <g class="sf-mug-steam">
+          <path d="M15 79c-3-4 3-6 0-11" fill="none" stroke="#fff7ea" stroke-width="2" stroke-linecap="round" opacity="0.6"></path>
+        </g>
+        <g class="sf-mug-steam">
+          <path d="M21 79c-3-5 3-7 0-12" fill="none" stroke="#fff7ea" stroke-width="2" stroke-linecap="round" opacity="0.6"></path>
+        </g>
+        <g class="sf-mug-steam">
+          <path d="M27 79c-3-4 3-6 0-11" fill="none" stroke="#fff7ea" stroke-width="2" stroke-linecap="round" opacity="0.6"></path>
+        </g>
+      </g>
       <g class="sf-yarn">
-        <circle cx="100" cy="82" r="15" fill="#3a8f82" opacity="0.95"></circle>
-        <path d="M87 82c8-9 20-9 27 0" fill="none" stroke="#bff2e8" stroke-width="1.4" opacity="0.8"></path>
-        <path d="M86 86c9 6 20 6 29 0" fill="none" stroke="#bff2e8" stroke-width="1.4" opacity="0.8"></path>
-        <path d="M89 72c5 10 5 18 0 24" fill="none" stroke="#bff2e8" stroke-width="1.4" opacity="0.6"></path>
-        <path d="M111 72c-5 10-5 18 0 24" fill="none" stroke="#bff2e8" stroke-width="1.4" opacity="0.6"></path>
+        <circle cx="124" cy="82" r="15" fill="#3a8f82" opacity="0.95"></circle>
+        <path d="M111 82c8-9 20-9 27 0" fill="none" stroke="#bff2e8" stroke-width="1.4" opacity="0.8"></path>
+        <path d="M110 86c9 6 20 6 29 0" fill="none" stroke="#bff2e8" stroke-width="1.4" opacity="0.8"></path>
+        <path d="M113 72c5 10 5 18 0 24" fill="none" stroke="#bff2e8" stroke-width="1.4" opacity="0.6"></path>
+        <path d="M135 72c-5 10-5 18 0 24" fill="none" stroke="#bff2e8" stroke-width="1.4" opacity="0.6"></path>
       </g>
       <g class="sf-cat-tail">
-        <path d="M24 88c-14-2-20-16-11-27" fill="none" stroke="#c88a52" stroke-width="9" stroke-linecap="round"></path>
+        <path d="M48 88c-14-2-20-16-11-27" fill="none" stroke="#c88a52" stroke-width="9" stroke-linecap="round"></path>
       </g>
       <g class="sf-cat-body">
-        <ellipse cx="46" cy="76" rx="30" ry="23" fill="#d9a066"></ellipse>
-        <ellipse cx="46" cy="86" rx="17" ry="10" fill="#f4dcb4"></ellipse>
+        <ellipse cx="70" cy="76" rx="30" ry="23" fill="#d9a066"></ellipse>
+        <ellipse cx="70" cy="86" rx="17" ry="10" fill="#f4dcb4"></ellipse>
         <g class="sf-cat-paw">
-          <ellipse cx="66" cy="83" rx="9" ry="7" fill="#d9a066"></ellipse>
+          <ellipse cx="90" cy="83" rx="9" ry="7" fill="#d9a066"></ellipse>
         </g>
-        <circle cx="42" cy="40" r="21" fill="#d9a066"></circle>
+        <circle cx="66" cy="40" r="21" fill="#d9a066"></circle>
         <g class="sf-cat-ear-left">
-          <polygon points="26,30 33,10 41,28" fill="#d9a066"></polygon>
-          <polygon points="29,27 33,15 38,26" fill="#f2b7a3"></polygon>
+          <polygon points="50,30 57,10 65,28" fill="#d9a066"></polygon>
+          <polygon points="53,27 57,15 62,26" fill="#f2b7a3"></polygon>
         </g>
         <g class="sf-cat-ear-right">
-          <polygon points="46,26 54,9 61,29" fill="#d9a066"></polygon>
-          <polygon points="49,25 54,14 58,27" fill="#f2b7a3"></polygon>
+          <polygon points="70,26 78,9 85,29" fill="#d9a066"></polygon>
+          <polygon points="73,25 78,14 82,27" fill="#f2b7a3"></polygon>
         </g>
-        <ellipse cx="42" cy="48" rx="12" ry="9" fill="#f4dcb4"></ellipse>
+        <ellipse cx="66" cy="48" rx="12" ry="9" fill="#f4dcb4"></ellipse>
         <g class="sf-cat-eyes">
-          <ellipse class="sf-cat-eye" cx="35" cy="40" rx="2.4" ry="3" fill="#2a2016"></ellipse>
-          <ellipse class="sf-cat-eye" cx="49" cy="40" rx="2.4" ry="3" fill="#2a2016"></ellipse>
+          <ellipse class="sf-cat-eye" cx="59" cy="40" rx="2.4" ry="3" fill="#2a2016"></ellipse>
+          <ellipse class="sf-cat-eye" cx="73" cy="40" rx="2.4" ry="3" fill="#2a2016"></ellipse>
         </g>
-        <polygon points="42,45 39,48 45,48" fill="#e8879a"></polygon>
-        <path d="M30 48c-6 1-10 3-13 6M54 48c6 1 10 3 13 6M30 51c-6 2-10 5-12 8M54 51c6 2 10 5 12 8"
+        <polygon points="66,45 63,48 69,48" fill="#e8879a"></polygon>
+        <path d="M54 48c-6 1-10 3-13 6M78 48c6 1 10 3 13 6M54 51c-6 2-10 5-12 8M78 51c6 2 10 5 12 8"
               stroke="#5a4331" stroke-width="0.7" fill="none" opacity="0.55" stroke-linecap="round"></path>
-        <path d="M20 26c2-6 8-10 14-9M64 26c-2-6-8-10-14-9" stroke="#a9784a" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.5"></path>
+        <path d="M44 26c2-6 8-10 14-9M88 26c-2-6-8-10-14-9" stroke="#a9784a" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.5"></path>
       </g>
     </svg>
   `;
@@ -137,7 +150,7 @@
     const el = document.createElement('div');
     el.className = 'sf-companion';
     el.innerHTML =
-      '<button type="button" class="sf-companion__hit" aria-label="Play with the corner cat"></button>' +
+      '<button type="button" class="sf-companion__hit" aria-label="Play with the corner companion"></button>' +
       SVG_MARKUP;
     document.body.appendChild(el);
 

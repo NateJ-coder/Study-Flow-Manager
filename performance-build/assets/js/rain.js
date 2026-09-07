@@ -15,6 +15,10 @@
   }
 
   function isDisabled() {
+    // Routed through SF_PREFS (prefs.js) when available; falls back to a
+    // direct read so rain mode still behaves correctly if prefs.js failed
+    // to load for some reason.
+    if (window.SF_PREFS) return window.SF_PREFS.getBool(DISABLE_KEY, false);
     try { return localStorage.getItem(DISABLE_KEY) === '1'; } catch (e) { return false; }
   }
 
@@ -105,9 +109,8 @@
 
       const btn = document.getElementById('sf-rain-accessibility-pause');
       if (btn) btn.addEventListener('click', () => {
-        try {
-          localStorage.setItem(DISABLE_KEY, '1');
-        } catch (e) {}
+        if (window.SF_PREFS) window.SF_PREFS.setBool(DISABLE_KEY, true);
+        else { try { localStorage.setItem(DISABLE_KEY, '1'); } catch (e) {} }
         stopRain();
       });
     }

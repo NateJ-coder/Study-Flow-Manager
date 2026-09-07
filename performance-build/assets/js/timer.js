@@ -1162,23 +1162,52 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// Background parallax (lightweight) — register once app is ready
+// Background motion: a slow autonomous "breathing" zoom (so the scene
+// feels alive even with no mouse input — the old version only moved on
+// mousemove, so touch devices got nothing) blended with a lightweight
+// mouse parallax. Both drive the same `transform`, so they're combined in
+// one rAF loop rather than two animations fighting over the property.
 (function registerParallax(){
-  let raf = 0; const bg = document.getElementById('background-image');
+  const bg = document.getElementById('background-image');
+  if (!bg) return;
+  let reduced = false;
+  try { reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+  if (reduced) return;
+
+  const lowEnd = (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4)
+              || (navigator.deviceMemory && navigator.deviceMemory <= 4)
+              || /Mobi|Android/i.test(navigator.userAgent);
+
+  let targetX = 0, targetY = 0, curX = 0, curY = 0;
+  let raf = 0, frame = 0, sleeping = false;
+  const start = performance.now();
+
   function onMove(e){
-    if (!bg) return;
     const { innerWidth: w, innerHeight: h } = window;
-    const x = (e.clientX - w/2) / w, y = (e.clientY - h/2) / h;
-    cancelAnimationFrame(raf);
-    raf = requestAnimationFrame(()=> bg.style.transform = `translate(${x*6}px, ${y*6}px) scale(1.03)`);
+    targetX = ((e.clientX - w / 2) / w) * 6;
+    targetY = ((e.clientY - h / 2) / h) * 6;
   }
+
+  function tick(now){
+    raf = requestAnimationFrame(tick);
+    if (sleeping) return;
+    frame++;
+    if (lowEnd && (frame % 3 !== 0)) return; // thin out updates on low-end/mobile devices
+    const t = (now - start) / 1000;
+    const breathe = 1.03 + Math.sin(t * (Math.PI * 2 / 46)) * 0.015; // ~46s cycle, 1.015–1.045
+    curX += (targetX - curX) * 0.04;
+    curY += (targetY - curY) * 0.04;
+    bg.style.transform = `translate(${curX.toFixed(2)}px, ${curY.toFixed(2)}px) scale(${breathe.toFixed(4)})`;
+  }
+
   function register(){
-    try {
-      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: no-preference)').matches) {
-        window.addEventListener('mousemove', onMove);
-      }
-    } catch (e) {}
+    try { window.addEventListener('mousemove', onMove); } catch (e) {}
+    raf = requestAnimationFrame(tick);
   }
+
+  window.addEventListener('sleepModeEntered', () => { sleeping = true; });
+  window.addEventListener('sleepModeExited', () => { sleeping = false; });
+
   if (document.body.classList.contains('ready')) register();
   else window.addEventListener('studyflow:readyToAnimate', register, { once: true });
 })();
