@@ -9,6 +9,7 @@
   <!-- <link rel="stylesheet" href="/Study-Flow-Manager/performance-build/assets/css/timer.css"> -->
 
   <link rel="stylesheet" href="/Study-Flow-Manager/performance-build/assets/css/calendar.css">
+  <link rel="stylesheet" href="/Study-Flow-Manager/performance-build/assets/css/companion.css?v=2026090701">
   <link rel="manifest" href="/Study-Flow-Manager/performance-build/manifest.webmanifest">
   <meta name="theme-color" content="#0b0b0b">
   <script>
@@ -130,6 +131,8 @@
   <script src="/Study-Flow-Manager/performance-build/assets/js/calendar.js" defer></script>
   <script src="/Study-Flow-Manager/performance-build/assets/js/sleep.js" defer></script>
   <script src="/Study-Flow-Manager/performance-build/assets/js/calendar-sleep-redirect.js" defer></script>
+  <!-- Corner companion (lo-fi cat + yarn ball); listens for sleepModeEntered/Exited above -->
+  <script src="/Study-Flow-Manager/performance-build/assets/js/companion.js?v=2026090701" defer></script>
   <script>
     // Lightweight background initializer for calendar page.
     // Runs on DOMContentLoaded and uses SF_CONFIG.BACKGROUNDS when available.
@@ -187,7 +190,13 @@
     <!-- Toasts -->
     <div id="toasts" aria-live="polite" aria-atomic="true"></div>
 
-    <!-- Season Switcher (dev/test) -->
-    <button id="seasonSwitcher" class="sf-btn sf-btn--ghost" title="Preview seasons" style="position:fixed; left:10px; bottom:10px; z-index:40">⚙️</button>
+    <!-- Season Switcher (dev/test only — hidden from regular users; reveal with ?debug=1) -->
+    <button id="seasonSwitcher" class="sf-btn sf-btn--ghost" title="Preview seasons" style="position:fixed; left:10px; bottom:10px; z-index:40" hidden>⚙️</button>
+    <script>
+      try {
+        const isDebug = new URLSearchParams(location.search).get('debug') === '1' || localStorage.getItem('sf_debug') === '1';
+        if (isDebug) document.getElementById('seasonSwitcher')?.removeAttribute('hidden');
+      } catch (e) { /* ignore */ }
+    </script>
 </body>
 </html>
